@@ -1,0 +1,62 @@
+# PGLumiLineage 配置示例文件
+# 复制此文件为 settings.toml 并根据实际情况修改
+# 作者: Vance Chen
+
+#################################################
+# 基本配置
+#################################################
+
+# 日志级别: DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_LEVEL = "INFO"
+
+# 项目名称
+PROJECT_NAME = "PGLumiLineage"
+
+#################################################
+# PostgreSQL配置
+#################################################
+
+# 数据库连接信息
+[postgres]
+# PostgreSQL用户名
+USER = "postgres"
+
+# PostgreSQL密码 (建议通过环境变量设置: POSTGRES_PASSWORD)
+PASSWORD = "your_password_here"  
+
+# PostgreSQL主机地址
+HOST = "localhost"
+
+# PostgreSQL端口
+PORT = 5432
+
+# 原始日志数据库名
+DB_RAW_LOGS = "pg_raw_logs"
+
+# 分析模式数据库名
+DB_ANALYTICAL_PATTERNS = "pg_analytical"
+
+# AGE图数据库名 (可能与上面某个相同)
+DB_AGE = "pg_age"
+
+#################################################
+# LLM配置
+#################################################
+
+[llm]
+# LLM API密钥 (建议通过环境变量设置: LLM_API_KEY)
+API_KEY = "your_api_key_here"
+
+# LLM模型名称
+MODEL_NAME = "gpt-4o"
+
+#################################################
+# 日志文件配置
+#################################################
+
+# PostgreSQL日志文件模式
+PG_LOG_FILE_PATTERN = "/var/log/postgresql/postgresql-*.csv"
+
+# 注意: 以上配置项也可以通过环境变量设置
+# 环境变量优先级高于TOML文件
+# 环境变量名称与上面的字段名称一致，例如: POSTGRES_USER, LLM_MODEL_NAME等
