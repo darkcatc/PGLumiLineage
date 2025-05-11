@@ -1,7 +1,7 @@
 # ✨ PGLumiLineage: 点亮你的数据之旅 - PostgreSQL自动化数据血缘与知识图谱构建平台 ✨
 ![alt text](image.png)
 
-**PGLumiLineage：借助大语言模型（LLM）与图数据库（Apache AGE），实现PostgreSQL自动化数据血缘分析及知识图谱构建。**
+**PGLumiLineage：借助大语言模型（LLM）与图数据库（Apache AGE），实现PG自动化数据血缘分析及知识图谱构建。**
 
 
 ## 🚀 项目简介：连接数据资产，赋能AI认知
