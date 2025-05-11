@@ -24,7 +24,6 @@ db_pool = None
 # 获取日志记录器
 logger = logging.getLogger(__name__)
 
-
 async def init_db_pool() -> None:
     """
     初始化数据库连接池

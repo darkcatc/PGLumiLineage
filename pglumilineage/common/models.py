@@ -80,3 +80,24 @@ class LLMAnalysisStatus:
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+
+
+from pydantic import SecretStr
+
+
+class DataSourceConfig(BaseModel):
+    """
+    数据源配置模型
+    
+    对应数据库中的 lumi_config.data_sources 表
+    """
+    source_id: int = Field(description="数据源ID，主键")
+    source_name: str = Field(description="数据源名称")
+    host: str = Field(description="数据库主机名或IP地址")
+    port: int = Field(description="数据库端口")
+    username: str = Field(description="数据库用户名")
+    password: SecretStr = Field(description="数据库密码，使用 SecretStr 类型保护敏感信息")
+    database: str = Field(description="数据库名称")
+    
+    # Pydantic V2使用model_config进行配置
+    model_config = SettingsConfigDict(from_attributes=True, populate_by_name=True)

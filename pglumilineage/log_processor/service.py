@@ -17,12 +17,12 @@ import csv
 import os
 import glob
 import logging
+import time
 from typing import List, Set, Dict, Optional, Tuple, Any
 from datetime import datetime
 import re
 
-from pglumilineage.common.logging_config import setup_logging
-from pglumilineage.common import config, db_utils, models
+from pglumilineage.common import logging_config, config, db_utils, models
 
 # 设置日志
 logger = logging.getLogger(__name__)
@@ -145,27 +145,92 @@ async def parse_log_file(source_name: str, log_file_path: str) -> List[models.Ra
     logger.info(f"开始解析日志文件: {log_file_path}")
     log_entries = []
     
+    # 定义PostgreSQL CSV日志的列顺序
+    # 参考: https://www.postgresql.org/docs/current/runtime-config-logging.html#RUNTIME-CONFIG-LOGGING-CSVLOG
+    # CSV columns expected: 
+    # log_time, user_name, database_name, process_id, connection_from, session_id, session_line_num, 
+    # command_tag, session_start_time, virtual_transaction_id, transaction_id, error_severity, 
+    # sql_state_code, message, detail, hint, internal_query, internal_query_pos, context, query, 
+    # query_pos, location, application_name, backend_type, leader_pid, query_id
+    fieldnames = [
+        'log_time', 'user_name', 'database_name', 'process_id', 'connection_from', 
+        'session_id', 'session_line_num', 'command_tag', 'session_start_time', 
+        'virtual_transaction_id', 'transaction_id', 'error_severity', 'sql_state_code', 
+        'message', 'detail', 'hint', 'internal_query', 'internal_query_pos', 
+        'context', 'query', 'query_pos', 'location', 'application_name', 'backend_type',
+        'leader_pid', 'query_id'
+    ]
+    
     try:
         with open(log_file_path, 'r', newline='') as csvfile:
-            # PostgreSQL CSV日志格式通常包含标题行
-            csv_reader = csv.DictReader(csvfile)
+            # PostgreSQL CSV日志没有标题行，需要手动指定字段名
+            csv_reader = csv.DictReader(csvfile, fieldnames=fieldnames)
             
             for row in csv_reader:
+                # 提取SQL语句 - 可能在query字段或message字段(以statement:开头)
+                sql_text = None
+                
+                if row.get('query') and row.get('query').strip():
+                    sql_text = row.get('query').strip()
+                elif row.get('message', '').startswith('statement:'):
+                    sql_text = row.get('message')[len('statement:'):].strip()
+                
                 # 只处理包含SQL语句的行
-                if 'query' in row and row['query'] and not row['query'].strip().startswith('--'):
+                if sql_text and not sql_text.startswith('--'):
                     try:
+                        # 提取客户端地址 (从connection_from字段，格式可能是host:port)
+                        client_addr = row.get('connection_from', '')
+                        if ':' in client_addr:
+                            client_addr = client_addr.split(':')[0]  # 只保留IP地址部分
+                        
+                        # 提取持续时间 (可能在message字段中，格式如"duration: X.XXX ms")
+                        duration_ms = 0
+                        message = row.get('message', '')
+                        duration_match = re.search(r'duration:\s*([0-9.]+)\s*ms', message)
+                        if duration_match:
+                            try:
+                                duration_ms = int(float(duration_match.group(1)) * 1000)
+                            except (ValueError, IndexError):
+                                logger.warning(f"无法解析持续时间: {message}")
+                        
+                        # 解析日志时间 (格式如"2023-01-01 12:34:56.789 UTC")
+                        log_time = datetime.now()
+                        if row.get('log_time'):
+                            try:
+                                # 处理带时区的时间戳
+                                log_time_str = row.get('log_time')
+                                if ' UTC' in log_time_str:
+                                    # 如果有UTC标记，先移除它，然后添加Z表示UTC
+                                    log_time_str = log_time_str.replace(' UTC', 'Z')
+                                # 处理毫秒部分
+                                if '.' in log_time_str:
+                                    # 确保毫秒部分格式正确
+                                    date_part, time_part = log_time_str.split(' ', 1)
+                                    time_part, tz_part = time_part.split('Z', 1) if 'Z' in time_part else (time_part, '')
+                                    time_parts = time_part.split('.')
+                                    if len(time_parts) > 1:
+                                        # 确保毫秒部分最多3位
+                                        ms_part = time_parts[1][:3]
+                                        time_part = f"{time_parts[0]}.{ms_part}"
+                                    log_time_str = f"{date_part} {time_part}{'Z' if tz_part == '' and 'Z' in log_time_str else tz_part}"
+                                
+                                # 尝试解析时间
+                                log_time = datetime.fromisoformat(log_time_str.replace('Z', '+00:00'))
+                            except (ValueError, IndexError) as e:
+                                logger.warning(f"无法解析日志时间: {row.get('log_time')}, 错误: {str(e)}")
+                        
                         # 创建RawSQLLog对象
                         log_entry = models.RawSQLLog(
-                            log_time=datetime.fromisoformat(row.get('log_time', '')) if row.get('log_time') else datetime.now(),
+                            log_time=log_time,
                             source_database_name=source_name,
                             username=row.get('user_name', ''),
                             database_name_logged=row.get('database_name', ''),
-                            client_addr=row.get('remote_host', ''),
+                            client_addr=client_addr,
                             application_name=row.get('application_name', ''),
                             session_id=row.get('session_id', ''),
                             query_id=int(row.get('query_id', 0)) if row.get('query_id', '').isdigit() else None,
-                            duration_ms=int(float(row.get('duration_ms', 0)) * 1000) if row.get('duration_ms') else 0,
-                            raw_sql_text=row.get('query', ''),
+                            duration_ms=duration_ms,
+                            raw_sql_text=sql_text,
                             log_source_identifier=os.path.basename(log_file_path)
                         )
                         log_entries.append(log_entry)
@@ -199,19 +264,33 @@ async def batch_insert_logs(log_entries: List[models.RawSQLLog]) -> int:
         # 获取数据库连接池
         pool = await db_utils.get_db_pool()
         
-        # 准备插入语句
-        insert_query = """
-        INSERT INTO lumi_logs.captured_logs (
-            log_time, source_database_name, username, database_name_logged,
-            client_addr, application_name, session_id, query_id,
-            duration_ms, raw_sql_text, log_source_identifier
-        ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-        )
-        """
+        # 定义目标表的列顺序
+        # lumi_logs.captured_logs 表的列顺序如下：
+        # 1. log_id (serial, 自增主键，不需要插入)
+        # 2. log_time
+        # 3. source_database_name
+        # 4. username
+        # 5. database_name_logged
+        # 6. client_addr
+        # 7. application_name
+        # 8. session_id
+        # 9. query_id
+        # 10. duration_ms
+        # 11. raw_sql_text
+        # 12. log_source_identifier
+        # 13. created_at (默认为 now()，不需要插入)
+        # 14. updated_at (默认为 now()，不需要插入)
         
-        # 准备批量插入的参数
-        values = [
+        # 定义要插入的列
+        columns = [
+            'log_time', 'source_database_name', 'username', 'database_name_logged',
+            'client_addr', 'application_name', 'session_id', 'query_id',
+            'duration_ms', 'raw_sql_text', 'log_source_identifier'
+        ]
+        
+        # 准备要插入的记录
+        # 注意：记录顺序必须与 columns 定义的顺序一致
+        records = [
             (
                 entry.log_time,
                 entry.source_database_name,
@@ -228,145 +307,251 @@ async def batch_insert_logs(log_entries: List[models.RawSQLLog]) -> int:
             for entry in log_entries
         ]
         
-        # 执行批量插入
+        # 使用 copy_records_to_table 进行高性能批量插入
         async with pool.acquire() as conn:
-            # 使用executemany进行批量插入
-            await conn.executemany(insert_query, values)
-        
-        logger.info(f"成功插入 {len(log_entries)} 条日志记录")
-        return len(log_entries)
+            try:
+                # 开始事务
+                async with conn.transaction():
+                    # 使用 COPY 协议批量插入数据
+                    # 确保使用完全限定名称并设置 schema
+                    await conn.execute('SET search_path TO lumi_logs, public')
+                    result = await conn.copy_records_to_table(
+                        'captured_logs',  # 不使用 schema 前缀，因为已经设置了搜索路径
+                        records=records,
+                        columns=columns
+                    )
+                    
+                    # copy_records_to_table 不返回影响行数，所以我们使用记录数量
+                    inserted_count = len(records)
+                    logger.info(f"成功插入 {inserted_count} 条日志记录")
+                    return inserted_count
+            except Exception as e:
+                # 如果 COPY 失败，尝试使用 executemany 方法
+                logger.warning(f"COPY 协议插入失败，尝试使用 executemany: {str(e)}")
+                
+                # 准备 INSERT 语句
+                insert_query = """
+                INSERT INTO lumi_logs.captured_logs (
+                    log_time, source_database_name, username, database_name_logged,
+                    client_addr, application_name, session_id, query_id,
+                    duration_ms, raw_sql_text, log_source_identifier
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                """
+                
+                # 开始新事务
+                async with conn.transaction():
+                    # 执行批量插入
+                    await conn.executemany(insert_query, records)
+                    
+                    inserted_count = len(records)
+                    logger.info(f"成功插入 {inserted_count} 条日志记录 (使用 executemany)")
+                    return inserted_count
     
     except Exception as e:
         logger.error(f"批量插入日志记录时出错: {str(e)}")
         return 0
 
 
-async def process_log_files() -> int:
+async def process_log_files(interval_seconds: int = 60, run_once: bool = False) -> int:
     """
     处理日志文件的主函数
+    
+    Args:
+        interval_seconds: 处理间隔时间（秒）
+        run_once: 是否只运行一次，如果为 False 则作为服务持续运行
     
     Returns:
         int: 处理的记录总数
     """
+    # 初始化日志和数据库连接池
+    logging_config.setup_logging()
     logger.info("开始处理PostgreSQL日志文件")
     
-    # 跟踪已处理的文件
-    processed_log_files: Dict[str, Set[str]] = {}  # 数据源名称 -> 已处理文件集合
-    total_processed_records = 0
-    
     try:
-        # 获取数据源信息
-        data_sources = await get_data_sources()
+        # 初始化数据库连接池
+        await db_utils.init_db_pool()
         
-        if not data_sources:
-            logger.warning("没有找到活跃的数据源，无法处理日志文件")
-            return 0
+        # 跟踪已处理的文件
+        processed_log_files: Dict[str, Set[str]] = {}  # 数据源名称 -> 已处理文件集合
+        total_processed_records = 0
         
-        for data_source in data_sources:
-            source_name = data_source['source_name']
-            logger.info(f"处理数据源: {source_name}")
+        # 定义处理一次日志的函数
+        async def process_logs_once() -> int:
+            processed_count = 0
             
-            # 初始化已处理文件集合
-            if source_name not in processed_log_files:
-                processed_log_files[source_name] = set()
-            
-            # 查找新的日志文件
-            new_log_files = await find_new_log_files(source_name, processed_log_files[source_name])
-            
-            for log_file in new_log_files:
-                # 解析日志文件
-                log_entries = await parse_log_file(source_name, log_file)
+            try:
+                # 获取数据源信息
+                data_sources = await get_data_sources()
                 
-                if not log_entries:
-                    logger.info(f"日志文件 {log_file} 中没有找到有效的SQL日志条目")
-                    processed_log_files[source_name].add(log_file)
-                    continue
+                if not data_sources:
+                    logger.warning("没有找到活跃的数据源，无法处理日志文件")
+                    return 0
                 
-                # 分批处理日志条目
-                for i in range(0, len(log_entries), BATCH_SIZE):
-                    batch = log_entries[i:i + BATCH_SIZE]
-                    inserted_count = await batch_insert_logs(batch)
-                    total_processed_records += inserted_count
+                for data_source in data_sources:
+                    source_name = data_source['source_name']
+                    logger.info(f"处理数据源: {source_name}")
+                    
+                    # 初始化已处理文件集合
+                    if source_name not in processed_log_files:
+                        processed_log_files[source_name] = set()
+                    
+                    # 查找新的日志文件
+                    new_log_files = await find_new_log_files(source_name, processed_log_files[source_name])
+                    
+                    for log_file in new_log_files:
+                        # 解析日志文件
+                        log_entries = await parse_log_file(source_name, log_file)
+                        
+                        if not log_entries:
+                            logger.info(f"日志文件 {log_file} 中没有找到有效的SQL日志条目")
+                            processed_log_files[source_name].add(log_file)
+                            continue
+                        
+                        # 分批处理日志条目
+                        for i in range(0, len(log_entries), BATCH_SIZE):
+                            batch = log_entries[i:i + BATCH_SIZE]
+                            inserted_count = await batch_insert_logs(batch)
+                            processed_count += inserted_count
+                        
+                        # 标记文件为已处理
+                        processed_log_files[source_name].add(log_file)
+                        logger.info(f"完成处理日志文件: {log_file}")
+                        
+                        # 更新同步状态
+                        await update_sync_status(source_name, len(log_entries), inserted_count)
                 
-                # 标记文件为已处理
-                processed_log_files[source_name].add(log_file)
-                logger.info(f"完成处理日志文件: {log_file}")
-                
-                # 更新同步状态
-                await update_sync_status(data_source['schedule_id'], 'SUCCESS', f"处理了 {len(log_entries)} 条记录")
+                return processed_count
+            except Exception as e:
+                logger.error(f"处理日志文件时出错: {str(e)}")
+                return 0
+        
+        # 主处理循环
+        if run_once:
+            # 只运行一次
+            total_processed_records = await process_logs_once()
+        else:
+            # 作为服务持续运行
+            try:
+                while True:
+                    start_time = time.time()
+                    
+                    # 处理一次日志
+                    processed_count = await process_logs_once()
+                    total_processed_records += processed_count
+                    
+                    # 计算实际需要等待的时间
+                    elapsed_time = time.time() - start_time
+                    wait_time = max(0, interval_seconds - elapsed_time)
+                    
+                    if processed_count > 0:
+                        logger.info(f"本次处理了 {processed_count} 条记录，总计: {total_processed_records}")
+                    
+                    if wait_time > 0:
+                        logger.info(f"等待 {wait_time:.1f} 秒后继续处理...")
+                        await asyncio.sleep(wait_time)
+            except asyncio.CancelledError:
+                logger.info("服务被取消，正在优雅退出...")
+            except KeyboardInterrupt:
+                logger.info("收到键盘中断，正在优雅退出...")
+        
+        logger.info(f"日志处理完成，共处理 {total_processed_records} 条记录")
+        return total_processed_records
     
     except Exception as e:
-        logger.error(f"处理日志文件时出错: {str(e)}")
-    
-    logger.info(f"日志处理完成，共处理 {total_processed_records} 条记录")
-    return total_processed_records
+        logger.error(f"日志处理服务出错: {str(e)}")
+        return 0
+    finally:
+        # 关闭数据库连接池
+        try:
+            await db_utils.close_db_pool()
+            logger.info("数据库连接池已关闭")
+        except Exception as e:
+            logger.error(f"关闭数据库连接池时出错: {str(e)}")
 
 
-async def update_sync_status(schedule_id: int, status: str, message: str) -> None:
+async def update_sync_status(source_name: str, processed_count: int, inserted_count: int) -> None:
     """
-    更新同步状态
+    更新数据源的同步状态
     
     Args:
-        schedule_id: 同步计划ID
-        status: 状态 ('SUCCESS', 'FAILED', 'IN_PROGRESS')
-        message: 状态消息
+        source_name: 数据源名称
+        processed_count: 处理的记录数
+        inserted_count: 插入的记录数
     """
     try:
+        # 获取数据源信息
+        data_source = data_source_cache.get(source_name)
+        
+        if not data_source:
+            logger.error(f"未找到数据源: {source_name}")
+            return
+        
         # 获取数据库连接池
         pool = await db_utils.get_db_pool()
         
         # 更新同步状态
-        query = """
+        update_query = """
         UPDATE lumi_config.source_sync_schedules
-        SET last_sync_attempt_at = CURRENT_TIMESTAMP,
-            last_sync_success_at = CASE WHEN $2 = 'SUCCESS' THEN CURRENT_TIMESTAMP ELSE last_sync_success_at END,
-            last_sync_status = $2,
-            last_sync_message = $3,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE schedule_id = $1
+        SET 
+            last_sync_attempt_at = NOW(),
+            last_sync_success_at = CASE WHEN $3 > 0 THEN NOW() ELSE last_sync_success_at END,
+            last_sync_status = CASE WHEN $3 > 0 THEN 'SUCCESS' ELSE 'NO_RECORDS' END,
+            last_sync_message = $4,
+            updated_at = NOW()
+            -- 注意：表中没有 processed_count 列
+        WHERE source_id = $1 AND is_schedule_active = TRUE
         """
         
-        async with pool.acquire() as conn:
-            await conn.execute(query, schedule_id, status, message)
+        # 构造同步状态消息
+        sync_message = f"处理了 {processed_count} 条记录，成功插入 {inserted_count} 条"
         
-        logger.debug(f"已更新同步计划 {schedule_id} 的状态: {status}")
+        async with pool.acquire() as conn:
+            # 执行更新
+            # 确保参数类型正确并与 SQL 中的参数匹配
+            result = await conn.execute(
+                update_query, 
+                int(data_source['source_id']),  # 确保 source_id 是整数
+                int(processed_count),           # $2
+                int(inserted_count),            # $3
+                str(sync_message)               # $4
+            )
+            
+            if result == 'UPDATE 0':
+                # 如果没有更新任何行，可能是因为没有活跃的计划
+                logger.warning(f"没有找到数据源 {source_name} 的活跃同步计划")
+            else:
+                logger.info(f"已更新数据源 {source_name} 的同步状态: {sync_message}")
     
     except Exception as e:
         logger.error(f"更新同步状态时出错: {str(e)}")
-        # 这里不抛出异常，因为这是一个次要操作，不应该影响主要流程
 
 
-async def run_log_processor(interval_seconds: int = 60) -> None:
-    """
-    定期运行日志处理器
-    
-    Args:
-        interval_seconds: 处理间隔（秒）
-    """
-    logger.info(f"启动日志处理器，处理间隔: {interval_seconds}秒")
-    
-    while True:
-        try:
-            # 处理日志文件
-            await process_log_files()
-        except Exception as e:
-            logger.error(f"日志处理器运行出错: {str(e)}")
-        
-        logger.info(f"等待 {interval_seconds} 秒后继续处理...")
-        await asyncio.sleep(interval_seconds)
-
-
-async def main():
-    """
-    主函数
-    """
-    # 设置日志
-    setup_logging()
-    
-    # 运行日志处理器
-    await run_log_processor()
-
-
+# 如果直接运行该模块，则启动日志处理服务
 if __name__ == "__main__":
-    # 运行主函数
-    asyncio.run(main())
+    import argparse
+    
+    # 解析命令行参数
+    parser = argparse.ArgumentParser(description="PostgreSQL 日志处理服务")
+    parser.add_argument(
+        "--interval", 
+        type=int, 
+        default=60, 
+        help="处理间隔时间（秒），默认为 60 秒"
+    )
+    parser.add_argument(
+        "--run-once", 
+        action="store_true", 
+        help="只运行一次然后退出，而不是作为服务持续运行"
+    )
+    
+    args = parser.parse_args()
+    
+    # 运行日志处理服务
+    try:
+        asyncio.run(process_log_files(interval_seconds=args.interval, run_once=args.run_once))
+    except KeyboardInterrupt:
+        print("\n程序被用户中断")
+    except Exception as e:
+        print(f"\n程序出错: {str(e)}")
+        import traceback
+        traceback.print_exc()
