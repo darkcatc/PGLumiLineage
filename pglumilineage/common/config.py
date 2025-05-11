@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     LLM_API_KEY: SecretStr = Field(..., description="LLM API密钥")
     LLM_MODEL_NAME: str = Field("gpt-4o", description="LLM模型名称")
     
+    # Qwen API配置
+    DASHSCOPE_API_KEY: SecretStr = Field("sk-add1fe773eb44685a3aeee14d89c19a4", description="DashScope API密钥")
+    QWEN_BASE_URL: AnyHttpUrl = Field("https://dashscope.aliyuncs.com/compatible-mode/v1", description="Qwen API基础URL")
+    QWEN_MODEL_NAME: str = Field("qwen-plus", description="Qwen模型名称")
+    
     # 日志文件配置
     PG_LOG_FILE_PATTERN: str = Field(..., description="PostgreSQL日志文件模式，例如: '/var/log/postgresql/postgresql-*.csv'")
     
