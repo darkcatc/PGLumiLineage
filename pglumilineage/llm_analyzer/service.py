@@ -624,109 +624,223 @@ async def update_sql_pattern_analysis_result(sql_hash: str, status: str, relatio
     except Exception as e:
         logger.error(f"更新 SQL 模式 {sql_hash[:8]}... 的分析结果失败: {str(e)}")
 
-async def analyze_sql_patterns_with_llm(batch_size: int = 10):
+async def analyze_sql_patterns_with_llm(batch_size: int = 10, poll_interval_seconds: int = 60, run_once: bool = False):
     """
     使用 LLM 分析 SQL 模式
     
-    主函数，协调整个分析流程
+    主函数，协调整个分析流程。定期轮询并处理待分析的 SQL 模式。
     
     Args:
         batch_size: 每批处理的 SQL 模式数量
+        poll_interval_seconds: 轮询间隔（秒）
+        run_once: 是否只运行一次（用于测试）
     """
-    logger.info(f"开始使用 LLM 分析 SQL 模式，批大小: {batch_size}")
+    logger.info(f"启动 LLM 分析器服务，批大小: {batch_size}, 轮询间隔: {poll_interval_seconds}秒")
     
+    # 初始化数据库连接池
     try:
-        # 1. 获取待分析的 SQL 模式
-        patterns = await fetch_pending_sql_patterns(batch_size)
-        
-        if not patterns:
-            logger.info("没有找到待分析的 SQL 模式")
-            return
-        
-        # 获取数据库连接池
+        # 初始化数据库连接池
         pool = await db_utils.get_db_pool()
-        
-        # 2. 逐个处理 SQL 模式
-        for pattern in patterns:
+        logger.info("数据库连接池初始化成功")
+    except Exception as e:
+        logger.error(f"初始化数据库连接池失败: {str(e)}")
+        return
+    
+    # 设置信号处理程序，以便优雅退出
+    import signal
+    running = True
+    
+    def signal_handler(sig, frame):
+        nonlocal running
+        logger.info(f"收到信号 {sig}，准备优雅退出...")
+        running = False
+    
+    # 注册信号处理程序
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    # 统计信息
+    total_processed = 0
+    total_success = 0
+    total_failed = 0
+    
+    # 主循环
+    try:
+        while running:
+            cycle_start_time = time.time()
             try:
-                # 获取 SQL 模式的元数据上下文
-                async with pool.acquire() as conn:
-                    metadata_context = await fetch_metadata_context_for_sql(conn, pattern)
+                # 1. 获取待分析的 SQL 模式
+                patterns = await fetch_pending_sql_patterns(batch_size)
                 
-                # 确定 SQL 模式类型
-                sql_mode = "UNKNOWN"
-                if pattern.normalized_sql_text.lower().startswith("insert"):
-                    sql_mode = "INSERT"
-                elif pattern.normalized_sql_text.lower().startswith("update"):
-                    sql_mode = "UPDATE"
-                elif pattern.normalized_sql_text.lower().startswith("select"):
-                    sql_mode = "SELECT"
-                elif pattern.normalized_sql_text.lower().startswith("create"):
-                    sql_mode = "CREATE"
-                
-                # 构造 Qwen prompt
-                messages = construct_prompt_for_qwen(
-                    sql_mode=sql_mode,
-                    sample_sql=pattern.sample_raw_sql_text,
-                    metadata_context=metadata_context
-                )
-                
-                # 调用 Qwen API
-                response_content = await call_qwen_api(messages)
-                
-                if not response_content:
-                    # 更新分析状态为失败
-                    await update_sql_pattern_analysis_result(
-                        sql_hash=pattern.sql_hash,
-                        status="FAILED",
-                        relations_json=None,
-                        error_message="LLM API 返回空响应"
-                    )
+                if not patterns:
+                    logger.info("没有找到待分析的 SQL 模式，等待下次轮询")
+                    if run_once:
+                        logger.info("运行模式为单次运行，退出程序")
+                        break
+                    await asyncio.sleep(poll_interval_seconds)
                     continue
                 
-                # 解析 LLM 响应
-                relations_json = parse_llm_response(response_content)
+                logger.info(f"获取到 {len(patterns)} 条待分析的 SQL 模式")
                 
-                if relations_json:
-                    # 更新分析状态为成功
-                    await update_sql_pattern_analysis_result(
-                        sql_hash=pattern.sql_hash,
-                        status="SUCCESS",
-                        relations_json=relations_json
-                    )
+                # 2. 逐个处理 SQL 模式
+                batch_success = 0
+                batch_failed = 0
+                
+                for pattern in patterns:
+                    if not running:
+                        logger.info("收到退出信号，中断处理")
+                        break
+                    
+                    try:
+                        logger.info(f"开始处理 SQL 模式: {pattern.sql_hash[:8]}...")
+                        
+                        # 获取 SQL 模式的元数据上下文
+                        async with pool.acquire() as conn:
+                            metadata_context = await fetch_metadata_context_for_sql(conn, pattern)
+                        
+                        # 确定 SQL 模式类型
+                        sql_mode = "UNKNOWN"
+                        normalized_sql_lower = pattern.normalized_sql_text.lower()
+                        if normalized_sql_lower.startswith("insert"):
+                            sql_mode = "INSERT"
+                        elif normalized_sql_lower.startswith("update"):
+                            sql_mode = "UPDATE"
+                        elif normalized_sql_lower.startswith("select"):
+                            sql_mode = "SELECT"
+                        elif normalized_sql_lower.startswith("create"):
+                            sql_mode = "CREATE"
+                        elif normalized_sql_lower.startswith("delete"):
+                            sql_mode = "DELETE"
+                        elif normalized_sql_lower.startswith("merge"):
+                            sql_mode = "MERGE"
+                        
+                        logger.info(f"SQL 模式类型: {sql_mode}, 哈希值: {pattern.sql_hash[:8]}...")
+                        
+                        # 构造 Qwen prompt
+                        messages = construct_prompt_for_qwen(
+                            sql_mode=sql_mode,
+                            sample_sql=pattern.sample_raw_sql_text,
+                            metadata_context=metadata_context
+                        )
+                        
+                        # 调用 Qwen API
+                        logger.info(f"调用 Qwen API 分析 SQL 模式: {pattern.sql_hash[:8]}...")
+                        response_content = await call_qwen_api(messages)
+                        
+                        if not response_content:
+                            # 更新分析状态为失败
+                            await update_sql_pattern_analysis_result(
+                                sql_hash=pattern.sql_hash,
+                                status="FAILED",
+                                relations_json=None,
+                                error_message="LLM API 返回空响应"
+                            )
+                            logger.warning(f"SQL 模式 {pattern.sql_hash[:8]}... 分析失败: LLM API 返回空响应")
+                            batch_failed += 1
+                            continue
+                        
+                        # 解析 LLM 响应
+                        logger.info(f"解析 LLM 响应: {pattern.sql_hash[:8]}...")
+                        relations_json = parse_llm_response(response_content)
+                        
+                        if relations_json:
+                            # 更新分析状态为成功
+                            await update_sql_pattern_analysis_result(
+                                sql_hash=pattern.sql_hash,
+                                status="SUCCESS",
+                                relations_json=relations_json
+                            )
+                            logger.info(f"SQL 模式 {pattern.sql_hash[:8]}... 分析成功")
+                            batch_success += 1
+                        else:
+                            # 更新分析状态为失败
+                            await update_sql_pattern_analysis_result(
+                                sql_hash=pattern.sql_hash,
+                                status="FAILED",
+                                relations_json=None,
+                                error_message="无法解析 LLM 响应"
+                            )
+                            logger.warning(f"SQL 模式 {pattern.sql_hash[:8]}... 分析失败: 无法解析 LLM 响应")
+                            batch_failed += 1
+                        
+                    except Exception as e:
+                        logger.error(f"处理 SQL 模式 {pattern.sql_hash[:8]}... 时出错: {str(e)}")
+                        # 更新分析状态为失败
+                        await update_sql_pattern_analysis_result(
+                            sql_hash=pattern.sql_hash,
+                            status="FAILED",
+                            relations_json=None,
+                            error_message=str(e)
+                        )
+                        batch_failed += 1
+                
+                # 更新统计信息
+                total_processed += len(patterns)
+                total_success += batch_success
+                total_failed += batch_failed
+                
+                # 记录批处理结果
+                logger.info(f"完成当前批 SQL 模式的 LLM 分析: 成功 {batch_success}, 失败 {batch_failed}")
+                logger.info(f"总计: 已处理 {total_processed}, 成功 {total_success}, 失败 {total_failed}")
+                
+                # 如果是单次运行模式，则退出
+                if run_once:
+                    logger.info("运行模式为单次运行，退出程序")
+                    break
+                
+                # 计算当前周期耗时
+                cycle_duration = time.time() - cycle_start_time
+                sleep_time = max(0, poll_interval_seconds - cycle_duration)
+                
+                if sleep_time > 0:
+                    logger.info(f"当前周期耗时 {cycle_duration:.2f} 秒，休眠 {sleep_time:.2f} 秒后继续下一周期")
+                    await asyncio.sleep(sleep_time)
                 else:
-                    # 更新分析状态为失败
-                    await update_sql_pattern_analysis_result(
-                        sql_hash=pattern.sql_hash,
-                        status="FAILED",
-                        relations_json=None,
-                        error_message="无法解析 LLM 响应"
-                    )
+                    logger.info(f"当前周期耗时 {cycle_duration:.2f} 秒，立即开始下一周期")
                 
             except Exception as e:
-                logger.error(f"处理 SQL 模式 {pattern.sql_hash[:8]}... 时出错: {str(e)}")
-                # 更新分析状态为失败
-                await update_sql_pattern_analysis_result(
-                    sql_hash=pattern.sql_hash,
-                    status="FAILED",
-                    relations_json=None,
-                    error_message=str(e)
-                )
+                logger.error(f"LLM 分析器周期执行出错: {str(e)}")
+                logger.info(f"等待 {poll_interval_seconds} 秒后重试")
+                await asyncio.sleep(poll_interval_seconds)
         
-        logger.info(f"完成 {len(patterns)} 条 SQL 模式的 LLM 分析")
+        logger.info("服务正常退出")
+        logger.info(f"总计: 已处理 {total_processed}, 成功 {total_success}, 失败 {total_failed}")
         
     except Exception as e:
-        logger.error(f"LLM 分析 SQL 模式过程中出现未知错误: {str(e)}")
+        logger.error(f"LLM 分析器服务发生未知错误: {str(e)}")
+    finally:
+        # 关闭数据库连接池
+        try:
+            await db_utils.close_db_pool()
+            logger.info("数据库连接池已关闭")
+        except Exception as e:
+            logger.error(f"关闭数据库连接池失败: {str(e)}")
 
 async def main():
     """
     主函数
     """
     # 设置日志
+    from pglumilineage.common.logging_config import setup_logging
     setup_logging()
     
-    # 分析 SQL 模式
-    await analyze_sql_patterns_with_llm()
+    # 导入必要的模块
+    import time
+    
+    # 从配置中获取参数
+    from pglumilineage.common.config import settings
+    
+    # 启动 LLM 分析器服务
+    logger.info("启动 LLM 分析器服务...")
+    await analyze_sql_patterns_with_llm(
+        batch_size=10,  # 可以从配置中读取
+        poll_interval_seconds=60  # 可以从配置中读取
+    )
 
 if __name__ == "__main__":
+    # 导入必要的模块
+    import asyncio
+    import time
+    
+    # 运行主函数
     asyncio.run(main())
