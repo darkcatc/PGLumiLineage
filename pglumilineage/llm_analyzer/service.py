@@ -584,27 +584,42 @@ async def update_sql_pattern_analysis_result(sql_hash: str, status: str, relatio
         # 获取数据库连接池
         pool = await db_utils.get_db_pool()
         
-        # 构建 UPDATE SQL 语句
+        # 构建 UPDATE SQL 语句，包含错误信息字段
         query = """
-        UPDATE lumi_analytics.sql_patterns
+        UPDATE lumi_analytical.sql_patterns
         SET 
             llm_analysis_status = $1,
             llm_extracted_relations_json = $2,
-            last_llm_analysis_at = CURRENT_TIMESTAMP
+            last_llm_analysis_at = CURRENT_TIMESTAMP,
+            llm_error_message = $3
         WHERE 
-            sql_hash = $3
+            sql_hash = $4
         """
+        
+        # 如果 relations_json 存在，将其转换为 JSON 字符串
+        relations_json_str = None
+        if relations_json:
+            try:
+                relations_json_str = json.dumps(relations_json, ensure_ascii=False)
+            except Exception as json_err:
+                logger.error(f"序列化 relations_json 失败: {str(json_err)}")
+                # 如果序列化失败，更新错误信息
+                error_message = f"序列化关系 JSON 失败: {str(json_err)}" + (f", 原始错误: {error_message}" if error_message else "")
+                status = "FAILED"
         
         async with pool.acquire() as conn:
             # 执行 UPDATE 操作
             await conn.execute(
                 query,
                 status,
-                json.dumps(relations_json) if relations_json else None,
+                relations_json_str,
+                error_message,
                 sql_hash
             )
             
             logger.info(f"成功更新 SQL 模式 {sql_hash[:8]}... 的分析结果，状态: {status}")
+            if error_message:
+                logger.debug(f"SQL {sql_hash[:8]}... 错误信息: {error_message}")
             
     except Exception as e:
         logger.error(f"更新 SQL 模式 {sql_hash[:8]}... 的分析结果失败: {str(e)}")
