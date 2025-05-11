@@ -48,3 +48,6 @@ Thumbs.db
 
 # 配置文件
 config/settings.toml
+
+# 临时文件
+tmp/

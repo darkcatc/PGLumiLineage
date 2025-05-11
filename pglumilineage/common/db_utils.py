@@ -57,6 +57,23 @@ async def init_db_pool() -> None:
         raise
 
 
+async def get_db_pool() -> asyncpg.Pool:
+    """
+    获取数据库连接池
+    
+    如果连接池不存在，则初始化它
+    
+    Returns:
+        asyncpg.Pool: 数据库连接池
+    """
+    global db_pool
+    
+    if db_pool is None:
+        await init_db_pool()
+    
+    return db_pool
+
+
 async def close_db_pool() -> None:
     """
     关闭数据库连接池
