@@ -49,5 +49,14 @@ Thumbs.db
 # 配置文件
 config/settings.toml
 
-# 临时文件
-tmp/
+# 临时文件 - 保留目录结构但忽略内容
+# 先忽略所有tmp目录下的文件
+tmp/*
+# 不忽略tmp目录下的子目录
+!tmp/*/
+# 忽略所有子目录下的文件
+tmp/*/*
+# 特别是忽略tpcds-log目录下的所有文件
+tmp/tpcds-log/*
+# 但保留.gitkeep文件以保持目录结构
+!tmp/**/.gitkeep

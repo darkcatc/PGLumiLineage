@@ -15,7 +15,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql
-      - /mnt/e/Projects/PGLumiLineage/tmp/tpcds-log:/var/lib/postgresql/data/log
+      - ../tmp/tpcds-log:/var/lib/postgresql/data/log
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
