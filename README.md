@@ -1,5 +1,5 @@
 # ✨ PGLumiLineage: 点亮你的数据之旅 - 自动化数据血缘与知识图谱构建平台 ✨
-![alt text](image.png)
+![alt text](resource/image/image-1.png)
 
 **PGLumiLineage：借助大语言模型（LLM）与图数据库（Apache AGE），实现PG自动化数据血缘分析及知识图谱构建。**
 
@@ -35,7 +35,7 @@
 ## 🏛️ 系统架构概览
 
 PGLumiLineage 采用模块化、面向服务的架构设计：
-![alt text](image-1.png)
+![alt text](resource/image/arch1.png)
 1.  **数据采集服务**: `log_processor`（日志处理器）和 `metadata_collector`（元数据收集器）负责从配置的源数据库收集原始SQL日志和技术元数据。
 2.  **中央存储 (`iwdb`)**: 一个专用的PostgreSQL数据库，用于存储系统配置、经过初步处理的日志、提取的元数据以及聚合后的SQL模式。Apache AGE扩展也安装在此数据库中。
 3.  **SQL范式化与聚合服务**: `sql_normalizer`（SQL范式化器）处理原始SQL（来自日志和元数据定义），创建唯一的、匿名的SQL模式，并聚合相关的统计信息。
