@@ -34,6 +34,141 @@ BATCH_SIZE = 1000
 data_source_cache: Dict[str, Dict[str, Any]] = {}
 
 
+def validate_data_source(data_source: Dict[str, Any]) -> bool:
+    """
+    验证数据源配置是否有效
+    
+    Args:
+        data_source: 数据源配置字典
+        
+    Returns:
+        bool: 配置是否有效
+    """
+    # 检查必要字段
+    required_fields = ['source_id', 'source_name', 'log_retrieval_method']
+    for field in required_fields:
+        if field not in data_source or not data_source[field]:
+            logger.error(f"数据源配置缺失必要字段: {field}")
+            return False
+    
+    # 根据日志检索方法检查相关字段
+    log_method = data_source['log_retrieval_method']
+    
+    if log_method == 'local_file' or log_method == 'local_path':
+        if 'log_path_pattern' not in data_source or not data_source['log_path_pattern']:
+            logger.error(f"本地文件方式需要指定 log_path_pattern")
+            return False
+    elif log_method == 'ssh':
+        ssh_fields = ['ssh_host', 'ssh_port', 'ssh_user', 'ssh_remote_log_path_pattern']
+        for field in ssh_fields:
+            if field not in data_source or not data_source[field]:
+                logger.error(f"SSH方式需要指定 {field}")
+                return False
+        # 检查认证方式，密码或密钥至少需要一种
+        if ('ssh_password' not in data_source or not data_source['ssh_password']) and \
+           ('ssh_key_path' not in data_source or not data_source['ssh_key_path']):
+            logger.error("SSH方式需要指定 ssh_password 或 ssh_key_path")
+            return False
+    elif log_method == 'kafka' or log_method == 'kafka_topic':
+        kafka_fields = ['kafka_bootstrap_servers', 'kafka_topic', 'kafka_consumer_group']
+        for field in kafka_fields:
+            if field not in data_source or not data_source[field]:
+                logger.error(f"Kafka方式需要指定 {field}")
+                return False
+    else:
+        logger.error(f"不支持的日志检索方式: {log_method}")
+        return False
+    
+    return True
+
+
+async def get_processed_files_from_db(source_name: str) -> Set[str]:
+    """
+    从数据库中获取已处理的文件记录
+    
+    Args:
+        source_name: 数据源名称
+        
+    Returns:
+        Set[str]: 已处理的文件路径集合
+    """
+    processed_files = set()
+    
+    try:
+        # 获取数据库连接池
+        pool = await db_utils.get_db_pool()
+        
+        # 检查表是否存在
+        check_table_query = """
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'lumi_logs' AND table_name = 'processed_log_files'
+        )
+        """
+        
+        async with pool.acquire() as conn:
+            exists = await conn.fetchval(check_table_query)
+            
+            if exists:
+                # 查询已处理的文件
+                query = """
+                SELECT file_path FROM lumi_logs.processed_log_files
+                WHERE source_name = $1
+                """
+                
+                rows = await conn.fetch(query, source_name)
+                processed_files = {row['file_path'] for row in rows}
+                
+                logger.debug(f"从数据库中获取到 {len(processed_files)} 个已处理的文件记录")
+    
+    except Exception as e:
+        logger.error(f"从数据库中获取已处理文件记录时出错: {str(e)}")
+    
+    return processed_files
+
+
+async def save_processed_file(source_name: str, file_path: str) -> None:
+    """
+    将已处理的文件记录保存到数据库
+    
+    Args:
+        source_name: 数据源名称
+        file_path: 文件路径
+    """
+    try:
+        # 获取数据库连接池
+        pool = await db_utils.get_db_pool()
+        
+        # 检查是否存在已处理文件记录表，如果不存在则创建
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS lumi_logs.processed_log_files (
+            id SERIAL PRIMARY KEY,
+            source_name TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            processed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT uq_source_file UNIQUE (source_name, file_path)
+        )
+        """
+        
+        async with pool.acquire() as conn:
+            await conn.execute(create_table_query)
+            
+            # 插入或更新已处理文件记录
+            insert_query = """
+            INSERT INTO lumi_logs.processed_log_files (source_name, file_path)
+            VALUES ($1, $2)
+            ON CONFLICT (source_name, file_path) DO UPDATE
+            SET processed_at = CURRENT_TIMESTAMP
+            """
+            
+            await conn.execute(insert_query, source_name, file_path)
+        
+        logger.debug(f"已保存已处理文件记录: {source_name} - {file_path}")
+    except Exception as e:
+        logger.error(f"保存已处理文件记录时出错: {str(e)}")
+
+
+
 async def get_data_sources() -> List[Dict[str, Any]]:
     """
     从配置表中获取数据源信息
@@ -46,6 +181,9 @@ async def get_data_sources() -> List[Dict[str, Any]]:
     try:
         # 获取数据库连接池
         pool = await db_utils.get_db_pool()
+        
+        # 清空缓存，确保每次都获取最新的数据源信息
+        data_source_cache.clear()
         
         # 查询活跃的数据源
         query = """
@@ -67,11 +205,17 @@ async def get_data_sources() -> List[Dict[str, Any]]:
         data_sources = [dict(row) for row in rows]
         logger.info(f"找到 {len(data_sources)} 个活跃的数据源")
         
-        # 更新缓存
+        # 验证数据源配置
+        valid_data_sources = []
         for ds in data_sources:
-            data_source_cache[ds['source_name']] = ds
+            if validate_data_source(ds):
+                # 更新缓存
+                data_source_cache[ds['source_name']] = ds
+                valid_data_sources.append(ds)
+            else:
+                logger.warning(f"数据源 {ds.get('source_name', 'unknown')} 配置无效，已跳过")
         
-        return data_sources
+        return valid_data_sources
     
     except Exception as e:
         logger.error(f"获取数据源信息时出错: {str(e)}")
@@ -84,7 +228,7 @@ async def find_new_log_files(source_name: str, processed_log_files_tracker: Set[
     
     Args:
         source_name: 数据源名称
-        processed_log_files_tracker: 已处理的日志文件集合
+        processed_log_files_tracker: 内存中跟踪的已处理的日志文件集合
         
     Returns:
         List[str]: 新日志文件路径列表
@@ -99,36 +243,38 @@ async def find_new_log_files(source_name: str, processed_log_files_tracker: Set[
     # 获取日志文件路径模式
     log_retrieval_method = data_source['log_retrieval_method']
     
-    if log_retrieval_method == 'local_path':
+    # 获取所有日志文件
+    all_log_files = []
+    
+    if log_retrieval_method == 'local_file' or log_retrieval_method == 'local_path':
         log_files_pattern = data_source['log_path_pattern']
         logger.info(f"查找本地日志文件: {log_files_pattern}")
-        
+    
+    if log_retrieval_method == 'local_file' or log_retrieval_method == 'local_path':
         # 使用glob查找匹配的文件
-        all_log_files = glob.glob(log_files_pattern)
-        
-        # 过滤出未处理的文件
-        new_log_files = [f for f in all_log_files if f not in processed_log_files_tracker]
-        
-        if new_log_files:
-            logger.info(f"找到 {len(new_log_files)} 个新日志文件")
-        else:
-            logger.info("没有找到新日志文件")
-        
-        return new_log_files
-    
+        log_files = glob.glob(log_files_pattern)
+        all_log_files.extend(log_files)
+        logger.info(f"找到 {len(log_files)} 个本地日志文件")
     elif log_retrieval_method == 'ssh':
-        # SSH 方式获取日志文件（未实现）
-        logger.warning(f"SSH 方式获取日志文件尚未实现")
-        return []
-    
-    elif log_retrieval_method == 'kafka_topic':
-        # Kafka 方式获取日志（未实现）
-        logger.warning(f"Kafka 方式获取日志尚未实现")
-        return []
-    
+        # SSH 方式，待实现
+        logger.warning("SSH 方式尚未实现")
+    elif log_retrieval_method == 'kafka':
+        # Kafka 方式，待实现
+        logger.warning("Kafka 方式尚未实现")
     else:
-        logger.error(f"不支持的日志获取方式: {log_retrieval_method}")
-        return []
+        logger.error(f"不支持的日志检索方式: {log_retrieval_method}")
+    
+    # 从数据库中获取已处理的文件记录
+    db_processed_files = await get_processed_files_from_db(source_name)
+    
+    # 合并内存中的记录和数据库中的记录
+    all_processed_files = processed_log_files_tracker.union(db_processed_files)
+    
+    # 过滤已处理的文件
+    new_log_files = [f for f in all_log_files if f not in all_processed_files]
+    logger.info(f"找到 {len(new_log_files)} 个新日志文件需要处理（共 {len(all_log_files)} 个文件，{len(all_processed_files)} 个已处理）")
+    
+    return new_log_files
 
 
 async def parse_log_file(source_name: str, log_file_path: str) -> List[models.RawSQLLog]:
@@ -363,13 +509,11 @@ async def process_log_files(interval_seconds: int = 60, run_once: bool = False) 
     Returns:
         int: 处理的记录总数
     """
-    # 初始化日志和数据库连接池
-    logging_config.setup_logging()
     logger.info("开始处理PostgreSQL日志文件")
     
     try:
-        # 初始化数据库连接池
-        await db_utils.init_db_pool()
+        # 使用已初始化的数据库连接池
+        # 注意：连接池应该在上层调用者中初始化
         
         # 跟踪已处理的文件
         processed_log_files: Dict[str, Set[str]] = {}  # 数据源名称 -> 已处理文件集合
@@ -407,18 +551,25 @@ async def process_log_files(interval_seconds: int = 60, run_once: bool = False) 
                             processed_log_files[source_name].add(log_file)
                             continue
                         
+                        # 初始化插入计数
+                        total_inserted_count = 0
+                        
                         # 分批处理日志条目
                         for i in range(0, len(log_entries), BATCH_SIZE):
                             batch = log_entries[i:i + BATCH_SIZE]
-                            inserted_count = await batch_insert_logs(batch)
-                            processed_count += inserted_count
+                            batch_inserted_count = await batch_insert_logs(batch)
+                            total_inserted_count += batch_inserted_count
+                            processed_count += batch_inserted_count
                         
                         # 标记文件为已处理
                         processed_log_files[source_name].add(log_file)
-                        logger.info(f"完成处理日志文件: {log_file}")
+                        logger.info(f"完成处理日志文件: {log_file}，解析 {len(log_entries)} 条记录，成功插入 {total_inserted_count} 条记录")
                         
                         # 更新同步状态
-                        await update_sync_status(source_name, len(log_entries), inserted_count)
+                        await update_sync_status(source_name, len(log_entries), total_inserted_count)
+                        
+                        # 持久化已处理文件记录
+                        await save_processed_file(source_name, log_file)
                 
                 return processed_count
             except Exception as e:
