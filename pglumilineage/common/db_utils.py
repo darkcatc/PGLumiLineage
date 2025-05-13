@@ -15,7 +15,7 @@ from typing import Dict, Any, List, Optional, Union
 
 import asyncpg
 
-from pglumilineage.common.config import settings
+from pglumilineage.common.config import get_settings_instance
 from pglumilineage.common.models import RawSQLLog, AnalyticalSQLPattern
 
 # 全局连接池
@@ -37,10 +37,29 @@ async def init_db_pool() -> None:
         return
     
     try:
+        # 获取全局配置实例
+        settings = get_settings_instance()
+        
         # 使用RAW_LOGS_DSN创建连接池
-        # 注意：settings.RAW_LOGS_DSN是PostgresDsn类型，需要转换为字符串
-        dsn = str(settings.RAW_LOGS_DSN)
-        logger.info(f"正在初始化数据库连接池，DSN: {dsn.replace(settings.POSTGRES_PASSWORD.get_secret_value(), '****')}")
+        if settings.RAW_LOGS_DSN:
+            # 直接使用预先构建的DSN
+            dsn = str(settings.RAW_LOGS_DSN)
+        else:
+            # 使用内部数据库设置构建 DSN
+            user = settings.INTERNAL_DB.USER
+            password = settings.INTERNAL_DB.PASSWORD.get_secret_value()
+            host = settings.INTERNAL_DB.HOST
+            port = settings.INTERNAL_DB.PORT
+            db_name = settings.INTERNAL_DB.DB_RAW_LOGS
+            
+            # 构建 DSN
+            dsn = f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+        
+        # 隐藏密码输出到日志
+        masked_dsn = dsn
+        if settings.INTERNAL_DB.PASSWORD and settings.INTERNAL_DB.PASSWORD.get_secret_value():
+            masked_dsn = dsn.replace(settings.INTERNAL_DB.PASSWORD.get_secret_value(), '****')
+        logger.info(f"正在初始化数据库连接池，DSN: {masked_dsn}")
         
         db_pool = await asyncpg.create_pool(
             dsn=dsn,

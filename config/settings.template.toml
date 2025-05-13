@@ -1,0 +1,101 @@
+# PGLumiLineage 配置模板文件
+# 复制此文件为 settings.toml 并根据实际情况修改
+# 作者: Vance Chen
+
+#################################################
+# 基本配置
+#################################################
+
+# 日志级别: DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_LEVEL = "INFO"
+
+# 项目名称
+PROJECT_NAME = "PGLumiLineage"
+
+#################################################
+# 内部数据库配置 (iwdb)
+#################################################
+
+# 内部数据库连接信息
+[internal_db]
+# 数据库用户名
+USER = "lumiadmin"
+
+# 数据库密码 (敏感信息)
+PASSWORD = "lumiadmin"  
+
+# 数据库主机地址
+HOST = "localhost"
+
+# 数据库端口
+PORT = 5432
+
+# 数据库名称
+DB_NAME = "iwdb"
+
+# 原始日志数据库名
+DB_RAW_LOGS = "iwdb"
+
+# 分析模式数据库名
+DB_ANALYTICAL_PATTERNS = "iwdb"
+
+# AGE图数据库名
+DB_AGE = "iwdb"
+
+#################################################
+# 生产数据库配置
+#################################################
+
+# 生产数据库连接信息
+[production_db]
+# 数据库名称
+DB_NAME = "tpcds"
+
+# 数据库类型
+DB_TYPE = "postgresql"
+
+# 数据库用户名
+USER = "your_user_name"
+
+# 数据库密码 (敏感信息)
+PASSWORD = "your_password_here"  
+
+# 数据库主机地址
+HOST = "your_host_name"
+
+# 数据库端口
+PORT = "your_port"
+
+# 是否启用SSL连接
+SSL = false
+
+# 连接超时时间（秒）
+TIMEOUT = 10
+
+#################################################
+# LLM配置
+#################################################
+[llm]
+# LLM模型名称
+MODEL_NAME = "your_model_name"
+
+# 通用LLM API密钥 (敏感信息)
+API_KEY = "your_api_key_here"
+
+# API配置
+# DashScope API密钥 (敏感信息)
+DASHSCOPE_API_KEY = "your_api_key_here"
+
+# API基础URL
+BASE_URL = "your_base_url"
+
+#################################################
+# 日志文件配置
+#################################################
+
+# PostgreSQL日志文件模式
+PG_LOG_FILE_PATTERN = "/var/log/postgresql/postgresql-*.csv"
+
+# 注意: 以上配置项也可以通过环境变量设置
+# 环境变量优先级高于TOML文件
+# 环境变量名称与上面的字段名称一致，例如: INTERNAL_DB_USER, PRODUCTION_DB_PASSWORD, LLM_QWEN_DASHSCOPE_API_KEY等

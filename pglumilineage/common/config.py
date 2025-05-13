@@ -13,85 +13,166 @@
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 import toml
 from pydantic import (
     AnyHttpUrl,
-    Field,
     PostgresDsn,
     SecretStr,
-    field_validator,
     model_validator,
 )
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
+class InternalDBSettings:
+    """
+    内部数据库配置类
+    
+    用于配置项目内部使用的数据库连接信息
+    """
+    def __init__(self, **kwargs):
+        self.USER = kwargs.get("USER", "")
+        self.PASSWORD = SecretStr(kwargs.get("PASSWORD", ""))
+        self.HOST = kwargs.get("HOST", "")
+        self.PORT = kwargs.get("PORT", None)
+        self.DB_NAME = kwargs.get("DB_NAME", "")
+        self.DB_RAW_LOGS = kwargs.get("DB_RAW_LOGS", "")
+        self.DB_ANALYTICAL_PATTERNS = kwargs.get("DB_ANALYTICAL_PATTERNS", "")
+        self.DB_AGE = kwargs.get("DB_AGE", "")
+
+
+class ProductionDBSettings:
+    """
+    生产数据库配置类
+    
+    用于配置要连接解析的生产数据库连接信息
+    """
+    def __init__(self, **kwargs):
+        self.USER = kwargs.get("USER", "")
+        self.PASSWORD = SecretStr(kwargs.get("PASSWORD", ""))
+        self.HOST = kwargs.get("HOST", "")
+        self.PORT = kwargs.get("PORT", None)
+        self.DB_NAME = kwargs.get("DB_NAME", "")
+        self.SSL = kwargs.get("SSL", False)
+        self.TIMEOUT = kwargs.get("TIMEOUT", None)
+        self.DB_TYPE = kwargs.get("DB_TYPE", "")
+
+
+class QwenSettings:
+    """
+    Qwen API配置类
+    
+    用于配置通义千问API的连接信息
+    """
+    def __init__(self, **kwargs):
+        self.DASHSCOPE_API_KEY = SecretStr(kwargs.get("DASHSCOPE_API_KEY", ""))
+        self.BASE_URL = kwargs.get("BASE_URL", "")
+        self.MODEL_NAME = kwargs.get("MODEL_NAME", "")
+
+
+class LLMSettings:
+    """
+    LLM配置类
+    
+    用于配置大语言模型的连接信息
+    """
+    def __init__(self, **kwargs):
+        self.API_KEY = SecretStr(kwargs.get("API_KEY", ""))
+        self.MODEL_NAME = kwargs.get("MODEL_NAME", "")
+        qwen_data = kwargs.get("QWEN", {})
+        if isinstance(qwen_data, dict):
+            self.QWEN = QwenSettings(**qwen_data)
+        else:
+            self.QWEN = qwen_data
+
+
+class Settings:
     """
     应用配置类
     
-    从环境变量和配置文件加载配置项
+    从 TOML 配置文件加载配置项
     """
     
-    # 基本配置
-    LOG_LEVEL: str = "INFO"
-    PROJECT_NAME: str = "PGLumiLineage"
+    def __init__(self, **kwargs):
+        # 基本配置
+        self.LOG_LEVEL = kwargs.get("LOG_LEVEL", "")
+        self.PROJECT_NAME = kwargs.get("PROJECT_NAME", "")
+        
+        # 数据库配置
+        internal_db_data = kwargs.get("INTERNAL_DB", {})
+        if isinstance(internal_db_data, dict):
+            self.INTERNAL_DB = InternalDBSettings(**internal_db_data)
+        else:
+            self.INTERNAL_DB = internal_db_data
+            
+        production_db_data = kwargs.get("PRODUCTION_DB", {})
+        if isinstance(production_db_data, dict):
+            self.PRODUCTION_DB = ProductionDBSettings(**production_db_data)
+        else:
+            self.PRODUCTION_DB = production_db_data
+        
+        # LLM配置
+        llm_data = kwargs.get("LLM", {})
+        if isinstance(llm_data, dict):
+            self.LLM = LLMSettings(**llm_data)
+        else:
+            self.LLM = llm_data
+        
+        # 日志文件配置
+        self.PG_LOG_FILE_PATTERN = kwargs.get("PG_LOG_FILE_PATTERN", "")
+        
+        # 数据库连接字符串
+        self.RAW_LOGS_DSN = kwargs.get("RAW_LOGS_DSN", None)
+        self.ANALYTICAL_PATTERNS_DSN = kwargs.get("ANALYTICAL_PATTERNS_DSN", None)
+        self.AGE_DSN = kwargs.get("AGE_DSN", None)
+        
+        # 兼容旧版配置
+        self.POSTGRES_USER = kwargs.get("POSTGRES_USER", None)
+        self.POSTGRES_PASSWORD = kwargs.get("POSTGRES_PASSWORD", None)
+        self.POSTGRES_HOST = kwargs.get("POSTGRES_HOST", None)
+        self.POSTGRES_PORT = kwargs.get("POSTGRES_PORT", None)
+        self.POSTGRES_DB_RAW_LOGS = kwargs.get("POSTGRES_DB_RAW_LOGS", None)
+        self.POSTGRES_DB_ANALYTICAL_PATTERNS = kwargs.get("POSTGRES_DB_ANALYTICAL_PATTERNS", None)
+        self.POSTGRES_DB_AGE = kwargs.get("POSTGRES_DB_AGE", None)
     
-    # PostgreSQL配置
-    POSTGRES_USER: str = Field(..., description="PostgreSQL用户名")
-    POSTGRES_PASSWORD: SecretStr = Field(..., description="PostgreSQL密码")
-    POSTGRES_HOST: str = Field(..., description="PostgreSQL主机地址")
-    POSTGRES_PORT: int = Field(5432, description="PostgreSQL端口")
-    POSTGRES_DB_RAW_LOGS: str = Field(..., description="原始日志数据库名")
-    POSTGRES_DB_ANALYTICAL_PATTERNS: str = Field(..., description="分析模式数据库名")
-    POSTGRES_DB_AGE: str = Field(..., description="AGE图数据库名")
-    
-    # 数据库连接字符串
-    RAW_LOGS_DSN: Optional[PostgresDsn] = None
-    ANALYTICAL_PATTERNS_DSN: Optional[PostgresDsn] = None
-    AGE_DSN: Optional[PostgresDsn] = None
-    
-    # LLM配置
-    LLM_API_KEY: SecretStr = Field(..., description="LLM API密钥")
-    LLM_MODEL_NAME: str = Field("gpt-4o", description="LLM模型名称")
-    
-    # Qwen API配置
-    DASHSCOPE_API_KEY: SecretStr = Field("sk-add1fe773eb44685a3aeee14d89c19a4", description="DashScope API密钥")
-    QWEN_BASE_URL: AnyHttpUrl = Field("https://dashscope.aliyuncs.com/compatible-mode/v1", description="Qwen API基础URL")
-    QWEN_MODEL_NAME: str = Field("qwen-plus", description="Qwen模型名称")
-    
-    # 日志文件配置
-    PG_LOG_FILE_PATTERN: str = Field(..., description="PostgreSQL日志文件模式，例如: '/var/log/postgresql/postgresql-*.csv'")
-    
-    # 配置模型设置
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-        case_sensitive=True,
-    )
-    
-    @model_validator(mode="after")
     def build_dsn_uris(self) -> "Settings":
         """构建数据库连接字符串"""
+        # 兼容旧版配置
+        # 如果使用了旧版配置字段，将其同步到新的嵌套配置中
+        if self.POSTGRES_USER is not None:
+            self.INTERNAL_DB.USER = self.POSTGRES_USER
+        if self.POSTGRES_PASSWORD is not None:
+            self.INTERNAL_DB.PASSWORD = self.POSTGRES_PASSWORD
+        if self.POSTGRES_HOST is not None:
+            self.INTERNAL_DB.HOST = self.POSTGRES_HOST
+        if self.POSTGRES_PORT is not None:
+            self.INTERNAL_DB.PORT = self.POSTGRES_PORT
+        if self.POSTGRES_DB_RAW_LOGS is not None:
+            self.INTERNAL_DB.DB_RAW_LOGS = self.POSTGRES_DB_RAW_LOGS
+        if self.POSTGRES_DB_ANALYTICAL_PATTERNS is not None:
+            self.INTERNAL_DB.DB_ANALYTICAL_PATTERNS = self.POSTGRES_DB_ANALYTICAL_PATTERNS
+        if self.POSTGRES_DB_AGE is not None:
+            self.INTERNAL_DB.DB_AGE = self.POSTGRES_DB_AGE
+        
         # 构建原始日志数据库DSN
         if not self.RAW_LOGS_DSN:
-            # 使用字符串格式化直接构建DSN，避免PostgresDsn.build产生的双斜杠问题
-            dsn = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD.get_secret_value()}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_RAW_LOGS}"
+            # 使用字符串格式化直接构建 DSN，避免 PostgresDsn.build 产生的双斜杠问题
+            dsn = f"postgresql://{self.INTERNAL_DB.USER}:{self.INTERNAL_DB.PASSWORD.get_secret_value()}@{self.INTERNAL_DB.HOST}:{self.INTERNAL_DB.PORT}/{self.INTERNAL_DB.DB_RAW_LOGS}"
             self.RAW_LOGS_DSN = PostgresDsn(dsn)
         
         # 构建分析模式数据库DSN
         if not self.ANALYTICAL_PATTERNS_DSN:
-            dsn = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD.get_secret_value()}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_ANALYTICAL_PATTERNS}"
+            dsn = f"postgresql://{self.INTERNAL_DB.USER}:{self.INTERNAL_DB.PASSWORD.get_secret_value()}@{self.INTERNAL_DB.HOST}:{self.INTERNAL_DB.PORT}/{self.INTERNAL_DB.DB_ANALYTICAL_PATTERNS}"
             self.ANALYTICAL_PATTERNS_DSN = PostgresDsn(dsn)
         
-        # 构建AGE图数据库DSN
+        # 构建 AGE 图数据库 DSN
         if not self.AGE_DSN:
-            dsn = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD.get_secret_value()}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_AGE}"
+            dsn = f"postgresql://{self.INTERNAL_DB.USER}:{self.INTERNAL_DB.PASSWORD.get_secret_value()}@{self.INTERNAL_DB.HOST}:{self.INTERNAL_DB.PORT}/{self.INTERNAL_DB.DB_AGE}"
             self.AGE_DSN = PostgresDsn(dsn)
         
         return self
+    
+
     
     @classmethod
     def from_toml(cls, toml_path: str) -> "Settings":
@@ -102,17 +183,41 @@ class Settings(BaseSettings):
         with open(toml_path, "r", encoding="utf-8") as f:
             toml_data = toml.load(f)
         
-        # 将TOML数据转换为字典
+        # 处理嵌套结构
         config_dict = {}
-        for section, values in toml_data.items():
-            if isinstance(values, dict):
-                for key, value in values.items():
-                    config_key = f"{section.upper()}_{key.upper()}"
-                    config_dict[config_key] = value
-            else:
-                config_dict[section.upper()] = values
         
-        return cls(**config_dict)
+        # 处理顶级字段
+        for key, value in toml_data.items():
+            if not isinstance(value, dict):
+                config_dict[key.upper()] = value
+        
+        # 处理内部数据库配置
+        if "internal_db" in toml_data:
+            config_dict["INTERNAL_DB"] = toml_data["internal_db"]
+        
+        # 处理生产数据库配置
+        if "production_db" in toml_data:
+            config_dict["PRODUCTION_DB"] = toml_data["production_db"]
+        
+        # 处理 LLM 配置
+        if "llm" in toml_data:
+            llm_data = toml_data["llm"]
+            # 如果有 Qwen 配置，将其保留在 llm 下
+            config_dict["LLM"] = llm_data
+        
+        # 兼容旧版配置格式
+        if "postgres" in toml_data:
+            postgres_data = toml_data["postgres"]
+            for key, value in postgres_data.items():
+                config_dict[f"POSTGRES_{key.upper()}"] = value
+        
+        # 创建设置实例
+        settings = cls(**config_dict)
+        
+        # 构建数据库连接字符串
+        settings.build_dsn_uris()
+        
+        return settings
 
 
 @lru_cache()
@@ -161,16 +266,59 @@ def get_settings_instance():
             import sys
             # 在测试环境中，如果无法加载设置，使用测试默认值
             if 'pytest' in sys.modules:
-                _settings = Settings(
-                    POSTGRES_USER="test_user",
-                    POSTGRES_PASSWORD="test_password",
-                    POSTGRES_HOST="test_host",
-                    POSTGRES_DB_RAW_LOGS="test_raw_logs",
-                    POSTGRES_DB_ANALYTICAL_PATTERNS="test_analytical",
-                    POSTGRES_DB_AGE="test_age",
-                    LLM_API_KEY="test_api_key",
-                    PG_LOG_FILE_PATTERN="/test/path/*.csv",
-                )
+                # 创建测试用的设置实例
+                # 尝试从测试配置文件加载
+                test_config_paths = [
+                    Path("config/settings.test.toml"),
+                    Path("../config/settings.test.toml"),
+                    Path("tests/config/settings.test.toml")
+                ]
+                
+                test_config_loaded = False
+                for path in test_config_paths:
+                    if path.exists():
+                        try:
+                            _settings = Settings.from_toml(str(path))
+                            test_config_loaded = True
+                            break
+                        except Exception:
+                            pass
+                
+                # 如果没有测试配置文件，使用环境变量或默认值
+                if not test_config_loaded:
+                    import os
+                    _settings = Settings(
+                        INTERNAL_DB={
+                            "USER": os.environ.get("TEST_DB_USER", ""),
+                            "PASSWORD": os.environ.get("TEST_DB_PASSWORD", ""),
+                            "HOST": os.environ.get("TEST_DB_HOST", ""),
+                            "PORT": os.environ.get("TEST_DB_PORT", None),
+                            "DB_NAME": os.environ.get("TEST_DB_NAME", ""),
+                            "DB_RAW_LOGS": os.environ.get("TEST_DB_RAW_LOGS", ""),
+                            "DB_ANALYTICAL_PATTERNS": os.environ.get("TEST_DB_ANALYTICAL_PATTERNS", ""),
+                            "DB_AGE": os.environ.get("TEST_DB_AGE", "")
+                        },
+                        PRODUCTION_DB={
+                            "USER": os.environ.get("TEST_PROD_DB_USER", ""),
+                            "PASSWORD": os.environ.get("TEST_PROD_DB_PASSWORD", ""),
+                            "HOST": os.environ.get("TEST_PROD_DB_HOST", ""),
+                            "PORT": os.environ.get("TEST_PROD_DB_PORT", None),
+                            "DB_NAME": os.environ.get("TEST_PROD_DB_NAME", "")
+                        },
+                        LLM={
+                            "API_KEY": os.environ.get("TEST_LLM_API_KEY", ""),
+                            "MODEL_NAME": os.environ.get("TEST_LLM_MODEL_NAME", ""),
+                            "QWEN": {
+                                "DASHSCOPE_API_KEY": os.environ.get("TEST_QWEN_API_KEY", ""),
+                                "BASE_URL": os.environ.get("TEST_QWEN_BASE_URL", ""),
+                                "MODEL_NAME": os.environ.get("TEST_QWEN_MODEL_NAME", "")
+                            }
+                        },
+                        PG_LOG_FILE_PATTERN=os.environ.get("TEST_PG_LOG_FILE_PATTERN", "")
+                    )
+                
+                # 构建数据库连接字符串
+                _settings.build_dsn_uris()
             else:
                 # 非测试环境，则抛出异常
                 raise e

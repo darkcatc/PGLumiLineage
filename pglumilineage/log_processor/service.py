@@ -60,12 +60,20 @@ def validate_data_source(data_source: Dict[str, Any]) -> bool:
     Returns:
         bool: 配置是否有效
     """
+    if not data_source:
+        logger.error("数据源配置为空")
+        return False
+        
     # 检查必要字段
     required_fields = ['source_id', 'source_name', 'log_retrieval_method']
     for field in required_fields:
-        if field not in data_source or not data_source[field]:
+        if field not in data_source or data_source[field] is None or data_source[field] == '':
             logger.error(f"数据源配置缺失必要字段: {field}")
             return False
+    
+    # 检查数据库连接信息（如果需要连接数据库）
+    db_fields = ['db_host', 'db_port', 'db_name', 'db_user']
+    has_db_fields = all(field in data_source and data_source[field] for field in db_fields)
     
     # 根据日志检索方法检查相关字段
     log_method = data_source['log_retrieval_method']
@@ -74,27 +82,70 @@ def validate_data_source(data_source: Dict[str, Any]) -> bool:
         if 'log_path_pattern' not in data_source or not data_source['log_path_pattern']:
             logger.error(f"本地文件方式需要指定 log_path_pattern")
             return False
+            
+        # 检查日志路径模式是否有效
+        log_path = data_source['log_path_pattern']
+        if not isinstance(log_path, str) or not log_path.strip():
+            logger.error(f"日志路径模式无效: {log_path}")
+            return False
+            
+    elif log_method == 'db_query':
+        # 如果是直接从数据库查询日志，需要检查数据库连接信息
+        if not has_db_fields:
+            logger.error("数据库查询方式需要指定数据库连接信息")
+            return False
+            
+        # 检查是否有查询SQL
+        if 'log_query_sql' not in data_source or not data_source['log_query_sql']:
+            logger.error("数据库查询方式需要指定 log_query_sql")
+            return False
+            
     elif log_method == 'ssh':
         ssh_fields = ['ssh_host', 'ssh_port', 'ssh_user', 'ssh_remote_log_path_pattern']
         for field in ssh_fields:
             if field not in data_source or not data_source[field]:
                 logger.error(f"SSH方式需要指定 {field}")
                 return False
+                
         # 检查认证方式，密码或密钥至少需要一种
         if ('ssh_password' not in data_source or not data_source['ssh_password']) and \
            ('ssh_key_path' not in data_source or not data_source['ssh_key_path']):
             logger.error("SSH方式需要指定 ssh_password 或 ssh_key_path")
             return False
+            
+        # 检查SSH端口是否有效
+        try:
+            ssh_port = int(data_source['ssh_port'])
+            if ssh_port <= 0 or ssh_port > 65535:
+                logger.error(f"SSH端口无效: {ssh_port}")
+                return False
+        except (ValueError, TypeError):
+            logger.error(f"SSH端口必须是数字: {data_source['ssh_port']}")
+            return False
+            
     elif log_method == 'kafka' or log_method == 'kafka_topic':
         kafka_fields = ['kafka_bootstrap_servers', 'kafka_topic', 'kafka_consumer_group']
         for field in kafka_fields:
             if field not in data_source or not data_source[field]:
                 logger.error(f"Kafka方式需要指定 {field}")
                 return False
+                
+        # 检查Kafka服务器列表是否有效
+        servers = data_source['kafka_bootstrap_servers']
+        if not isinstance(servers, str) or not servers.strip():
+            logger.error(f"Kafka服务器列表无效: {servers}")
+            return False
+            
     else:
         logger.error(f"不支持的日志检索方式: {log_method}")
         return False
     
+    # 检查数据源状态
+    if 'is_active' in data_source and data_source['is_active'] is False:
+        logger.warning(f"数据源 {data_source['source_name']} 已禁用")
+        return False
+        
+    logger.debug(f"数据源 {data_source['source_name']} 配置验证通过")
     return True
 
 
@@ -210,7 +261,20 @@ async def get_data_sources() -> List[Dict[str, Any]]:
         pool = await db_utils.get_db_pool()
         
         async with pool.acquire() as conn:
-            # 查询数据源配置
+            # 首先检查表是否存在
+            check_table_query = """
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'lumi_config' AND table_name = 'data_sources'
+            )
+            """
+            
+            table_exists = await conn.fetchval(check_table_query)
+            if not table_exists:
+                logger.error("lumi_config.data_sources 表不存在，无法获取数据源配置")
+                return []
+            
+            # 查询数据源配置，获取所有可能的字段
             query = """
             SELECT 
                 source_id, 
@@ -222,36 +286,93 @@ async def get_data_sources() -> List[Dict[str, Any]]:
                 db_user, 
                 db_password, 
                 log_retrieval_method, 
-                log_path_pattern, 
+                log_path_pattern,
+                log_query_sql,
+                ssh_host,
+                ssh_port,
+                ssh_user,
+                ssh_password,
+                ssh_key_path,
+                ssh_remote_log_path_pattern,
+                kafka_bootstrap_servers,
+                kafka_topic,
+                kafka_consumer_group,
+                kafka_security_protocol,
+                kafka_sasl_mechanism,
+                kafka_sasl_username,
+                kafka_sasl_password,
                 is_active,
                 created_at,
-                updated_at
+                updated_at,
+                description
             FROM lumi_config.data_sources
             WHERE is_active = TRUE
             """
             
-            rows = await conn.fetch(query)
+            try:
+                rows = await conn.fetch(query)
+            except Exception as e:
+                # 如果完整查询失败，可能是表结构不完整，尝试使用基本查询
+                logger.warning(f"完整查询失败，尝试基本查询: {str(e)}")
+                basic_query = """
+                SELECT 
+                    source_id, 
+                    source_name, 
+                    source_type, 
+                    db_host, 
+                    db_port, 
+                    db_name, 
+                    db_user, 
+                    db_password, 
+                    log_retrieval_method, 
+                    log_path_pattern, 
+                    is_active,
+                    created_at,
+                    updated_at
+                FROM lumi_config.data_sources
+                WHERE is_active = TRUE
+                """
+                rows = await conn.fetch(basic_query)
+            
             data_sources = []
             
             # 清除旧缓存
             data_source_cache["data"] = {}
             
             for row in rows:
-                data_source = dict(row)
+                # 将行转换为字典，并过滤掉None值
+                data_source = {k: v for k, v in dict(row).items() if v is not None}
+                
+                # 处理特殊字段
+                # 如果有密码字段，确保它们是字符串
+                for pwd_field in ['db_password', 'ssh_password', 'kafka_sasl_password']:
+                    if pwd_field in data_source and data_source[pwd_field] is not None:
+                        data_source[pwd_field] = str(data_source[pwd_field])
+                
+                # 确保端口是整数
+                for port_field in ['db_port', 'ssh_port']:
+                    if port_field in data_source and data_source[port_field] is not None:
+                        try:
+                            data_source[port_field] = int(data_source[port_field])
+                        except (ValueError, TypeError):
+                            logger.warning(f"数据源 {data_source.get('source_name', 'unknown')} 的 {port_field} 不是有效的整数: {data_source[port_field]}")
                 
                 # 验证数据源配置
                 if validate_data_source(data_source):
                     data_sources.append(data_source)
                     # 更新缓存
                     data_source_cache["data"][data_source['source_name']] = data_source
+                    logger.info(f"成功加载数据源配置: {data_source['source_name']} (日志检索方式: {data_source['log_retrieval_method']})")
                 else:
-                    logger.warning(f"数据源 {data_source['source_name']} 配置无效，已跳过")
+                    logger.warning(f"数据源 {data_source.get('source_name', 'unknown')} 配置无效，已跳过")
             
             # 更新缓存时间戳
             data_source_cache["timestamp"] = now
             
             if not data_sources:
                 logger.warning("没有找到活跃的数据源，无法处理日志文件")
+            else:
+                logger.info(f"共找到 {len(data_sources)} 个活跃的数据源")
             
             return data_sources
     
@@ -259,7 +380,7 @@ async def get_data_sources() -> List[Dict[str, Any]]:
         logger.error(f"获取数据源配置时出错: {str(e)}")
         # 如果出错但缓存中有数据，返回缓存数据
         if data_source_cache["data"]:
-            logger.info("使用缓存的数据源配置作为备用")
+            logger.info(f"使用缓存的数据源配置作为备用 (缓存中有 {len(data_source_cache['data'])} 个数据源)")
             return list(data_source_cache["data"].values())
         return []
 
@@ -275,36 +396,37 @@ async def find_new_log_files(source_name: str, processed_log_files_tracker: Set[
     Returns:
         List[str]: 新日志文件路径列表
     """
-    # 从缓存中获取数据源信息
-    data_source = data_source_cache.get(source_name)
-    
-    if not data_source:
-        logger.error(f"未找到数据源: {source_name}")
-        return []
+    # 获取全局配置实例
+    from pglumilineage.common.config import get_settings_instance
+    settings = get_settings_instance()
     
     # 获取日志文件路径模式
-    log_retrieval_method = data_source['log_retrieval_method']
+    log_files_pattern = ""
+    
+    # 首先检查是否有日志处理器特定的配置
+    if hasattr(settings, "log_processor") and hasattr(settings.log_processor, "log_files_pattern"):
+        log_files_pattern = settings.log_processor.log_files_pattern
+    # 如果没有特定配置，则使用全局配置
+    elif hasattr(settings, "PG_LOG_FILE_PATTERN"):
+        log_files_pattern = settings.PG_LOG_FILE_PATTERN
+    else:
+        # 如果使用数据源缓存
+        data_source = data_source_cache.get("data", {}).get(source_name)
+        if data_source and 'log_path_pattern' in data_source:
+            log_files_pattern = data_source['log_path_pattern']
+        else:
+            logger.error(f"未找到数据源 {source_name} 的日志文件路径模式")
+            return []
+    
+    logger.info(f"查找本地日志文件: {log_files_pattern}")
     
     # 获取所有日志文件
     all_log_files = []
     
-    if log_retrieval_method == 'local_file' or log_retrieval_method == 'local_path':
-        log_files_pattern = data_source['log_path_pattern']
-        logger.info(f"查找本地日志文件: {log_files_pattern}")
-    
-    if log_retrieval_method == 'local_file' or log_retrieval_method == 'local_path':
-        # 使用glob查找匹配的文件
-        log_files = glob.glob(log_files_pattern)
-        all_log_files.extend(log_files)
-        logger.info(f"找到 {len(log_files)} 个本地日志文件")
-    elif log_retrieval_method == 'ssh':
-        # SSH 方式，待实现
-        logger.warning("SSH 方式尚未实现")
-    elif log_retrieval_method == 'kafka':
-        # Kafka 方式，待实现
-        logger.warning("Kafka 方式尚未实现")
-    else:
-        logger.error(f"不支持的日志检索方式: {log_retrieval_method}")
+    # 使用glob查找匹配的文件
+    log_files = glob.glob(log_files_pattern)
+    all_log_files.extend(log_files)
+    logger.info(f"找到 {len(log_files)} 个本地日志文件")
     
     # 从数据库中获取已处理的文件记录
     db_processed_files = await get_processed_files_from_db(source_name)
@@ -319,17 +441,26 @@ async def find_new_log_files(source_name: str, processed_log_files_tracker: Set[
     return new_log_files
 
 
-async def parse_log_file(source_name: str, log_file_path: str) -> List[models.RawSQLLog]:
+async def parse_log_file(log_file_path: str) -> List[models.RawSQLLog]:
     """
     解析日志文件，提取SQL日志条目
     
     Args:
-        source_name: 数据源名称
         log_file_path: 日志文件路径
         
     Returns:
         List[models.RawSQLLog]: 解析后的SQL日志条目列表
     """
+    # 获取全局配置实例
+    from pglumilineage.common.config import get_settings_instance
+    settings = get_settings_instance()
+    
+    # 获取源数据库名称
+    source_name = ""
+    if hasattr(settings, "log_processor") and hasattr(settings.log_processor, "source_database_name"):
+        source_name = settings.log_processor.source_database_name
+    elif hasattr(settings, "PRODUCTION_DB") and hasattr(settings.PRODUCTION_DB, "DB_NAME"):
+        source_name = settings.PRODUCTION_DB.DB_NAME
     logger.info(f"开始解析日志文件: {log_file_path}")
     log_entries = []
     
@@ -351,8 +482,19 @@ async def parse_log_file(source_name: str, log_file_path: str) -> List[models.Ra
     
     try:
         with open(log_file_path, 'r', newline='') as csvfile:
-            # PostgreSQL CSV日志没有标题行，需要手动指定字段名
+            # 检查文件是否有标题行
+            first_line = csvfile.readline().strip()
+            has_header = first_line.startswith('log_time,user_name,database_name')
+            
+            # 重置文件指针到开头
+            csvfile.seek(0)
+            
+            # PostgreSQL CSV日志通常没有标题行，需要手动指定字段名
             csv_reader = csv.DictReader(csvfile, fieldnames=fieldnames)
+            
+            # 如果有标题行，跳过第一行
+            if has_header:
+                next(csv_reader)
             
             for row in csv_reader:
                 # 提取SQL语句 - 可能在query字段或message字段(以statement:开头)
@@ -368,8 +510,21 @@ async def parse_log_file(source_name: str, log_file_path: str) -> List[models.Ra
                     try:
                         # 提取客户端地址 (从connection_from字段，格式可能是host:port)
                         client_addr = row.get('connection_from', '')
+                        
+                        # 处理客户端地址，确保它是有效的IP地址
+                        # 如果是带引号的格式，如"127.0.0.1:5432"，则去掉引号
+                        if client_addr.startswith('"') and client_addr.endswith('"'):
+                            client_addr = client_addr[1:-1]
+                            
+                        # 如果包含端口号，只保留IP地址部分
                         if ':' in client_addr:
                             client_addr = client_addr.split(':')[0]  # 只保留IP地址部分
+                            
+                        # 如果不是有效的IP地址，则使用默认值
+                        import re
+                        ip_pattern = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
+                        if not ip_pattern.match(client_addr):
+                            client_addr = '127.0.0.1'  # 使用本地回环地址作为默认值
                         
                         # 提取持续时间 (可能在message字段中，格式如"duration: X.XXX ms")
                         duration_ms = 0

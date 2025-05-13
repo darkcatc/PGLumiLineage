@@ -34,17 +34,21 @@ async def setup_test_config():
     # 设置源数据库名称
     source_database_name = "tpcds"
     
-    # 创建临时配置
-    config.settings.log_processor = type('LogProcessorConfig', (), {
-        'log_files_pattern': log_files_pattern,
-        'source_database_name': source_database_name,
-        'batch_size': 1000
-    })
+    # 获取全局配置实例
+    settings = config.get_settings_instance()
+    
+    # 创建临时配置（动态添加属性）
+    if not hasattr(settings, "log_processor"):
+        settings.log_processor = type('LogProcessorConfig', (), {})()
+    
+    settings.log_processor.log_files_pattern = log_files_pattern
+    settings.log_processor.source_database_name = source_database_name
+    settings.log_processor.batch_size = 1000
     
     print(f"已设置日志文件模式: {log_files_pattern}")
     print(f"已设置源数据库名称: {source_database_name}")
     
-    return config.settings
+    return settings
 
 
 async def verify_db_connection():
@@ -75,7 +79,9 @@ async def verify_db_connection():
 
 async def verify_log_files():
     """验证日志文件是否存在"""
-    log_files_pattern = config.settings.log_processor.log_files_pattern
+    # 获取全局配置实例
+    settings = config.get_settings_instance()
+    log_files_pattern = settings.log_processor.log_files_pattern
     
     # 确保日志目录存在
     log_dir = Path(log_files_pattern).parent
@@ -86,7 +92,7 @@ async def verify_log_files():
     
     # 检查是否有匹配的日志文件
     processed_log_files = set()
-    new_log_files = await service.find_new_log_files(processed_log_files)
+    new_log_files = await service.find_new_log_files(settings.log_processor.source_database_name, processed_log_files)
     
     if new_log_files:
         print(f"✅ 找到 {len(new_log_files)} 个日志文件:")
@@ -227,7 +233,8 @@ async def main():
     
     if not log_files:
         # 如果没有找到日志文件，使用示例日志文件
-        log_dir = Path(config.settings.log_processor.log_files_pattern).parent
+        settings = config.get_settings_instance()
+        log_dir = Path(settings.log_processor.log_files_pattern).parent
         sample_log_file = str(log_dir / "postgresql-sample.csv")
         
         if os.path.exists(sample_log_file):

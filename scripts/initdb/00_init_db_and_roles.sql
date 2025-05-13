@@ -35,7 +35,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'lumiadmin') THEN
         -- 创建角色
         -- 注意：在生产环境中应替换为实际的强密码
-        CREATE ROLE lumiadmin WITH LOGIN PASSWORD 'lumiadmin_pwd_change_me';
+        CREATE ROLE lumiadmin WITH LOGIN PASSWORD 'lumiadmin';
         RAISE NOTICE '角色 lumiadmin 已创建';
     ELSE
         RAISE NOTICE '角色 lumiadmin 已存在，跳过创建';
@@ -54,7 +54,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'lumiuser') THEN
         -- 创建角色
         -- 注意：在生产环境中应替换为实际的强密码
-        CREATE ROLE lumiuser WITH LOGIN PASSWORD 'lumiuser_pwd_change_me';
+        CREATE ROLE lumiuser WITH LOGIN PASSWORD 'lumiuser';
         RAISE NOTICE '角色 lumiuser 已创建';
     ELSE
         RAISE NOTICE '角色 lumiuser 已存在，跳过创建';

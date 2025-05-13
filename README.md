@@ -68,11 +68,17 @@ PGLumiLineage 采用模块化、面向服务的架构设计：
    ```bash
    pip install -r requirements.txt
    ```
-4. 复制环境变量模板并配置
+4. 配置系统
    ```bash
-   cp .env.example .env
-   # 编辑 .env 文件，填入实际配置
+   # 复制配置模板并进行配置
+   cp config/settings.template.toml config/settings.toml
+   # 编辑 config/settings.toml 文件，填入实际配置
    ```
+   
+   配置文件包含三个主要部分：
+   - **内部数据库配置**（internal_db）：项目自身使用的数据库（iwdb）
+   - **生产数据库配置**（production_db）：需要解析的生产数据库（测试中使用的是tpcds数据库）
+   - **LLM配置**（llm）：包括通用LLM和 Qwen API的配置
 
 ## 使用方法
 
