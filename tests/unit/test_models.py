@@ -27,8 +27,9 @@ class TestRawSQLLog:
         raw_log = RawSQLLog(
             log_id=1,
             log_time=log_time,
+            source_database_name="test_source_db",
             username="test_user",
-            database_name="test_db",
+            database_name_logged="test_db",
             client_addr="127.0.0.1",
             application_name="test_app",
             duration_ms=100,
@@ -40,8 +41,9 @@ class TestRawSQLLog:
         # 验证字段值
         assert raw_log.log_id == 1
         assert raw_log.log_time == log_time
+        assert raw_log.source_database_name == "test_source_db"
         assert raw_log.username == "test_user"
-        assert raw_log.database_name == "test_db"
+        assert raw_log.database_name_logged == "test_db"
         assert raw_log.client_addr == "127.0.0.1"
         assert raw_log.application_name == "test_app"
         assert raw_log.duration_ms == 100
@@ -54,13 +56,14 @@ class TestRawSQLLog:
         raw_log = RawSQLLog(
             log_id=1,
             log_time=datetime.now(),
+            source_database_name="test_source_db",
             duration_ms=100,
             raw_sql_text="SELECT * FROM test_table"
         )
         
         # 验证可选字段默认值
         assert raw_log.username is None
-        assert raw_log.database_name is None
+        assert raw_log.database_name_logged is None
         assert raw_log.client_addr is None
         assert raw_log.application_name is None
         assert raw_log.normalized_sql_hash is None
@@ -73,6 +76,7 @@ class TestRawSQLLog:
             RawSQLLog(
                 log_id=1,
                 # 缺少log_time
+                source_database_name="test_source_db",
                 duration_ms=100,
                 # 缺少raw_sql_text
             )
@@ -82,6 +86,7 @@ class TestRawSQLLog:
             RawSQLLog(
                 log_id="not_an_int",  # 应该是int
                 log_time=datetime.now(),
+                source_database_name="test_source_db",
                 duration_ms=100,
                 raw_sql_text="SELECT * FROM test_table"
             )

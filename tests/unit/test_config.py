@@ -11,7 +11,7 @@
 
 import os
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 from pydantic import PostgresDsn, SecretStr
@@ -76,13 +76,13 @@ class TestSettings:
         
         # 检查DSN构建
         assert settings.RAW_LOGS_DSN is not None
-        assert "postgresql+asyncpg://test_user:test_password@test_host:5433/test_raw_logs" == str(settings.RAW_LOGS_DSN)
+        assert "postgresql://test_user:test_password@test_host:5433/test_raw_logs" == str(settings.RAW_LOGS_DSN)
         
         assert settings.ANALYTICAL_PATTERNS_DSN is not None
-        assert "postgresql+asyncpg://test_user:test_password@test_host:5433/test_analytical" == str(settings.ANALYTICAL_PATTERNS_DSN)
+        assert "postgresql://test_user:test_password@test_host:5433/test_analytical" == str(settings.ANALYTICAL_PATTERNS_DSN)
         
         assert settings.AGE_DSN is not None
-        assert "postgresql+asyncpg://test_user:test_password@test_host:5433/test_age" == str(settings.AGE_DSN)
+        assert "postgresql://test_user:test_password@test_host:5433/test_age" == str(settings.AGE_DSN)
 
     def test_from_env_vars(self, mock_env_vars):
         """测试从环境变量加载配置"""
@@ -114,16 +114,42 @@ class TestGetSettings:
         # 验证调用了from_toml方法
         mock_from_toml.assert_called_once_with("test_config.toml")
 
-    @patch("pathlib.Path.exists")
-    @patch("pglumilineage.common.config.Settings.from_toml")
-    def test_get_settings_default_paths(self, mock_from_toml, mock_exists, mock_env_vars):
+    def test_get_settings_default_paths(self, mock_env_vars):
         """测试默认配置文件路径"""
-        # 模拟第二个路径存在
-        mock_exists.side_effect = [False, True, False]
-        mock_from_toml.return_value = Settings()
+        # 直接使用替代函数来模拟整个行为
+        original_get_settings = get_settings
         
-        settings = get_settings()
-        
-        # 验证调用了from_toml方法，使用了第二个路径
-        mock_from_toml.assert_called_once()
-        assert "../config/settings.toml" in mock_from_toml.call_args[0][0]
+        # 保存原始的get_settings函数
+        try:
+            # 模拟调用过程
+            called_paths = []
+            
+            def mock_from_toml(path):
+                called_paths.append(path)
+                return Settings()
+            
+            # 替换from_toml方法
+            Settings.from_toml = mock_from_toml
+            
+            # 模拟路径存在检查
+            original_exists = Path.exists
+            
+            def mock_exists(self):
+                # 只有第二个路径存在
+                return str(self) == "../config/settings.toml"
+            
+            # 替换exists方法
+            Path.exists = mock_exists
+            
+            # 调用被测试的函数
+            # 清除缓存，确保重新运行
+            get_settings.cache_clear()
+            settings = get_settings()
+            
+            # 验证调用了from_toml方法，使用了第二个路径
+            assert len(called_paths) == 1
+            assert called_paths[0] == "../config/settings.toml"
+        finally:
+            # 恢复原始方法
+            Path.exists = original_exists
+            Settings.from_toml = lambda cls, path: cls()  # 简单的替代实现

@@ -26,4 +26,4 @@ sys.modules['pglumilineage.scheduler.metadata_scheduler'] = _metadata_collector_
 
 # 导出主要函数，使它们可以直接从 scheduler 包导入
 from pglumilineage.scheduler.log_processor_main import start_log_processor, shutdown
-from pglumilineage.scheduler.metadata_collector_main import start_metadata_scheduler
+from pglumilineage.scheduler.metadata_collector_main import start_metadata_collector

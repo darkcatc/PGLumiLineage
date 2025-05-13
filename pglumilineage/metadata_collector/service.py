@@ -5,12 +5,21 @@
 
 该模块负责连接到 lumi_config.data_sources 中配置的 PostgreSQL 数据源，
 并提取其技术元数据，存入 iwdb.lumi_metadata_store 下的表中。
+
+此模块还负责：
+1. 从 lumi_config.source_sync_schedules 表获取元数据同步调度规则
+2. 根据调度规则执行元数据收集
+3. 更新同步状态
+4. 提供批量处理和缓存机制以优化性能
+
+作者: Vance Chen
 """
 
 import asyncio
 import logging
-from datetime import datetime
-from typing import List, Dict, Any, Optional, Tuple
+import functools
+from datetime import datetime, timedelta, timezone
+from typing import List, Dict, Any, Optional, Tuple, Set, Union, cast
 
 import asyncpg
 from pydantic import BaseModel
@@ -19,6 +28,16 @@ from pglumilineage.common import config, db_utils, models
 
 # 配置日志记录器
 logger = logging.getLogger(__name__)
+
+# 缓存设置
+SCHEDULES_CACHE_TTL = 300  # 调度规则缓存有效期（秒）
+_schedules_cache: Dict[str, Any] = {
+    "data": None,
+    "timestamp": None
+}
+
+# 批处理设置
+BATCH_SIZE = 100  # 批量处理的大小
 
 
 # 元数据模型定义
@@ -853,6 +872,274 @@ async def update_sync_status(sync_status: MetadataSyncStatus) -> int:
         raise
 
 
+@functools.lru_cache(maxsize=32)
+async def get_metadata_sync_schedules_from_db() -> List[Dict[str, Any]]:
+    """
+    从数据库获取元数据同步调度规则
+    
+    Returns:
+        List[Dict[str, Any]]: 调度规则列表
+    """
+    pool = await db_utils.get_db_pool()
+    async with pool.acquire() as conn:
+        query = """
+        SELECT 
+            s.schedule_id,
+            s.source_id,
+            s.is_schedule_active,
+            s.sync_frequency_type,
+            s.sync_interval_seconds,
+            s.cron_expression,
+            s.last_sync_attempt_at,
+            s.last_sync_success_at,
+            s.last_sync_status,
+            s.last_sync_message,
+            s.created_at,
+            s.updated_at,
+            d.source_name,
+            d.db_host,
+            d.db_port,
+            d.db_name,
+            d.db_user,
+            d.db_password
+        FROM lumi_config.source_sync_schedules s
+        JOIN lumi_config.data_sources d ON s.source_id = d.source_id
+        WHERE s.is_schedule_active = TRUE
+        """
+        
+        rows = await conn.fetch(query)
+        schedules = []
+        
+        for row in rows:
+            # 将密码字符串转换为 SecretStr
+            password_secret = models.SecretStr(row['db_password']) if row['db_password'] else models.SecretStr('')
+            
+            schedule = {
+                'schedule_id': row['schedule_id'],
+                'source_id': row['source_id'],
+                'is_schedule_active': row['is_schedule_active'],
+                'sync_frequency_type': row['sync_frequency_type'],
+                'sync_interval_seconds': row['sync_interval_seconds'],
+                'cron_expression': row['cron_expression'],
+                'last_sync_attempt_at': row['last_sync_attempt_at'],
+                'last_sync_success_at': row['last_sync_success_at'],
+                'source_config': models.DataSourceConfig(
+                    source_id=row['source_id'],
+                    source_name=row['source_name'],
+                    host=row['db_host'],
+                    port=row['db_port'],
+                    username=row['db_user'],
+                    password=password_secret,
+                    database=row['db_name']
+                )
+            }
+            schedules.append(schedule)
+        
+        return schedules
+
+
+async def get_metadata_sync_schedules() -> List[Dict[str, Any]]:
+    """
+    从 lumi_config.source_sync_schedules 表获取元数据同步调度规则
+    使用缓存机制减少数据库查询
+
+    Returns:
+        List[Dict[str, Any]]: 调度规则列表
+    """
+    global _schedules_cache
+
+    # 检查缓存是否有效
+    now = datetime.now()
+    if (_schedules_cache["data"] is not None and
+        _schedules_cache["timestamp"] is not None and
+        (now - _schedules_cache["timestamp"]).total_seconds() < SCHEDULES_CACHE_TTL):
+        logger.debug("使用缓存的元数据同步调度规则")
+        return _schedules_cache["data"]
+    
+    logger.info("获取元数据同步调度规则")
+    
+    # 从数据库获取调度规则
+    schedules = await get_metadata_sync_schedules_from_db()
+    
+    # 更新缓存
+    _schedules_cache["data"] = schedules
+    _schedules_cache["timestamp"] = now
+    
+    return schedules
+
+
+async def update_schedule_sync_status(schedule_id: int, success: bool, message: str = None) -> None:
+    """
+    更新调度规则的同步状态
+    
+    Args:
+        schedule_id: 调度规则ID
+        success: 同步是否成功
+        message: 同步消息
+    """
+    logger.info(f"更新调度规则 {schedule_id} 的同步状态: {'SUCCESS' if success else 'FAILED'}")
+    
+    now = datetime.now(timezone.utc)
+    status = "SUCCESS" if success else "FAILED"
+    
+    # 使用全局连接池而不是创建新连接
+    pool = await db_utils.get_db_pool()
+    async with pool.acquire() as conn:
+        try:
+            query = """
+            UPDATE lumi_config.source_sync_schedules
+            SET last_sync_attempt_at = $1, 
+                last_sync_status = $2, 
+                last_sync_message = $3,
+                last_sync_success_at = CASE WHEN $4 THEN $1 ELSE last_sync_success_at END,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE schedule_id = $5
+            """
+            
+            await conn.execute(query, now, status, message, success, schedule_id)
+            
+            # 清除缓存，确保下次获取最新数据
+            if hasattr(get_metadata_sync_schedules_from_db, 'cache_clear'):
+                get_metadata_sync_schedules_from_db.cache_clear()
+            
+            # 同时清除内存缓存
+            global _schedules_cache
+            _schedules_cache["data"] = None
+            _schedules_cache["timestamp"] = None
+            
+        except Exception as e:
+            logger.error(f"更新调度规则同步状态时出错: {str(e)}")
+            raise
+
+
+async def calculate_next_run_time(sync_frequency_type: str, sync_interval_seconds: int, 
+                               cron_expression: str, from_time: datetime) -> datetime:
+    """
+    根据调度类型计算下次运行时间
+    
+    Args:
+        sync_frequency_type: 同步频率类型 ('interval', 'cron', 'manual')
+        sync_interval_seconds: 同步间隔秒数
+        cron_expression: cron 表达式
+        from_time: 起始时间
+        
+    Returns:
+        datetime: 下次运行时间
+    """
+    if sync_frequency_type == 'interval' and sync_interval_seconds:
+        return from_time + timedelta(seconds=sync_interval_seconds)
+    elif sync_frequency_type == 'cron' and cron_expression:
+        # 注意: 实际实现中应使用 croniter 等库来处理 cron 表达式
+        # 这里简化处理，返回一天后的时间
+        logger.warning(f"Cron 表达式处理未实现，使用默认间隔 (1 天): {cron_expression}")
+        return from_time + timedelta(days=1)
+    elif sync_frequency_type == 'manual':
+        # 手动模式下，返回远期时间
+        return from_time + timedelta(days=365)
+    else:
+        # 默认情况，返回一天后的时间
+        logger.warning(f"未知的同步频率类型: {sync_frequency_type}，使用默认间隔 (1 天)")
+        return from_time + timedelta(days=1)
+
+
+async def process_metadata_collection(interval_seconds: int = 86400, run_once: bool = False) -> None:
+    """
+    处理元数据收集
+    
+    Args:
+        interval_seconds: 检查间隔时间（秒），默认为86400秒（1天）
+        run_once: 是否只运行一次
+    """
+    logger.info(f"启动元数据收集服务，检查间隔: {interval_seconds}秒，{'单次运行' if run_once else '持续运行'}")
+    
+    try:
+        while True:
+            now = datetime.now(timezone.utc)
+            logger.info(f"检查元数据同步调度规则，当前时间: {now}")
+            
+            # 获取调度规则
+            schedules = await get_metadata_sync_schedules()
+            logger.info(f"找到 {len(schedules)} 个启用的元数据同步调度规则")
+            
+            # 并行处理每个调度规则
+            tasks = []
+            for schedule in schedules:
+                schedule_id = schedule['schedule_id']
+                source_config = schedule['source_config']
+                last_sync_success_at = schedule.get('last_sync_success_at')
+                sync_frequency_type = schedule.get('sync_frequency_type', 'interval')
+                sync_interval_seconds = schedule.get('sync_interval_seconds', 86400)
+                cron_expression = schedule.get('cron_expression', '')
+                
+                # 如果有上次成功同步时间，计算下次应该同步的时间
+                should_sync = True
+                if last_sync_success_at:
+                    next_run_time = await calculate_next_run_time(
+                        sync_frequency_type, sync_interval_seconds, cron_expression, last_sync_success_at
+                    )
+                    should_sync = now >= next_run_time
+                
+                # 如果应该同步，创建异步任务执行元数据收集
+                if should_sync:
+                    task = asyncio.create_task(
+                        process_single_source(schedule_id, source_config)
+                    )
+                    tasks.append(task)
+                else:
+                    next_run_time = await calculate_next_run_time(
+                        sync_frequency_type, sync_interval_seconds, cron_expression, last_sync_success_at
+                    )
+                    logger.info(f"数据源 {source_config.source_name} 的元数据收集还不需要运行，下次运行时间: {next_run_time}")
+            
+            # 等待所有任务完成
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # 如果只运行一次，则退出循环
+            if run_once:
+                logger.info("单次运行模式，元数据收集完成")
+                break
+            
+            # 等待下一次检查
+            logger.info(f"等待 {interval_seconds} 秒后进行下一次检查")
+            await asyncio.sleep(interval_seconds)
+    
+    except asyncio.CancelledError:
+        logger.info("元数据收集服务任务被取消")
+        raise
+    except Exception as e:
+        logger.error(f"元数据收集服务出错: {str(e)}")
+        raise
+
+
+async def process_single_source(schedule_id: int, source_config: models.DataSourceConfig) -> None:
+    """
+    处理单个数据源的元数据收集
+    
+    Args:
+        schedule_id: 调度规则ID
+        source_config: 数据源配置
+    """
+    logger.info(f"开始执行数据源 {source_config.source_name} 的元数据收集")
+    
+    try:
+        # 调用元数据收集服务
+        success, error_message = await collect_metadata_for_source(source_config)
+        
+        # 更新调度规则的同步状态
+        if success:
+            logger.info(f"数据源 {source_config.source_name} 的元数据收集成功")
+            await update_schedule_sync_status(schedule_id, True, "元数据收集成功")
+        else:
+            logger.error(f"数据源 {source_config.source_name} 的元数据收集失败: {error_message}")
+            await update_schedule_sync_status(schedule_id, False, f"元数据收集失败: {error_message}")
+    
+    except Exception as e:
+        error_msg = f"处理数据源 {source_config.source_name} 的元数据收集时出错: {str(e)}"
+        logger.error(error_msg)
+        await update_schedule_sync_status(schedule_id, False, error_msg)
+
+
 async def collect_metadata_for_source(source_config: models.DataSourceConfig) -> Tuple[bool, str]:
     """
     为指定数据源收集元数据
@@ -897,7 +1184,7 @@ async def collect_metadata_for_source(source_config: models.DataSourceConfig) ->
             objects_metadata = await fetch_objects_metadata(conn, source_config)
             objects_sync_status.items_processed = len(objects_metadata)
             
-            # 保存对象元数据
+            # 批量保存对象元数据
             object_ids = await save_objects_metadata(objects_metadata)
             objects_sync_status.items_succeeded = len(object_ids)
             
@@ -917,6 +1204,7 @@ async def collect_metadata_for_source(source_config: models.DataSourceConfig) ->
                         )
                         
                         columns_count += len(columns_metadata)
+                        # 批量保存列元数据
                         column_ids = await save_columns_metadata(columns_metadata)
                         columns_success += len(column_ids)
                     except Exception as e:

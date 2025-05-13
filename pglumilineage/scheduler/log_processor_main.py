@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 tasks: List[asyncio.Task] = []
 
 
-async def start_log_processor(interval_seconds: int = 60, run_once: bool = False) -> asyncio.Task:
+async def start_log_processor(interval_seconds: int = 86400, run_once: bool = False) -> asyncio.Task:
     """
     启动日志处理器服务
     
@@ -98,8 +98,8 @@ async def main() -> None:
     parser.add_argument(
         "--log-processor-interval", 
         type=int, 
-        default=60, 
-        help="日志处理器间隔时间（秒），默认为 60 秒"
+        default=86400, 
+        help="日志处理器间隔时间（秒），默认为 86400 秒（1天）"
     )
     parser.add_argument(
         "--log-processor-run-once", 

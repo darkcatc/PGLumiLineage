@@ -8,6 +8,8 @@ PostgreSQL 日志处理服务
 1. 读取 PostgreSQL 的 CSV 格式日志文件
 2. 解析 CSV 日志行，提取关键字段
 3. 将解析后的数据异步批量写入数据库
+4. 管理已处理文件记录和同步状态
+5. 提供性能优化机制，如缓存和批量处理
 
 作者: Vance Chen
 """
@@ -18,8 +20,9 @@ import os
 import glob
 import logging
 import time
-from typing import List, Set, Dict, Optional, Tuple, Any
-from datetime import datetime
+import functools
+from typing import List, Set, Dict, Optional, Tuple, Any, Union
+from datetime import datetime, timedelta
 import re
 
 from pglumilineage.common import logging_config, config, db_utils, models
@@ -27,11 +30,24 @@ from pglumilineage.common import logging_config, config, db_utils, models
 # 设置日志
 logger = logging.getLogger(__name__)
 
-# 批处理大小
+# 批处理设置
 BATCH_SIZE = 1000
 
+# 缓存设置
+DATA_SOURCE_CACHE_TTL = 300  # 数据源缓存有效期（秒）
+PROCESSED_FILES_CACHE_TTL = 600  # 已处理文件缓存有效期（秒）
+
 # 数据源配置缓存
-data_source_cache: Dict[str, Dict[str, Any]] = {}
+data_source_cache: Dict[str, Any] = {
+    "data": {},
+    "timestamp": None
+}
+
+# 已处理文件缓存
+processed_files_cache: Dict[str, Any] = {
+    "data": {},
+    "timestamp": {}
+}
 
 
 def validate_data_source(data_source: Dict[str, Any]) -> bool:
@@ -168,57 +184,83 @@ async def save_processed_file(source_name: str, file_path: str) -> None:
         logger.error(f"保存已处理文件记录时出错: {str(e)}")
 
 
-
+@functools.lru_cache(maxsize=32)
 async def get_data_sources() -> List[Dict[str, Any]]:
     """
     从配置表中获取数据源信息
+    使用缓存机制减少数据库查询
     
     Returns:
         List[Dict[str, Any]]: 数据源信息列表
     """
-    logger.info("从配置表中获取数据源信息")
+    global data_source_cache
+    
+    # 检查缓存是否有效
+    now = datetime.now()
+    if (data_source_cache["timestamp"] is not None and 
+        (now - data_source_cache["timestamp"]).total_seconds() < DATA_SOURCE_CACHE_TTL and
+        data_source_cache["data"]):
+        logger.debug("使用缓存的数据源配置")
+        return list(data_source_cache["data"].values())
+    
+    logger.info("从数据库获取数据源配置")
     
     try:
         # 获取数据库连接池
         pool = await db_utils.get_db_pool()
         
-        # 清空缓存，确保每次都获取最新的数据源信息
-        data_source_cache.clear()
-        
-        # 查询活跃的数据源
-        query = """
-        SELECT ds.source_id, ds.source_name, ds.source_type, ds.description,
-               ds.db_host, ds.db_port, ds.db_name, ds.db_user, ds.db_password,
-               ds.log_retrieval_method, ds.log_path_pattern,
-               ds.ssh_host, ds.ssh_port, ds.ssh_user, ds.ssh_password, ds.ssh_key_path, ds.ssh_remote_log_path_pattern,
-               ds.kafka_bootstrap_servers, ds.kafka_topic, ds.kafka_consumer_group,
-               ss.schedule_id, ss.sync_frequency_type, ss.sync_interval_seconds, ss.priority
-        FROM lumi_config.data_sources ds
-        JOIN lumi_config.source_sync_schedules ss ON ds.source_id = ss.source_id
-        WHERE ds.is_active = TRUE AND ss.is_schedule_active = TRUE
-        ORDER BY ss.priority DESC
-        """
-        
         async with pool.acquire() as conn:
+            # 查询数据源配置
+            query = """
+            SELECT 
+                source_id, 
+                source_name, 
+                source_type, 
+                db_host, 
+                db_port, 
+                db_name, 
+                db_user, 
+                db_password, 
+                log_retrieval_method, 
+                log_path_pattern, 
+                is_active,
+                created_at,
+                updated_at
+            FROM lumi_config.data_sources
+            WHERE is_active = TRUE
+            """
+            
             rows = await conn.fetch(query)
-        
-        data_sources = [dict(row) for row in rows]
-        logger.info(f"找到 {len(data_sources)} 个活跃的数据源")
-        
-        # 验证数据源配置
-        valid_data_sources = []
-        for ds in data_sources:
-            if validate_data_source(ds):
-                # 更新缓存
-                data_source_cache[ds['source_name']] = ds
-                valid_data_sources.append(ds)
-            else:
-                logger.warning(f"数据源 {ds.get('source_name', 'unknown')} 配置无效，已跳过")
-        
-        return valid_data_sources
+            data_sources = []
+            
+            # 清除旧缓存
+            data_source_cache["data"] = {}
+            
+            for row in rows:
+                data_source = dict(row)
+                
+                # 验证数据源配置
+                if validate_data_source(data_source):
+                    data_sources.append(data_source)
+                    # 更新缓存
+                    data_source_cache["data"][data_source['source_name']] = data_source
+                else:
+                    logger.warning(f"数据源 {data_source['source_name']} 配置无效，已跳过")
+            
+            # 更新缓存时间戳
+            data_source_cache["timestamp"] = now
+            
+            if not data_sources:
+                logger.warning("没有找到活跃的数据源，无法处理日志文件")
+            
+            return data_sources
     
     except Exception as e:
-        logger.error(f"获取数据源信息时出错: {str(e)}")
+        logger.error(f"获取数据源配置时出错: {str(e)}")
+        # 如果出错但缓存中有数据，返回缓存数据
+        if data_source_cache["data"]:
+            logger.info("使用缓存的数据源配置作为备用")
+            return list(data_source_cache["data"].values())
         return []
 
 
