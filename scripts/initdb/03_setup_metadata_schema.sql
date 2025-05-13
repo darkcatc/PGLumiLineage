@@ -223,3 +223,80 @@ COMMENT ON COLUMN lumi_metadata_store.metadata_sync_status.updated_at IS '记录
 -- 注意: 不使用触发器自动更新updated_at字段
 -- 应用层需要负责在更新数据时同时更新updated_at字段
 -- 例如: UPDATE table SET column1 = value1, updated_at = CURRENT_TIMESTAMP WHERE ...
+
+-- ----------------------------------------------------------------------------
+-- 设置权限
+-- ----------------------------------------------------------------------------
+
+-- 将 lumi_metadata_store schema 的所有者设置为 lumiadmin
+ALTER SCHEMA lumi_metadata_store OWNER TO lumiadmin;
+
+-- 将 lumi_metadata_store schema 中的所有表的所有者设置为 lumiadmin
+DO $$
+DECLARE
+    obj RECORD;
+BEGIN
+    FOR obj IN 
+        SELECT tablename FROM pg_tables WHERE schemaname = 'lumi_metadata_store'
+    LOOP
+        EXECUTE format('ALTER TABLE lumi_metadata_store.%I OWNER TO lumiadmin', obj.tablename);
+    END LOOP;
+END $$;
+
+-- 将 lumi_metadata_store schema 中的所有序列的所有者设置为 lumiadmin
+DO $$
+DECLARE
+    obj RECORD;
+BEGIN
+    FOR obj IN 
+        SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'lumi_metadata_store'
+    LOOP
+        EXECUTE format('ALTER SEQUENCE lumi_metadata_store.%I OWNER TO lumiadmin', obj.sequence_name);
+    END LOOP;
+END $$;
+
+-- 将 lumi_metadata_store schema 中的所有索引的所有者设置为 lumiadmin
+DO $$
+DECLARE
+    obj RECORD;
+BEGIN
+    FOR obj IN 
+        SELECT indexname FROM pg_indexes WHERE schemaname = 'lumi_metadata_store'
+    LOOP
+        EXECUTE format('ALTER INDEX lumi_metadata_store.%I OWNER TO lumiadmin', obj.indexname);
+    END LOOP;
+END $$;
+
+-- 授予 lumiuser 对 lumi_metadata_store schema 的使用权限
+GRANT USAGE ON SCHEMA lumi_metadata_store TO lumiuser;
+
+-- 授予 lumiuser 对 lumi_metadata_store schema 中所有表的权限
+DO $$
+DECLARE
+    obj RECORD;
+BEGIN
+    FOR obj IN 
+        SELECT tablename FROM pg_tables WHERE schemaname = 'lumi_metadata_store'
+    LOOP
+        EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE lumi_metadata_store.%I TO lumiuser', obj.tablename);
+    END LOOP;
+END $$;
+
+-- 授予 lumiuser 对 lumi_metadata_store schema 中所有序列的权限
+DO $$
+DECLARE
+    obj RECORD;
+BEGIN
+    FOR obj IN 
+        SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'lumi_metadata_store'
+    LOOP
+        EXECUTE format('GRANT USAGE, SELECT, UPDATE ON SEQUENCE lumi_metadata_store.%I TO lumiuser', obj.sequence_name);
+    END LOOP;
+END $$;
+
+-- 为 lumi_metadata_store schema 设置默认权限
+ALTER DEFAULT PRIVILEGES IN SCHEMA lumi_metadata_store FOR ROLE lumiadmin
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO lumiuser;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA lumi_metadata_store FOR ROLE lumiadmin
+GRANT USAGE, SELECT ON SEQUENCES TO lumiuser;

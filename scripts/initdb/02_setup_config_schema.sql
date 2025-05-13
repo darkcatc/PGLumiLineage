@@ -162,8 +162,62 @@ CREATE INDEX IF NOT EXISTS idx_source_sync_schedules_source_id ON lumi_config.so
 CREATE INDEX IF NOT EXISTS idx_source_sync_schedules_is_active_status ON lumi_config.source_sync_schedules (is_schedule_active, last_sync_status);
 CREATE INDEX IF NOT EXISTS idx_source_sync_schedules_next_run ON lumi_config.source_sync_schedules (is_schedule_active, sync_frequency_type, last_sync_success_at) WHERE is_schedule_active = TRUE;
 
--- Grant permissions (assuming lumiadmin owns this, lumiuser needs to read and possibly update status fields)
--- This should be part of your setup SQL scripts, run by lumiadmin in iwdb
-GRANT USAGE ON SCHEMA lumi_config TO lumiuser; -- (if not already granted)
+-- ----------------------------------------------------------------------------
+-- 设置权限
+-- ----------------------------------------------------------------------------
+
+-- 将 lumi_config schema 的所有者设置为 lumiadmin
+ALTER SCHEMA lumi_config OWNER TO lumiadmin;
+
+-- 将 lumi_config schema 中的所有表的所有者设置为 lumiadmin
+DO $$
+DECLARE
+    obj RECORD;
+BEGIN
+    FOR obj IN 
+        SELECT tablename FROM pg_tables WHERE schemaname = 'lumi_config'
+    LOOP
+        EXECUTE format('ALTER TABLE lumi_config.%I OWNER TO lumiadmin', obj.tablename);
+    END LOOP;
+END $$;
+
+-- 将 lumi_config schema 中的所有序列的所有者设置为 lumiadmin
+DO $$
+DECLARE
+    obj RECORD;
+BEGIN
+    FOR obj IN 
+        SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'lumi_config'
+    LOOP
+        EXECUTE format('ALTER SEQUENCE lumi_config.%I OWNER TO lumiadmin', obj.sequence_name);
+    END LOOP;
+END $$;
+
+-- 授予 lumiuser 对 lumi_config schema 的使用权限
+GRANT USAGE ON SCHEMA lumi_config TO lumiuser;
+
+-- 授予 lumiuser 对 lumi_config.data_sources 表的权限
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE lumi_config.data_sources TO lumiuser;
+
+-- 授予 lumiuser 对 lumi_config.source_sync_schedules 表的权限
 GRANT SELECT ON TABLE lumi_config.source_sync_schedules TO lumiuser;
 GRANT UPDATE (last_sync_attempt_at, last_sync_success_at, last_sync_status, last_sync_message, updated_at) ON TABLE lumi_config.source_sync_schedules TO lumiuser;
+
+-- 授予 lumiuser 对 lumi_config schema 中所有序列的权限
+DO $$
+DECLARE
+    obj RECORD;
+BEGIN
+    FOR obj IN 
+        SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'lumi_config'
+    LOOP
+        EXECUTE format('GRANT USAGE, SELECT, UPDATE ON SEQUENCE lumi_config.%I TO lumiuser', obj.sequence_name);
+    END LOOP;
+END $$;
+
+-- 为 lumi_config schema 设置默认权限
+ALTER DEFAULT PRIVILEGES IN SCHEMA lumi_config FOR ROLE lumiadmin
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO lumiuser;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA lumi_config FOR ROLE lumiadmin
+GRANT USAGE, SELECT ON SEQUENCES TO lumiuser;
