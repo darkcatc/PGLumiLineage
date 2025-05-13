@@ -1027,83 +1027,87 @@ async def _process_single_log_entry(log: RawSQLLog) -> Optional[Tuple[int, str]]
         return None
 
 
-async def process_captured_logs(batch_size: int = 100) -> Tuple[int, int, int]:
+async def process_captured_logs(batch_size: int = 100, max_concurrency: int = 10) -> Tuple[int, int, int]:
     """
     处理未分析的 SQL 日志
     
     该函数从 lumi_logs.captured_logs 表中获取未处理的日志记录，
     对每条记录进行 SQL 范式化和哈希生成，并将结果存储到 lumi_analytics.sql_patterns 表中。
     处理完成后，将日志记录标记为已处理。
+    使用并发处理提高性能。
     
     Args:
         batch_size: 每批处理的日志数量
+        max_concurrency: 并发处理的最大任务数
         
     Returns:
         Tuple[int, int, int]: 
-            - 处理的日志数量
-            - 成功范式化的日志数量
-            - 成功更新的日志数量
+            - 获取并尝试处理的日志数量
+            - 成功范式化并存储模式的日志数量
+            - 成功标记为已处理的日志数量
     """
-    logger.info(f"开始处理未分析的 SQL 日志，批大小: {batch_size}")
+    start_time = datetime.now(timezone.utc)
+    logger.info(f"开始处理未分析的 SQL 日志，批大小: {batch_size}, 最大并发数: {max_concurrency}")
     
-    # 获取未处理的日志记录
-    logs = await fetch_unprocessed_logs(batch_size)
-    
-    if not logs:
+    try:
+        # 获取未处理的日志记录
+        logs_to_process = await fetch_unprocessed_logs(batch_size)
+    except Exception as e:
+        logger.error(f"获取未处理的日志时出错: {str(e)}", exc_info=True)
+        return 0, 0, 0
+
+    if not logs_to_process:
         logger.info("没有找到未处理的 SQL 日志")
         return 0, 0, 0
+
+    total_fetched_count = len(logs_to_process)
+    processed_successfully_count = 0
+    marked_as_processed_count = 0
     
-    # 统计信息
-    total_count = len(logs)
-    normalized_count = 0
-    successful_updates = 0
-    
-    # 收集已成功处理的日志 ID 和哈希值
-    log_ids_with_hashes = []
-    
-    # 处理每条日志记录
-    for log in logs:
+    log_ids_and_hashes_to_mark = []
+
+    # 创建一个Semaphore对象来限制并发协程的数量
+    semaphore = asyncio.Semaphore(max_concurrency)
+    tasks = []
+
+    # 辅助函数，用于包装 _process_single_log_entry 调用以使用 semaphore
+    async def _process_with_semaphore(log_item):
+        async with semaphore:
+            return await _process_single_log_entry(log_item)
+
+    # 为每个日志条目创建一个处理任务
+    for log_item in logs_to_process:
+        tasks.append(_process_with_semaphore(log_item))
+
+    # 并发运行所有任务并收集结果
+    # return_exceptions=True 确保一个任务的失败不会取消其他任务
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for result in results:
+        if isinstance(result, Exception):
+            # 错误已在 _process_single_log_entry 中通过 exc_info=True 记录
+            logger.error(f"并发处理日志时捕获到未处理异常: {result}")
+        elif result is not None:
+            log_id, sql_hash = result
+            log_ids_and_hashes_to_mark.append((log_id, sql_hash))
+            processed_successfully_count += 1
+
+    # 批量标记成功处理的日志
+    if log_ids_and_hashes_to_mark:
         try:
-            # 范式化 SQL
-            normalized_sql = normalize_sql(log.raw_sql_text)
-            
-            if not normalized_sql:
-                logger.warning(f"SQL 范式化失败，日志 ID: {log.log_id}")
-                continue
-            
-            normalized_count += 1
-            
-            # 生成 SQL 哈希
-            sql_hash = generate_sql_hash(normalized_sql)
-            
-            if not sql_hash:
-                logger.warning(f"SQL 哈希生成失败，日志 ID: {log.log_id}")
-                continue
-            
-            # 将 SQL 模式信息写入/更新到 lumi_analytics.sql_patterns 表
-            pattern_id = await upsert_sql_pattern_from_log(
-                sql_hash=sql_hash,
-                normalized_sql=normalized_sql,
-                sample_raw_sql=log.raw_sql_text,
-                source_database_name=log.source_database_name,
-                log_time=log.log_time,
-                duration_ms=log.duration_ms or 0
-            )
-            
-            if pattern_id:
-                # 收集已成功处理的日志 ID 和哈希值
-                log_ids_with_hashes.append((log.log_id, sql_hash))
-            
+            marked_as_processed_count = await mark_logs_as_processed(log_ids_and_hashes_to_mark)
         except Exception as e:
-            logger.error(f"处理日志 {log.log_id} 时出错: {str(e)}")
+            logger.error(f"批量标记日志为已处理时出错: {str(e)}", exc_info=True)
     
-    # 批量标记日志为已处理
-    if log_ids_with_hashes:
-        successful_updates = await mark_logs_as_processed(log_ids_with_hashes)
+    end_time = datetime.now(timezone.utc)
+    duration_seconds = (end_time - start_time).total_seconds()
+    logger.info(
+        f"SQL 日志处理完成。耗时: {duration_seconds:.2f} 秒. "
+        f"获取日志: {total_fetched_count}, 成功处理并存储模式: {processed_successfully_count}, "
+        f"成功标记为已处理: {marked_as_processed_count}"
+    )
     
-    logger.info(f"处理完成，总共 {total_count} 条日志，成功范式化 {normalized_count} 条，成功更新 {successful_updates} 条")
-    
-    return total_count, normalized_count, successful_updates
+    return total_fetched_count, processed_successfully_count, marked_as_processed_count
 
 
 async def process_sql(
