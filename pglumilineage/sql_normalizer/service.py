@@ -6,13 +6,17 @@ SQL 范式化模块
 
 该模块负责将 SQL 语句转换为标准化格式，并生成唯一哈希值。
 这些哈希值将用于识别相似的 SQL 模式，并建立 SQL 语句之间的关联。
+
+作者: Vance Chen
 """
 
 import asyncio
 import hashlib
 import logging
+import re
+import functools
 from typing import Optional, Dict, List, Tuple, Any, Union
-from datetime import datetime
+from datetime import datetime, timezone
 
 import sqlglot
 from sqlglot import parse_one, transpile
@@ -28,6 +32,16 @@ from pglumilineage.metadata_collector.service import ObjectMetadata, FunctionMet
 
 # 设置日志记录器
 logger = logging.getLogger(__name__)
+
+# 缓存设置
+# 缓存已处理的SQL哈希值和规范化结果，避免重复处理
+SQL_HASH_CACHE_SIZE = 1000  # 缓存大小
+NORMALIZE_CACHE_SIZE = 1000  # 规范化缓存大小
+
+# 初始化缓存
+_normalize_cache = {}
+_normalize_cache_timestamp = datetime.now(timezone.utc)
+NORMALIZE_CACHE_TTL = 3600  # 缓存有效期（秒）
 
 
 def is_data_flow_sql(sql: str) -> bool:
@@ -134,6 +148,7 @@ def is_data_flow_sql(sql: str) -> bool:
     return False
 
 
+@functools.lru_cache(maxsize=NORMALIZE_CACHE_SIZE)
 def normalize_sql(raw_sql: str, dialect: str = 'postgres') -> Optional[str]:
     """
     将原始 SQL 语句转换为标准化格式
@@ -235,12 +250,14 @@ def normalize_sql(raw_sql: str, dialect: str = 'postgres') -> Optional[str]:
             return None
 
 
+@functools.lru_cache(maxsize=SQL_HASH_CACHE_SIZE)
 def generate_sql_hash(normalized_sql: str) -> str:
     """
     为标准化后的 SQL 语句生成唯一哈希值
     
     该函数使用 SHA-256 算法为标准化后的 SQL 语句生成哈希值，
     这个哈希值将作为 SQL 模式的唯一标识符，用于识别相似的 SQL 语句。
+    使用 LRU 缓存提高性能，避免重复计算相同 SQL 的哈希值。
     
     Args:
         normalized_sql: 标准化后的 SQL 语句
@@ -961,6 +978,53 @@ async def process_metadata_definitions() -> Tuple[int, int, int, int]:
     logger.info(f"处理完成，总共 {view_count} 条视图定义和 {function_count} 条函数定义，成功范式化 {normalized_count} 条，成功更新 {successful_updates} 条")
     
     return view_count, function_count, normalized_count, successful_updates
+
+
+async def _process_single_log_entry(log: RawSQLLog) -> Optional[Tuple[int, str]]:
+    """
+    处理单个日志条目：范式化SQL、生成哈希并更新数据库。
+
+    Args:
+        log: 原始SQL日志对象。
+
+    Returns:
+        Optional[Tuple[int, str]]: 如果成功，则返回 (log_id, sql_hash)，否则返回 None。
+    """
+    try:
+        # 范式化 SQL
+        normalized_sql = normalize_sql(log.raw_sql_text)
+        
+        if not normalized_sql:
+            logger.warning(f"SQL 范式化失败，日志 ID: {log.log_id}, SQL: {log.raw_sql_text[:200]}...")
+            return None
+
+        # 生成 SQL 哈希
+        sql_hash = generate_sql_hash(normalized_sql)
+        
+        if not sql_hash:
+            logger.warning(f"SQL 哈希生成失败，日志 ID: {log.log_id}, Normalized SQL: {normalized_sql[:200]}...")
+            return None
+
+        # 将 SQL 模式信息写入/更新到 lumi_analytics.sql_patterns 表
+        pattern_id = await upsert_sql_pattern_from_log(
+            sql_hash=sql_hash,
+            normalized_sql=normalized_sql,
+            sample_raw_sql=log.raw_sql_text,
+            source_database_name=log.source_database_name,
+            log_time=log.log_time,
+            duration_ms=log.duration_ms or 0
+        )
+
+        if pattern_id:
+            logger.debug(f"成功处理日志 ID: {log.log_id}, SQL 哈希: {sql_hash}")
+            return log.log_id, sql_hash
+        else:
+            logger.error(f"将 SQL 模式写入数据库失败，日志 ID: {log.log_id}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"处理日志 ID: {log.log_id} (SQL: {log.raw_sql_text[:200]}...) 时发生意外错误: {str(e)}", exc_info=True)
+        return None
 
 
 async def process_captured_logs(batch_size: int = 100) -> Tuple[int, int, int]:
