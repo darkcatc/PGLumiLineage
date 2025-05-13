@@ -385,7 +385,7 @@ async def get_data_sources() -> List[Dict[str, Any]]:
         return []
 
 
-async def find_new_log_files(source_name: str, processed_log_files_tracker: Set[str]) -> List[str]:
+async def find_new_log_files(source_name: str, processed_log_files_tracker: Set[str] = None) -> List[str]:
     """
     查找需要处理的新日志文件
     
@@ -396,27 +396,58 @@ async def find_new_log_files(source_name: str, processed_log_files_tracker: Set[
     Returns:
         List[str]: 新日志文件路径列表
     """
+    if processed_log_files_tracker is None:
+        processed_log_files_tracker = set()
+    
     # 获取全局配置实例
     from pglumilineage.common.config import get_settings_instance
-    settings = get_settings_instance()
     
     # 获取日志文件路径模式
     log_files_pattern = ""
     
-    # 首先检查是否有日志处理器特定的配置
-    if hasattr(settings, "log_processor") and hasattr(settings.log_processor, "log_files_pattern"):
-        log_files_pattern = settings.log_processor.log_files_pattern
-    # 如果没有特定配置，则使用全局配置
-    elif hasattr(settings, "PG_LOG_FILE_PATTERN"):
-        log_files_pattern = settings.PG_LOG_FILE_PATTERN
-    else:
-        # 如果使用数据源缓存
-        data_source = data_source_cache.get("data", {}).get(source_name)
-        if data_source and 'log_path_pattern' in data_source:
-            log_files_pattern = data_source['log_path_pattern']
-        else:
-            logger.error(f"未找到数据源 {source_name} 的日志文件路径模式")
-            return []
+    # 从数据源配置中获取日志路径模式
+    try:
+        # 先从缓存中获取数据源信息
+        if source_name in data_source_cache.get("data", {}):
+            data_source = data_source_cache["data"][source_name]
+            if data_source and 'log_path_pattern' in data_source:
+                log_files_pattern = data_source['log_path_pattern']
+                logger.info(f"从缓存中获取数据源 {source_name} 的日志路径模式: {log_files_pattern}")
+        
+        # 如果缓存中没有，则从数据库中获取
+        if not log_files_pattern:
+            # 获取数据库连接池
+            pool = await get_db_pool()
+            
+            async with pool.acquire() as conn:
+                # 查询数据源配置
+                data_source = await conn.fetchrow(
+                    """SELECT * FROM lumi_config.data_sources WHERE source_name = $1 AND is_active = true""",
+                    source_name
+                )
+                
+                if data_source and 'log_path_pattern' in data_source:
+                    log_files_pattern = data_source['log_path_pattern']
+                    logger.info(f"从数据库中获取数据源 {source_name} 的日志路径模式: {log_files_pattern}")
+    except Exception as e:
+        logger.error(f"获取数据源 {source_name} 的日志路径模式时出错: {str(e)}")
+    
+    # 如果没有从数据源配置中获取到路径模式，则使用配置文件中的设置
+    if not log_files_pattern:
+        settings = get_settings_instance()
+        # 首先检查是否有日志处理器特定的配置
+        if hasattr(settings, "log_processor") and hasattr(settings.log_processor, "log_files_pattern"):
+            log_files_pattern = settings.log_processor.log_files_pattern
+            logger.info(f"使用日志处理器配置中的日志路径模式: {log_files_pattern}")
+        # 如果没有特定配置，则使用全局配置
+        elif hasattr(settings, "PG_LOG_FILE_PATTERN"):
+            log_files_pattern = settings.PG_LOG_FILE_PATTERN
+            logger.info(f"使用全局配置中的日志路径模式: {log_files_pattern}")
+    
+    # 如果仍然没有找到日志路径模式，则返回空列表
+    if not log_files_pattern:
+        logger.error(f"未找到数据源 {source_name} 的日志文件路径模式")
+        return []
     
     logger.info(f"查找本地日志文件: {log_files_pattern}")
     
@@ -441,11 +472,12 @@ async def find_new_log_files(source_name: str, processed_log_files_tracker: Set[
     return new_log_files
 
 
-async def parse_log_file(log_file_path: str) -> List[models.RawSQLLog]:
+async def parse_log_file(source_name: str, log_file_path: str) -> List[models.RawSQLLog]:
     """
     解析日志文件，提取SQL日志条目
     
     Args:
+        source_name: 数据源名称
         log_file_path: 日志文件路径
         
     Returns:
@@ -695,13 +727,14 @@ async def batch_insert_logs(log_entries: List[models.RawSQLLog]) -> int:
         return 0
 
 
-async def process_log_files(interval_seconds: int = 60, run_once: bool = False) -> int:
+async def process_log_files(interval_seconds: int = 60, run_once: bool = False, source_name: Optional[str] = None) -> int:
     """
     处理日志文件的主函数
     
     Args:
         interval_seconds: 处理间隔时间（秒）
         run_once: 是否只运行一次，如果为 False 则作为服务持续运行
+        source_name: 指定要处理的数据源名称，如果为 None 则处理所有数据源
     
     Returns:
         int: 处理的记录总数
@@ -728,24 +761,32 @@ async def process_log_files(interval_seconds: int = 60, run_once: bool = False) 
                     logger.warning("没有找到活跃的数据源，无法处理日志文件")
                     return 0
                 
+                # 如果指定了数据源名称，则只处理该数据源
+                if source_name:
+                    data_sources = [ds for ds in data_sources if ds['source_name'] == source_name]
+                    if not data_sources:
+                        logger.warning(f"未找到名为 {source_name} 的活跃数据源")
+                        return 0
+                    logger.info(f"将只处理指定的数据源: {source_name}")
+                
                 for data_source in data_sources:
-                    source_name = data_source['source_name']
-                    logger.info(f"处理数据源: {source_name}")
+                    current_source_name = data_source['source_name']
+                    logger.info(f"处理数据源: {current_source_name}")
                     
                     # 初始化已处理文件集合
-                    if source_name not in processed_log_files:
-                        processed_log_files[source_name] = set()
+                    if current_source_name not in processed_log_files:
+                        processed_log_files[current_source_name] = set()
                     
                     # 查找新的日志文件
-                    new_log_files = await find_new_log_files(source_name, processed_log_files[source_name])
+                    new_log_files = await find_new_log_files(current_source_name, processed_log_files[current_source_name])
                     
                     for log_file in new_log_files:
                         # 解析日志文件
-                        log_entries = await parse_log_file(source_name, log_file)
+                        log_entries = await parse_log_file(current_source_name, log_file)
                         
                         if not log_entries:
                             logger.info(f"日志文件 {log_file} 中没有找到有效的SQL日志条目")
-                            processed_log_files[source_name].add(log_file)
+                            processed_log_files[current_source_name].add(log_file)
                             continue
                         
                         # 初始化插入计数
@@ -759,14 +800,14 @@ async def process_log_files(interval_seconds: int = 60, run_once: bool = False) 
                             processed_count += batch_inserted_count
                         
                         # 标记文件为已处理
-                        processed_log_files[source_name].add(log_file)
-                        logger.info(f"完成处理日志文件: {log_file}，解析 {len(log_entries)} 条记录，成功插入 {total_inserted_count} 条记录")
+                        processed_log_files[current_source_name].add(log_file)
+                        logger.info(f"已成功处理日志文件 {log_file}，插入 {total_inserted_count} 条记录")
                         
                         # 更新同步状态
-                        await update_sync_status(source_name, len(log_entries), total_inserted_count)
+                        await update_sync_status(current_source_name, len(log_entries), total_inserted_count)
                         
                         # 持久化已处理文件记录
-                        await save_processed_file(source_name, log_file)
+                        await save_processed_file(current_source_name, log_file)
                 
                 return processed_count
             except Exception as e:
