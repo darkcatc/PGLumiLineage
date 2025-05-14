@@ -9,10 +9,13 @@ LLM 分析器模块
 """
 
 import asyncio
-import os
+import hashlib
 import json
 import logging
-from typing import List, Dict, Optional, Any, Tuple
+import os
+import re
+from datetime import datetime
+from typing import Dict, List, Optional, Any, Tuple, Set
 
 import asyncpg
 import openai
@@ -57,7 +60,7 @@ qwen_client = None
 
 async def fetch_pending_sql_patterns(limit: int = 10) -> List[models.AnalyticalSQLPattern]:
     """
-    从 lumi_analytics.sql_patterns 表中获取待分析的 SQL 模式
+    从分析模式表中获取待分析的 SQL 模式
     
     获取 llm_analysis_status 为 'PENDING' 或 'NEEDS_REANALYSIS' 的记录
     并将它们的状态更新为 'PROCESSING'
@@ -72,11 +75,18 @@ async def fetch_pending_sql_patterns(limit: int = 10) -> List[models.AnalyticalS
         # 获取数据库连接池
         pool = await db_utils.get_db_pool()
         
+        # 从配置中获取模式表名
+        from pglumilineage.common.config import get_settings_instance
+        settings = get_settings_instance()
+        
+        # 默认使用lumi_analytics模式
+        schema_name = "lumi_analytics"
+        
         async with pool.acquire() as conn:
             # 开始事务
             async with conn.transaction():
                 # 1. 查询待分析的 SQL 模式
-                query = """
+                query = f"""
                 SELECT 
                     sql_hash,
                     normalized_sql_text,
@@ -94,7 +104,7 @@ async def fetch_pending_sql_patterns(limit: int = 10) -> List[models.AnalyticalS
                     last_llm_analysis_at,
                     tags
                 FROM 
-                    lumi_analytics.sql_patterns
+                    {schema_name}.sql_patterns
                 WHERE 
                     llm_analysis_status IN ('PENDING', 'NEEDS_REANALYSIS')
                 ORDER BY 
@@ -111,8 +121,8 @@ async def fetch_pending_sql_patterns(limit: int = 10) -> List[models.AnalyticalS
                 
                 # 2. 将这些记录的状态更新为 'PROCESSING'
                 sql_hashes = [row['sql_hash'] for row in rows]
-                update_query = """
-                UPDATE lumi_analytics.sql_patterns
+                update_query = f"""
+                UPDATE {schema_name}.sql_patterns
                 SET 
                     llm_analysis_status = 'PROCESSING'
                 WHERE 
@@ -152,14 +162,13 @@ async def fetch_pending_sql_patterns(limit: int = 10) -> List[models.AnalyticalS
         logger.error(f"获取待分析的 SQL 模式失败: {str(e)}")
         return []
 
-async def fetch_metadata_context_for_sql(conn_iwdb: asyncpg.Connection, sql_pattern: models.AnalyticalSQLPattern) -> Dict:
+async def fetch_metadata_context_for_sql(sql_pattern: models.AnalyticalSQLPattern) -> Dict:
     """
     从元数据存储中获取 SQL 相关的元数据上下文
     
     包括表、视图、列的定义和关系等信息
     
     Args:
-        conn_iwdb: iwdb 数据库连接
         sql_pattern: SQL 模式对象
         
     Returns:
@@ -168,6 +177,7 @@ async def fetch_metadata_context_for_sql(conn_iwdb: asyncpg.Connection, sql_patt
     try:
         # 初始化返回结果
         metadata_context = {
+            "source_database_name": sql_pattern.source_database_name,
             "tables_metadata": [],
             "view_definitions": []
         }
@@ -175,149 +185,160 @@ async def fetch_metadata_context_for_sql(conn_iwdb: asyncpg.Connection, sql_patt
         # 获取源数据库的配置信息
         source_db_name = sql_pattern.source_database_name
         
-        # 查询源数据库的 source_id
-        source_id_query = """
-        SELECT source_id 
-        FROM lumi_config.data_sources 
-        WHERE source_name = $1
-        """
-        source_id_row = await conn_iwdb.fetchrow(source_id_query, source_db_name)
+        # 从配置中获取模式名
+        from pglumilineage.common.config import get_settings_instance
+        settings = get_settings_instance()
         
-        if not source_id_row:
-            logger.warning(f"未找到源数据库 {source_db_name} 的配置信息")
-            return metadata_context
+        # 默认模式名
+        config_schema = "lumi_config"
+        metadata_schema = "lumi_metadata_store"
         
-        source_id = source_id_row['source_id']
+        # 获取数据库连接池
+        pool = await db_utils.get_db_pool()
         
-        # 1. 使用 sqlglot 解析 SQL 语句中的表引用
-        try:
-            import sqlglot
-            from sqlglot import exp
+        async with pool.acquire() as conn:
+            # 查询源数据库的 source_id
+            source_id_query = f"""
+            SELECT source_id 
+            FROM {config_schema}.data_sources 
+            WHERE source_name = $1
+            """
+            source_id_row = await conn.fetchrow(source_id_query, source_db_name)
             
-            # 解析 SQL 语句
-            parsed_sql = sqlglot.parse_one(sql_pattern.normalized_sql_text)
+            if not source_id_row:
+                logger.warning(f"未找到源数据库 {source_db_name} 的配置信息")
+                return metadata_context
             
-            # 提取所有表引用
-            table_refs = parsed_sql.find_all(exp.Table)
+            source_id = source_id_row['source_id']
             
-            # 处理每个表引用
-            tables_info = []
-            for table_ref in table_refs:
-                schema_name = table_ref.args.get('db') or 'public'  # 默认使用 public schema
-                table_name = table_ref.args.get('this')
-                table_alias = table_ref.args.get('alias')
+            # 1. 使用 sqlglot 解析 SQL 语句中的表引用
+            try:
+                import sqlglot
+                from sqlglot import exp
                 
-                if not table_name:
-                    continue
+                # 解析 SQL 语句
+                parsed_sql = sqlglot.parse_one(sql_pattern.normalized_sql_text)
                 
-                # 将表信息添加到列表中
-                tables_info.append({
-                    "schema": schema_name,
-                    "name": table_name,
-                    "alias": table_alias
-                })
-            
-            # 去重，避免重复查询相同的表
-            unique_tables = []
-            for table in tables_info:
-                if table not in unique_tables:
-                    unique_tables.append(table)
-            
-            logger.info(f"从 SQL 中提取到 {len(unique_tables)} 个表/视图引用")
-            
-            # 2. 为每个表/视图获取元数据
-            for table_info in unique_tables:
-                schema_name = table_info["schema"]
-                table_name = table_info["name"]
+                # 提取所有表引用
+                table_refs = parsed_sql.find_all(exp.Table)
                 
-                # a. 查询对象元数据
-                object_query = """
-                SELECT 
-                    object_id, 
-                    object_type, 
-                    definition,
-                    row_count,
-                    description
-                FROM 
-                    lumi_metadata_store.objects_metadata 
-                WHERE 
-                    source_id = $1 AND 
-                    schema_name = $2 AND 
-                    object_name = $3
-                """
-                
-                object_row = await conn_iwdb.fetchrow(
-                    object_query, 
-                    source_id, 
-                    schema_name, 
-                    table_name
-                )
-                
-                if not object_row:
-                    logger.warning(f"未找到对象 {schema_name}.{table_name} 的元数据")
-                    continue
-                
-                object_id = object_row['object_id']
-                object_type = object_row['object_type']
-                definition = object_row['definition']
-                row_count = object_row['row_count']
-                description = object_row['description']
-                
-                # b. 查询列元数据
-                columns_query = """
-                SELECT 
-                    column_name, 
-                    data_type, 
-                    is_nullable, 
-                    is_primary_key,
-                    description
-                FROM 
-                    lumi_metadata_store.columns_metadata 
-                WHERE 
-                    object_id = $1
-                ORDER BY 
-                    ordinal_position
-                """
-                
-                columns_rows = await conn_iwdb.fetch(columns_query, object_id)
-                
-                # 构造列信息列表
-                columns = []
-                for col in columns_rows:
-                    columns.append({
-                        "name": col['column_name'],
-                        "type": col['data_type'],
-                        "nullable": col['is_nullable'],
-                        "primary_key": col['is_primary_key'],
-                        "description": col['description']
-                    })
-                
-                # 构造对象元数据
-                object_metadata = {
-                    "schema": schema_name,
-                    "name": table_name,
-                    "type": object_type,
-                    "columns": columns,
-                    "row_count": row_count,
-                    "description": description
-                }
-                
-                # 将对象元数据添加到相应的列表中
-                metadata_context["tables_metadata"].append(object_metadata)
-                
-                # 如果是视图，将定义添加到视图定义列表中
-                if object_type == 'VIEW' and definition:
-                    metadata_context["view_definitions"].append({
+                # 处理每个表引用
+                tables_info = []
+                for table_ref in table_refs:
+                    schema_name = table_ref.args.get('db') or 'public'  # 默认使用 public schema
+                    table_name = table_ref.args.get('this')
+                    table_alias = table_ref.args.get('alias')
+                    
+                    if not table_name:
+                        continue
+                    
+                    # 将表信息添加到列表中
+                    tables_info.append({
                         "schema": schema_name,
                         "name": table_name,
-                        "definition": definition
+                        "alias": table_alias
                     })
-            
-        except sqlglot.errors.ParseError as e:
-            logger.warning(f"SQL 解析失败: {str(e)}")
-            # 如果解析失败，返回空的元数据上下文
-            return metadata_context
-        
+                
+                # 去重，避免重复查询相同的表
+                unique_tables = []
+                for table in tables_info:
+                    if table not in unique_tables:
+                        unique_tables.append(table)
+                
+                logger.info(f"从 SQL 中提取到 {len(unique_tables)} 个表/视图引用")
+                
+                # 2. 为每个表/视图获取元数据
+                for table_info in unique_tables:
+                    schema_name = table_info["schema"]
+                    table_name = table_info["name"]
+                    
+                    # a. 查询对象元数据
+                    object_query = f"""
+                    SELECT 
+                        object_id, 
+                        object_type, 
+                        definition,
+                        row_count,
+                        description
+                    FROM 
+                        {metadata_schema}.objects_metadata 
+                    WHERE 
+                        source_id = $1 AND 
+                        schema_name = $2 AND 
+                        object_name = $3
+                    """
+                    
+                    object_row = await conn.fetchrow(
+                        object_query, 
+                        source_id, 
+                        schema_name, 
+                        table_name
+                    )
+                    
+                    if not object_row:
+                        logger.warning(f"未找到对象 {schema_name}.{table_name} 的元数据")
+                        continue
+                    
+                    object_id = object_row['object_id']
+                    object_type = object_row['object_type']
+                    definition = object_row['definition']
+                    row_count = object_row['row_count']
+                    description = object_row['description']
+                    
+                    # b. 查询列元数据
+                    columns_query = f"""
+                    SELECT 
+                        column_name, 
+                        data_type, 
+                        is_nullable, 
+                        is_primary_key,
+                        description
+                    FROM 
+                        {metadata_schema}.columns_metadata 
+                    WHERE 
+                        object_id = $1
+                    ORDER BY 
+                        ordinal_position
+                    """
+                    
+                    columns_rows = await conn.fetch(columns_query, object_id)
+                    
+                    # 构造列信息列表
+                    columns = []
+                    for col in columns_rows:
+                        columns.append({
+                            "name": col['column_name'],
+                            "type": col['data_type'],
+                            "nullable": col['is_nullable'],
+                            "primary_key": col['is_primary_key'],
+                            "description": col['description']
+                        })
+                    
+                    # 构造对象元数据
+                    object_metadata = {
+                        "schema": schema_name,
+                        "name": table_name,
+                        "type": object_type,
+                        "columns": columns,
+                        "row_count": row_count,
+                        "description": description
+                    }
+                    
+                    # 将对象元数据添加到相应的列表中
+                    metadata_context["tables_metadata"].append(object_metadata)
+                    
+                    # 如果是视图，将定义添加到视图定义列表中
+                    if object_type == 'VIEW' and definition:
+                        metadata_context["view_definitions"].append({
+                            "schema": schema_name,
+                            "name": table_name,
+                            "definition": definition
+                        })
+            except sqlglot.errors.ParseError as e:
+                logger.warning(f"SQL 解析失败: {str(e)}")
+                # 如果解析失败，返回空的元数据上下文
+                return metadata_context
+                
         logger.info(f"获取到 SQL 模式 {sql_pattern.sql_hash[:8]}... 的元数据上下文，包含 {len(metadata_context['tables_metadata'])} 个表/视图的元数据")
         return metadata_context
         
@@ -325,7 +346,7 @@ async def fetch_metadata_context_for_sql(conn_iwdb: asyncpg.Connection, sql_patt
         logger.error(f"获取 SQL 模式 {sql_pattern.sql_hash[:8]}... 的元数据上下文失败: {str(e)}")
         return {"error": str(e), "tables_metadata": [], "view_definitions": []}
 
-def construct_prompt_for_qwen(sql_mode: str, sample_sql: str, metadata_context: Dict) -> List[Dict[str, str]]:
+def construct_prompt_for_qwen(sql_mode: str, sample_sql: str, metadata_context: Dict, sql_hash: str = None) -> List[Dict[str, str]]:
     """
     构造 Qwen 模型的 prompt
     
@@ -333,113 +354,152 @@ def construct_prompt_for_qwen(sql_mode: str, sample_sql: str, metadata_context: 
         sql_mode: SQL 模式类型（如 INSERT, UPDATE, SELECT 等）
         sample_sql: 示例 SQL 语句
         metadata_context: 元数据上下文
+        sql_hash: SQL 模式的哈希值，可选
         
     Returns:
         List[Dict[str, str]]: Qwen 模型的消息列表
     """
     try:
         # 构造系统提示
-        system_prompt = """你是一个专业的SQL数据血缘分析助手。你的任务是分析给定的SQL语句和相关的数据库元数据，识别出数据是如何从源表/源字段流向目标表/目标字段的。请以JSON格式输出结果。"""
+        system_prompt = """你是一位顶级的SQL数据血缘分析专家。
+你的任务是基于用户提供的SQL语句、相关的数据库对象元数据（表结构、视图定义等），以及SQL的唯一标识哈希（如果提供），精确地分析出字段级别的数据血缘关系。
+你需要识别数据是如何从源对象的源字段，经过可能的转换逻辑，最终写入到目标对象的特定目标字段。
 
-        # 构造用户提示
-        
-        # 格式化表结构信息以更清晰地展示
-        tables_info = ""
+请严格按照用户要求的JSON格式输出分析结果，不要包含任何解释性文字或Markdown标记，只输出纯JSON对象。
+JSON中应包含以下关键信息：
+- 'sql_pattern_hash': 提供的SQL模式的唯一哈希值（如果提供）。
+- 'source_database_name': SQL所属的源数据库名称。
+- 'target_object': 如果SQL有明确的写入目标（如INSERT的目标表，UPDATE的表，CREATE VIEW的视图名），请提供其 'schema', 'name', 'type'。若无明确写入目标（如纯SELECT），此字段可为null。
+- 'column_level_lineage': 一个列表，每个元素描述一个目标字段的血缘：
+    - 'target_column': 目标字段名。
+    - 'target_object_name': (可选，如果target_object非null) 目标对象名，用于消除歧义。
+    - 'target_object_schema': (可选) 目标对象schema。
+    - 'sources': 一个列表，包含所有对此目标字段有贡献的源信息。每个源信息包含：
+        - 'source_object': {'schema': '...', 'name': '...', 'type': 'TABLE'/'VIEW'}
+        - 'source_column': 源字段名。
+        - 'transformation_logic': 描述从源到目标所经历的简要转换逻辑或计算表达式（例如 'direct_copy', 'SUM(...)', 'COALESCE(col, 0)', 'CASE WHEN ...', 'd.d_year AS report_year'）。
+    - 'derivation_type': 对目标字段值产生方式的分类（例如 'DIRECT_MAPPING', 'AGGREGATION', 'LITERAL_ASSIGNMENT', 'CONDITIONAL_LOGIC', 'FUNCTION_CALL', 'UNION_MERGE'）。
+- 'referenced_objects': 一个列表，包含SQL中所有被引用（读取或写入）的数据库对象（表、视图）及其 'schema', 'name', 'type' 和 'access_mode' ('READ', 'WRITE', 'READ_WRITE')。
+- 'unresolved_references': (可选) 一个列表，记录在提供的元数据中找不到对应定义的表或视图名。
+- 'parsing_confidence': (可选) 你对本次解析准确度的信心评分 (0.0 - 1.0)。
+- 'errors_or_warnings': (可选) 一个列表，记录解析过程中遇到的任何问题或警告。"""
+
+        # 获取源数据库名称
+        source_database_name = ""
         for table in metadata_context.get("tables_metadata", []):
-            schema = table.get("schema", "")
+            if table.get("schema") and table.get("name"):
+                source_database_name = metadata_context.get("source_database_name", "")
+                break
+        
+        # 构造元数据上下文的文本表示
+        metadata_str_parts = [f"源数据库名称: {source_database_name}"]
+        
+        # 格式化表结构信息
+        for table in metadata_context.get("tables_metadata", []):
+            schema = table.get("schema", "public")
             name = table.get("name", "")
-            table_type = table.get("type", "TABLE")
-            tables_info += f"\n\u8868 {schema}.{name} ({table_type}):\n"
+            table_type = table.get("type", "TABLE").upper()
+            part = f"\n{table_type} '{schema}.{name}':"
+            
+            if table.get("description"):
+                part += f"\n  描述: {table['description']}"
+            
+            if table.get("row_count") is not None:
+                part += f"\n  行数: {table['row_count']}"
             
             # 添加列信息
+            columns_str = []
             for col in table.get("columns", []):
                 col_name = col.get("name", "")
                 col_type = col.get("type", "")
                 nullable = "NULL" if col.get("nullable", True) else "NOT NULL"
                 pk = "PRIMARY KEY" if col.get("primary_key", False) else ""
-                tables_info += f"  - {col_name} ({col_type} {nullable} {pk})\n"
+                col_desc = f"{col_name} ({col_type} {nullable} {pk})".strip()
+                if col.get("description"):
+                    col_desc += f" -- {col['description']}"
+                columns_str.append(f"    - {col_desc}")
+            
+            if columns_str:
+                part += "\n  列信息:\n" + "\n".join(columns_str)
+            
+            metadata_str_parts.append(part)
         
         # 格式化视图定义
-        views_info = ""
         for view in metadata_context.get("view_definitions", []):
-            schema = view.get("schema", "")
+            schema = view.get("schema", "public")
             name = view.get("name", "")
             definition = view.get("definition", "").strip()
-            views_info += f"\n\u89c6\u56fe {schema}.{name}:\n{definition}\n"
+            view_part = f"\n视图 '{schema}.{name}':\n  定义SQL: {definition}"
+            metadata_str_parts.append(view_part)
         
-        # 根据 SQL 类型调整任务描述
-        task_description = ""
-        target_table = ""
-        
+        # 确定SQL类型和目标对象
+        target_object = None
         if sql_mode == "INSERT":
-            # 尝试从 SQL 中提取目标表名
             import re
             match = re.search(r"INSERT\s+INTO\s+([\w\.]+)", sample_sql, re.IGNORECASE)
             if match:
                 target_table = match.group(1)
-            
-            task_description = f"""请分析以下 INSERT SQL 语句。识别出所有最终被插入到目标表 `{target_table}` 的每个字段的数据来源。请列出从源表的哪个字段，经过了怎样的转换（如果有的话），最终写入了目标表的哪个字段。"""
+                parts = target_table.split('.')
+                if len(parts) > 1:
+                    target_object = {"schema": parts[0], "name": parts[1], "type": "TABLE"}
+                else:
+                    target_object = {"schema": "public", "name": parts[0], "type": "TABLE"}
         elif sql_mode == "UPDATE":
-            # 尝试从 SQL 中提取目标表名
             import re
             match = re.search(r"UPDATE\s+([\w\.]+)", sample_sql, re.IGNORECASE)
             if match:
                 target_table = match.group(1)
-            
-            task_description = f"""请分析以下 UPDATE SQL 语句。识别出被更新的表 `{target_table}` 中每个被 SET 的字段的数据来源。请列出 SET 表达式右侧依赖的字段或计算逻辑。"""
-        elif sql_mode == "CREATE" and "SELECT" in sample_sql.upper():
-            task_description = """请分析以下 CREATE TABLE AS SELECT 语句。识别出新创建的表中每个字段的数据来源。请列出从源表的哪个字段，经过了怎样的转换，最终写入了新表的哪个字段。"""
-        else:
-            task_description = """请分析以下 SQL 语句。识别出数据流转的源和目标，以及字段级别的映射关系。"""
+                parts = target_table.split('.')
+                if len(parts) > 1:
+                    target_object = {"schema": parts[0], "name": parts[1], "type": "TABLE"}
+                else:
+                    target_object = {"schema": "public", "name": parts[0], "type": "TABLE"}
+        elif sql_mode == "CREATE" and "TABLE" in sample_sql.upper():
+            import re
+            match = re.search(r"CREATE\s+TABLE\s+([\w\.]+)", sample_sql, re.IGNORECASE)
+            if match:
+                target_table = match.group(1)
+                parts = target_table.split('.')
+                if len(parts) > 1:
+                    target_object = {"schema": parts[0], "name": parts[1], "type": "TABLE"}
+                else:
+                    target_object = {"schema": "public", "name": parts[0], "type": "TABLE"}
+        elif sql_mode == "CREATE" and "VIEW" in sample_sql.upper():
+            import re
+            match = re.search(r"CREATE\s+VIEW\s+([\w\.]+)", sample_sql, re.IGNORECASE)
+            if match:
+                target_view = match.group(1)
+                parts = target_view.split('.')
+                if len(parts) > 1:
+                    target_object = {"schema": parts[0], "name": parts[1], "type": "VIEW"}
+                else:
+                    target_object = {"schema": "public", "name": parts[0], "type": "VIEW"}
         
-        # 构造输出格式要求
-        output_format = """请严格按照以下JSON格式输出结果。只输出JSON内容，不要有任何其他解释性文字。
-{
-  'target_table': 'annual_channel_performance_report',
-  'lineage': [
-    {
-      'target_column': 'report_year',
-      'source_columns': [{'table': 'date_dim', 'column': 'd_year', 'transformation': 'direct_mapping'}],
-      'logic_description': 'd.d_year AS report_year'
-    },
-    {
-      'target_column': 'channel',
-      'source_columns': [], // 如果是字面量或固定值
-      'transformation': 'literal_value_assignment',
-      'logic_description': "'?' AS channel"
-    },
-    {
-      'target_column': 'total_sales_amount_inc_tax_ship',
-      'source_columns': [
-        {'table': 'store_sales', 'column': 'ss_net_paid_inc_tax', 'transformation': 'COALESCE(ss.ss_net_paid_inc_tax, ?)'},
-        {'table': 'catalog_sales', 'column': 'cs_net_paid_inc_ship_tax', 'transformation': 'COALESCE(cs.cs_net_paid_inc_ship_tax, ?)'},
-        {'table': 'web_sales', 'column': 'ws_net_paid_inc_ship_tax', 'transformation': 'COALESCE(ws.ws_net_paid_inc_ship_tax, ?)'}
-      ],
-      'aggregation': 'SUM', // 新增，表示聚合
-      'logic_description': 'SUM(COALESCE(ss.ss_net_paid_inc_tax, ?)) ... UNION ALL ...'
-    }
-  ],
-  'source_tables_involved': ['store_sales', 'date_dim', 'catalog_sales', 'web_sales'] // 列出所有读取的源表
-}
+        # 构造用户提示
+        user_prompt = f"""请分析以下SQL语句，并提取字段级血缘关系。
 
-如果SQL是UPDATE语句，'target_table' 仍然是被更新的表，'target_column' 是被SET的列，'source_columns' 是SET表达式右侧依赖的字段。
-如果SQL是纯SELECT或者VIEW定义，可以将 'target_table' 设为 null 或 'VIEW_OUTPUT', 'target_column' 对应SELECT列表中的别名，'source_columns' 对应其来源。
-如果无法解析或SQL不涉及数据写入，可以返回一个空的 'lineage' 列表或特定错误标记。"""
-        
-        # 组合完整的用户提示
-        user_prompt = f"""请分析以下SQL语句的血缘关系：
+{f'SQL模式的唯一哈希: {sql_hash}' if sql_hash else ''}
 
+原始SQL:
 ```sql
 {sample_sql}
 ```
 
-{task_description}
+相关的数据库对象元数据:
+{'\n'.join(metadata_str_parts)}
 
-相关表结构如下：{tables_info}
+{f'目标对象: {json.dumps(target_object, ensure_ascii=False)}' if target_object else ''}
 
-{views_info if views_info else ''}
+请分析SQL中的字段级数据血缘关系，并以JSON格式输出结果。JSON应包含：
+1. 'sql_pattern_hash': {f'\'{sql_hash}\'' if sql_hash else 'null'}
+2. 'source_database_name': 源数据库名称
+3. 'target_object': 写入目标对象信息（如果有）
+4. 'column_level_lineage': 字段级血缘关系列表
+5. 'referenced_objects': SQL中引用的所有数据库对象
+6. 'parsing_confidence': 解析准确度评分
+7. 其他可选字段（如有必要）
 
-{output_format}
+请确保输出的是有效的JSON格式，不包含任何解释性文字或Markdown标记。
 """
 
         # 构造消息列表
@@ -465,15 +525,94 @@ async def call_qwen_api(messages: List[Dict[str, str]], model_name: str = None) 
     Returns:
         Optional[str]: API 响应内容
     """
-    from pglumilineage.common.config import settings
+    from pglumilineage.common.config import get_settings_instance
     from openai import AsyncOpenAI
     
     try:
-        # 获取配置信息
-        api_key = settings.DASHSCOPE_API_KEY.get_secret_value()
-        base_url = str(settings.QWEN_BASE_URL)
-        default_model = settings.QWEN_MODEL_NAME
+        # 获取配置实例
+        settings = get_settings_instance()
         
+        # 获取配置信息
+        api_key = None
+        base_url = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+        default_model = 'qwen-max'
+        
+        # 尝试从不同的配置路径获取API密钥
+        # 1. 尝试直接从配置文件中获取
+        # 读取配置文件
+        config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'config', 'settings.toml')
+        if os.path.exists(config_path):
+            try:
+                import toml
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = toml.load(f)
+                    
+                # 从配置文件中获取LLM相关配置
+                if 'llm' in config:
+                    llm_config = config['llm']
+                    
+                    # 尝试获取API密钥
+                    if 'API_KEY' in llm_config:
+                        api_key = llm_config['API_KEY']
+                    elif 'DASHSCOPE_API_KEY' in llm_config:
+                        api_key = llm_config['DASHSCOPE_API_KEY']
+                    
+                    # 尝试获取模型名称
+                    if 'MODEL_NAME' in llm_config:
+                        default_model = llm_config['MODEL_NAME']
+                    
+                    # 尝试获取基础URL
+                    if 'BASE_URL' in llm_config:
+                        base_url = llm_config['BASE_URL']
+                    
+                    logger.info(f"从配置文件中获取到LLM配置，模型: {default_model}")
+            except Exception as e:
+                logger.warning(f"读取配置文件失败: {str(e)}")
+        
+        # 2. 如果从配置文件中没有获取到API密钥，尝试从配置模块中获取
+        if not api_key:
+            # 尝试新配置结构
+            if hasattr(settings, 'llm') and settings.llm:
+                # 尝试qwen子配置
+                if hasattr(settings.llm, 'qwen'):
+                    api_key = getattr(settings.llm.qwen, 'api_key', None)
+                    base_url = getattr(settings.llm.qwen, 'base_url', base_url)
+                    default_model = getattr(settings.llm.qwen, 'model_name', default_model)
+                
+                # 如果没有qwen子配置，尝试直接从 llm 配置中获取
+                if not api_key and hasattr(settings.llm, 'api_key'):
+                    api_key = settings.llm.api_key
+                    
+                # 尝试从 dashscope 子配置中获取
+                if not api_key and hasattr(settings.llm, 'dashscope_api_key'):
+                    api_key = settings.llm.dashscope_api_key
+            
+            # 尝试旧配置结构
+            if not api_key:
+                # 尝试直接从设置中获取
+                api_key = getattr(settings, 'DASHSCOPE_API_KEY', None)
+                if not api_key:
+                    api_key = getattr(settings, 'LLM_API_KEY', None)
+                if not api_key:
+                    api_key = getattr(settings, 'API_KEY', None)
+                
+                # 如果是 SecretStr 类型，获取实际值
+                if hasattr(api_key, 'get_secret_value'):
+                    api_key = api_key.get_secret_value()
+                    
+                # 获取其他配置
+                base_url_from_settings = getattr(settings, 'QWEN_BASE_URL', None) or getattr(settings, 'BASE_URL', None)
+                if base_url_from_settings:
+                    base_url = str(base_url_from_settings)
+                    
+                model_from_settings = getattr(settings, 'QWEN_MODEL_NAME', None) or getattr(settings, 'MODEL_NAME', None)
+                if model_from_settings:
+                    default_model = model_from_settings
+        
+        if not api_key:
+            logger.error("未找到通义千问API密钥，请检查配置")
+            return None
+            
         # 使用提供的模型名称或默认值
         model = model_name if model_name else default_model
         
@@ -584,9 +723,16 @@ async def update_sql_pattern_analysis_result(sql_hash: str, status: str, relatio
         # 获取数据库连接池
         pool = await db_utils.get_db_pool()
         
+        # 从配置中获取模式表名
+        from pglumilineage.common.config import get_settings_instance
+        settings = get_settings_instance()
+        
+        # 默认使用lumi_analytics模式
+        schema_name = "lumi_analytics"
+        
         # 构建 UPDATE SQL 语句，包含错误信息字段
-        query = """
-        UPDATE lumi_analytical.sql_patterns
+        query = f"""
+        UPDATE {schema_name}.sql_patterns
         SET 
             llm_analysis_status = $1,
             llm_extracted_relations_json = $2,
@@ -695,8 +841,7 @@ async def analyze_sql_patterns_with_llm(batch_size: int = 10, poll_interval_seco
                         logger.info(f"开始处理 SQL 模式: {pattern.sql_hash[:8]}...")
                         
                         # 获取 SQL 模式的元数据上下文
-                        async with pool.acquire() as conn:
-                            metadata_context = await fetch_metadata_context_for_sql(conn, pattern)
+                        metadata_context = await fetch_metadata_context_for_sql(pattern)
                         
                         # 确定 SQL 模式类型
                         sql_mode = "UNKNOWN"
