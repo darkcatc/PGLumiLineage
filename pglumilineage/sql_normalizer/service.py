@@ -804,23 +804,46 @@ async def mark_logs_as_processed(log_ids_with_hashes: List[Tuple[int, str]]) -> 
         # 获取数据库连接池
         pool = await db_utils.get_db_pool()
         
-        # 构建更新语句
-        query = """
-        UPDATE lumi_logs.captured_logs 
-        SET 
-            is_processed_for_analysis = TRUE, 
-            normalized_sql_hash = $2 
-        WHERE 
-            log_id = $1
-        """
+        # 分别处理有哈希值和无哈希值的情况
+        logs_with_hash = [(log_id, sql_hash) for log_id, sql_hash in log_ids_with_hashes if sql_hash]
+        logs_without_hash = [log_id for log_id, sql_hash in log_ids_with_hashes if not sql_hash]
+        
+        updated_count = 0
         
         async with pool.acquire() as conn:
-            # 使用 executemany 批量更新
-            result = await conn.executemany(query, log_ids_with_hashes)
+            # 处理有哈希值的记录（成功泛化的）
+            if logs_with_hash:
+                query_with_hash = """
+                UPDATE lumi_logs.captured_logs 
+                SET 
+                    is_processed_for_analysis = TRUE, 
+                    normalized_sql_hash = $2 
+                WHERE 
+                    log_id = $1
+                """
+                
+                # 批量更新有哈希值的记录
+                await conn.executemany(query_with_hash, logs_with_hash)
+                updated_count += len(logs_with_hash)
+                logger.info(f"成功将 {len(logs_with_hash)} 条成功泛化的日志记录标记为已处理并更新哈希值")
             
-            # 获取更新的行数
-            updated_count = len(log_ids_with_hashes)
-            logger.info(f"成功将 {updated_count} 条日志记录标记为已处理")
+            # 处理无哈希值的记录（非数据流SQL或解析失败的）
+            if logs_without_hash:
+                query_without_hash = """
+                UPDATE lumi_logs.captured_logs 
+                SET 
+                    is_processed_for_analysis = TRUE
+                WHERE 
+                    log_id = ANY($1)
+                """
+                
+                # 批量更新无哈希值的记录
+                await conn.execute(query_without_hash, logs_without_hash)
+                updated_count += len(logs_without_hash)
+                logger.info(f"成功将 {len(logs_without_hash)} 条非数据流SQL或解析失败的日志记录标记为已处理")
+            
+            # 返回总的更新行数
+            logger.info(f"总共成功将 {updated_count} 条日志记录标记为已处理")
             return updated_count
             
     except Exception as e:
@@ -1103,7 +1126,8 @@ async def _process_single_log_entry(log: RawSQLLog) -> Optional[Tuple[int, str]]
                     error_reason=error_reason,
                     source_database_name=log.source_database_name
                 )
-                return None
+                # 返回日志ID和空哈希值，表示已处理但未成功泛化
+                return log.log_id, ""
         except Exception as e:
             error_reason = f"SQL范式化异常: {str(e)}"
             logger.warning(f"SQL 范式化过程中出现异常，日志 ID: {log.log_id}, 异常: {str(e)}")
@@ -1116,14 +1140,16 @@ async def _process_single_log_entry(log: RawSQLLog) -> Optional[Tuple[int, str]]
                 error_details=str(e),
                 source_database_name=log.source_database_name
             )
-            return None
+            # 返回日志ID和空哈希值，表示已处理但未成功泛化
+            return log.log_id, ""
 
         # 生成 SQL 哈希
         sql_hash = generate_sql_hash(normalized_sql)
         
         if not sql_hash:
             logger.warning(f"SQL 哈希生成失败，日志 ID: {log.log_id}, Normalized SQL: {normalized_sql[:200]}...")
-            return None
+            # 返回日志ID和空哈希值，表示已处理但未成功泛化
+            return log.log_id, ""
 
         # 将 SQL 模式信息写入/更新到 lumi_analytics.sql_patterns 表
         pattern_id = await upsert_sql_pattern_from_log(
@@ -1140,11 +1166,13 @@ async def _process_single_log_entry(log: RawSQLLog) -> Optional[Tuple[int, str]]
             return log.log_id, sql_hash
         else:
             logger.error(f"将 SQL 模式写入数据库失败，日志 ID: {log.log_id}")
-            return None
+            # 返回日志ID和空哈希值，表示已处理但未成功泛化
+            return log.log_id, ""
             
     except Exception as e:
         logger.error(f"处理日志 ID: {log.log_id} (SQL: {log.raw_sql_text[:200]}...) 时发生意外错误: {str(e)}", exc_info=True)
-        return None
+        # 返回日志ID和空哈希值，表示已处理但未成功泛化
+        return log.log_id, ""
 
 
 async def process_captured_logs(batch_size: int = 100, max_concurrency: int = 10) -> Tuple[int, int, int]:
@@ -1210,7 +1238,9 @@ async def process_captured_logs(batch_size: int = 100, max_concurrency: int = 10
         elif result is not None:
             log_id, sql_hash = result
             log_ids_and_hashes_to_mark.append((log_id, sql_hash))
-            processed_successfully_count += 1
+            # 只有当哈希值非空时，才计算为成功泛化
+            if sql_hash:
+                processed_successfully_count += 1
 
     # 批量标记成功处理的日志
     if log_ids_and_hashes_to_mark:
