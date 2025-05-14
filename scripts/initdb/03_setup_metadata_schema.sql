@@ -20,6 +20,7 @@ COMMENT ON SCHEMA lumi_metadata_store IS '存储被监控数据源的技术元�
 CREATE TABLE IF NOT EXISTS lumi_metadata_store.objects_metadata (
     object_id BIGSERIAL PRIMARY KEY,
     source_id INTEGER NOT NULL, -- 来自哪个数据源，对应 lumi_config.data_sources 表的 source_id
+    database_name TEXT NOT NULL, -- 数据库名称，用于区分不同数据库中的同名对象
     schema_name TEXT NOT NULL,
     object_name TEXT NOT NULL,
     object_type TEXT NOT NULL CHECK (object_type IN ('TABLE', 'VIEW', 'MATERIALIZED VIEW', 'INDEX', 'SEQUENCE', 'FOREIGN TABLE')), -- 对象类型
@@ -30,10 +31,11 @@ CREATE TABLE IF NOT EXISTS lumi_metadata_store.objects_metadata (
     last_ddl_time TIMESTAMPTZ, -- 最后 DDL 时间 (可能较难获取，某些数据库支持，PG 中可从事件触发器或审计日志间接获取)
     last_analyzed TIMESTAMPTZ, -- PG 中的 pg_stat_all_tables.last_analyze / last_autoanalyze
     properties JSONB, -- 存储其他特定于对象类型的属性
+    normalized_sql_hash TEXT, -- SQL规范化后的哈希值，引用lumi_analytics.sql_patterns表的sql_hash列
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL, -- 应用层更新
 
-    CONSTRAINT uq_object_identity UNIQUE (source_id, schema_name, object_name, object_type)
+    CONSTRAINT uq_object_identity UNIQUE (source_id, database_name, schema_name, object_name, object_type)
 );
 
 -- 添加索引以加快查询
@@ -48,6 +50,7 @@ COMMENT ON TABLE lumi_metadata_store.objects_metadata IS '存储被监控数据�
 -- 列注释
 COMMENT ON COLUMN lumi_metadata_store.objects_metadata.object_id IS '对象唯一标识符，自增主键';
 COMMENT ON COLUMN lumi_metadata_store.objects_metadata.source_id IS '数据源ID，关联到lumi_config.data_sources表';
+COMMENT ON COLUMN lumi_metadata_store.objects_metadata.database_name IS '数据库名称，用于区分不同数据库中的同名对象';
 COMMENT ON COLUMN lumi_metadata_store.objects_metadata.schema_name IS '对象所属的schema名称';
 COMMENT ON COLUMN lumi_metadata_store.objects_metadata.object_name IS '对象名称';
 COMMENT ON COLUMN lumi_metadata_store.objects_metadata.object_type IS '对象类型，如TABLE、VIEW、MATERIALIZED VIEW等';
@@ -129,6 +132,7 @@ COMMENT ON COLUMN lumi_metadata_store.columns_metadata.updated_at IS '记录更�
 CREATE TABLE IF NOT EXISTS lumi_metadata_store.functions_metadata (
     function_id BIGSERIAL PRIMARY KEY,
     source_id INTEGER NOT NULL, -- 来自哪个数据源，对应 lumi_config.data_sources 表的 source_id
+    database_name TEXT NOT NULL, -- 数据库名称，用于区分不同数据库中的同名函数
     schema_name TEXT NOT NULL,
     function_name TEXT NOT NULL,
     function_type TEXT NOT NULL CHECK (function_type IN ('FUNCTION', 'PROCEDURE', 'AGGREGATE', 'WINDOW')), -- 函数类型
@@ -139,10 +143,12 @@ CREATE TABLE IF NOT EXISTS lumi_metadata_store.functions_metadata (
     owner TEXT, -- 函数所有者
     description TEXT, -- 函数描述 (从 COMMENT ON ... 获取)
     properties JSONB, -- 其他函数属性
+    normalized_sql_hash TEXT, -- SQL规范化后的哈希值，引用lumi_analytics.sql_patterns表的sql_hash列
+    parameter_types TEXT[], -- 函数参数类型列表
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL, -- 应用层更新
 
-    CONSTRAINT uq_function_identity UNIQUE (source_id, schema_name, function_name, function_type)
+    CONSTRAINT uq_function_identity UNIQUE (source_id, database_name, schema_name, function_name, function_type)
 );
 
 -- 添加索引以加快查询
@@ -158,6 +164,7 @@ COMMENT ON TABLE lumi_metadata_store.functions_metadata IS '存储用户自定�
 -- 列注释
 COMMENT ON COLUMN lumi_metadata_store.functions_metadata.function_id IS '函数唯一标识符，自增主键';
 COMMENT ON COLUMN lumi_metadata_store.functions_metadata.source_id IS '数据源ID，关联到lumi_config.data_sources表';
+COMMENT ON COLUMN lumi_metadata_store.functions_metadata.database_name IS '数据库名称，用于区分不同数据库中的同名函数';
 COMMENT ON COLUMN lumi_metadata_store.functions_metadata.schema_name IS '函数所属的schema名称';
 COMMENT ON COLUMN lumi_metadata_store.functions_metadata.function_name IS '函数名称';
 COMMENT ON COLUMN lumi_metadata_store.functions_metadata.function_type IS '函数类型，如FUNCTION、PROCEDURE、AGGREGATE等';

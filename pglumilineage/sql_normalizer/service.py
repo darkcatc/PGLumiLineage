@@ -828,6 +828,57 @@ async def mark_logs_as_processed(log_ids_with_hashes: List[Tuple[int, str]]) -> 
         return 0
 
 
+async def record_sql_normalization_error(source_type: str, source_id: int, raw_sql_text: str, error_reason: str, error_details: str = None, source_database_name: str = None) -> bool:
+    """
+    记录SQL规范化失败的信息
+    
+    Args:
+        source_type: 来源类型，如 'LOG'、'VIEW'、'FUNCTION'
+        source_id: 来源ID，如日志ID、对象ID或函数ID
+        raw_sql_text: 原始SQL文本
+        error_reason: 失败原因
+        error_details: 详细错误信息（可选）
+        source_database_name: 源数据库名称（可选）
+        
+    Returns:
+        bool: 记录是否成功
+    """
+    try:
+        # 获取数据库连接池
+        pool = await db_utils.get_db_pool()
+        
+        # 构建插入语句
+        query = """
+        INSERT INTO lumi_analytics.sql_normalization_errors (
+            source_type, 
+            source_id, 
+            raw_sql_text, 
+            error_reason, 
+            error_details, 
+            source_database_name
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING error_id
+        """
+        
+        async with pool.acquire() as conn:
+            # 执行插入
+            error_id = await conn.fetchval(
+                query, 
+                source_type, 
+                source_id, 
+                raw_sql_text, 
+                error_reason, 
+                error_details, 
+                source_database_name
+            )
+            
+            logger.info(f"成功记录SQL规范化失败信息，ID: {error_id}, 来源: {source_type} {source_id}, 原因: {error_reason}")
+            return True
+            
+    except Exception as e:
+        logger.error(f"记录SQL规范化失败信息时出错: {str(e)}")
+        return False
+
 async def update_log_sql_hash(log_id: int, sql_hash: str) -> bool:
     """
     更新日志表中的 SQL 哈希字段
@@ -903,10 +954,33 @@ async def process_metadata_definitions() -> Tuple[int, int, int, int]:
     for view in views:
         try:
             # 范式化 SQL
-            normalized_sql = normalize_sql(view.definition)
-            
-            if not normalized_sql:
-                logger.warning(f"SQL 范式化失败，视图 ID: {view.object_id}, 名称: {view.schema_name}.{view.object_name}")
+            try:
+                normalized_sql = normalize_sql(view.definition)
+                
+                if not normalized_sql:
+                    error_reason = "非数据流转SQL或解析失败"
+                    logger.warning(f"SQL 范式化失败，视图 ID: {view.object_id}, 名称: {view.schema_name}.{view.object_name}, 原因: {error_reason}")
+                    # 记录失败信息
+                    await record_sql_normalization_error(
+                        source_type="VIEW",
+                        source_id=view.object_id,
+                        raw_sql_text=view.definition,
+                        error_reason=error_reason,
+                        source_database_name=view.database_name
+                    )
+                    continue
+            except Exception as e:
+                error_reason = f"SQL范式化异常: {str(e)}"
+                logger.warning(f"SQL 范式化过程中出现异常，视图 ID: {view.object_id}, 名称: {view.schema_name}.{view.object_name}, 异常: {str(e)}")
+                # 记录失败信息
+                await record_sql_normalization_error(
+                    source_type="VIEW",
+                    source_id=view.object_id,
+                    raw_sql_text=view.definition,
+                    error_reason=error_reason,
+                    error_details=str(e),
+                    source_database_name=view.database_name
+                )
                 continue
             
             normalized_count += 1
@@ -941,10 +1015,33 @@ async def process_metadata_definitions() -> Tuple[int, int, int, int]:
     for func in functions:
         try:
             # 范式化 SQL
-            normalized_sql = normalize_sql(func.definition)
-            
-            if not normalized_sql:
-                logger.warning(f"SQL 范式化失败，函数 ID: {func.function_id}, 名称: {func.schema_name}.{func.function_name}")
+            try:
+                normalized_sql = normalize_sql(func.definition)
+                
+                if not normalized_sql:
+                    error_reason = "非数据流转SQL或解析失败"
+                    logger.warning(f"SQL 范式化失败，函数 ID: {func.function_id}, 名称: {func.schema_name}.{func.function_name}, 原因: {error_reason}")
+                    # 记录失败信息
+                    await record_sql_normalization_error(
+                        source_type="FUNCTION",
+                        source_id=func.function_id,
+                        raw_sql_text=func.definition,
+                        error_reason=error_reason,
+                        source_database_name=func.database_name
+                    )
+                    continue
+            except Exception as e:
+                error_reason = f"SQL范式化异常: {str(e)}"
+                logger.warning(f"SQL 范式化过程中出现异常，函数 ID: {func.function_id}, 名称: {func.schema_name}.{func.function_name}, 异常: {str(e)}")
+                # 记录失败信息
+                await record_sql_normalization_error(
+                    source_type="FUNCTION",
+                    source_id=func.function_id,
+                    raw_sql_text=func.definition,
+                    error_reason=error_reason,
+                    error_details=str(e),
+                    source_database_name=func.database_name
+                )
                 continue
             
             normalized_count += 1
@@ -992,10 +1089,33 @@ async def _process_single_log_entry(log: RawSQLLog) -> Optional[Tuple[int, str]]
     """
     try:
         # 范式化 SQL
-        normalized_sql = normalize_sql(log.raw_sql_text)
-        
-        if not normalized_sql:
-            logger.warning(f"SQL 范式化失败，日志 ID: {log.log_id}, SQL: {log.raw_sql_text[:200]}...")
+        try:
+            normalized_sql = normalize_sql(log.raw_sql_text)
+            
+            if not normalized_sql:
+                error_reason = "非数据流转SQL或解析失败"
+                logger.warning(f"SQL 范式化失败，日志 ID: {log.log_id}, 原因: {error_reason}, SQL: {log.raw_sql_text[:200]}...")
+                # 记录失败信息
+                await record_sql_normalization_error(
+                    source_type="LOG",
+                    source_id=log.log_id,
+                    raw_sql_text=log.raw_sql_text,
+                    error_reason=error_reason,
+                    source_database_name=log.source_database_name
+                )
+                return None
+        except Exception as e:
+            error_reason = f"SQL范式化异常: {str(e)}"
+            logger.warning(f"SQL 范式化过程中出现异常，日志 ID: {log.log_id}, 异常: {str(e)}")
+            # 记录失败信息
+            await record_sql_normalization_error(
+                source_type="LOG",
+                source_id=log.log_id,
+                raw_sql_text=log.raw_sql_text,
+                error_reason=error_reason,
+                error_details=str(e),
+                source_database_name=log.source_database_name
+            )
             return None
 
         # 生成 SQL 哈希

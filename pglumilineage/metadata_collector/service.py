@@ -16,6 +16,7 @@
 """
 
 import asyncio
+import json
 import logging
 import functools
 from datetime import datetime, timedelta, timezone
@@ -45,6 +46,7 @@ class ObjectMetadata(BaseModel):
     """表示数据库对象（表、视图等）的元数据"""
     object_id: Optional[int] = None  # 数据库自动生成
     source_id: int
+    database_name: str = 'default_db'  # 数据库名称，默认为'default_db'
     schema_name: str
     object_name: str
     object_type: str
@@ -86,11 +88,12 @@ class FunctionMetadata(BaseModel):
     """表示数据库函数的元数据"""
     function_id: Optional[int] = None  # 数据库自动生成
     source_id: int
+    database_name: str = 'default_db'  # 数据库名称，默认为'default_db'
     schema_name: str
     function_name: str
     function_type: str
     return_type: Optional[str] = None
-    parameters: Optional[Dict[str, Any]] = None
+    parameters: Optional[List[Dict[str, Any]]] = None  # 修改为列表类型，每个元素是一个参数字典
     definition: Optional[str] = None
     language: Optional[str] = None
     owner: Optional[str] = None
@@ -156,6 +159,16 @@ async def fetch_objects_metadata(conn: asyncpg.Connection, source_config: models
         List[ObjectMetadata]: 对象元数据列表
     """
     logger.info(f"正在从数据源 {source_config.source_name} 获取对象元数据")
+    
+    # 使用数据源配置中的数据库名称
+    db_name = source_config.database
+    logger.info(f"使用数据源配置中的数据库名称: {db_name}")
+    
+    # 如果数据源配置中没有数据库名称，则使用默认值
+    if not db_name:
+        logger.warning(f"数据源配置中没有数据库名称，使用默认值 'default_db'")
+        db_name = 'default_db'
+        db_name = 'default_db'
     
     # 查询获取表和视图的元数据
     query = """
@@ -258,6 +271,7 @@ async def fetch_objects_metadata(conn: asyncpg.Connection, source_config: models
         for row in rows:
             obj_metadata = ObjectMetadata(
                 source_id=source_config.source_id,
+                database_name=db_name,  # 添加数据库名称
                 schema_name=row['schema_name'],
                 object_name=row['object_name'],
                 object_type=row['object_type'],
@@ -458,6 +472,16 @@ async def fetch_functions_metadata(conn: asyncpg.Connection, source_config: mode
     """
     logger.info(f"正在从数据源 {source_config.source_name} 获取函数元数据")
     
+    # 使用数据源配置中的数据库名称
+    db_name = source_config.database
+    logger.info(f"使用数据源配置中的数据库名称: {db_name}")
+    
+    # 如果数据源配置中没有数据库名称，则使用默认值
+    if not db_name:
+        logger.warning(f"数据源配置中没有数据库名称，使用默认值 'default_db'")
+        db_name = 'default_db'
+        db_name = 'default_db'
+    
     # 查询获取函数的元数据
     query = """
     SELECT
@@ -472,7 +496,11 @@ async def fetch_functions_metadata(conn: asyncpg.Connection, source_config: mode
         END AS function_type,
         pg_get_function_result(p.oid) AS return_type,
         pg_get_function_arguments(p.oid) AS arguments,
-        pg_get_functiondef(p.oid) AS definition,
+        -- 使用 COALESCE 处理可能的空值情况
+        COALESCE(
+            CASE WHEN p.prokind = 'a' THEN NULL ELSE pg_get_functiondef(p.oid) END,
+            'NOT AVAILABLE'::text
+        ) AS definition,
         l.lanname AS language,
         pg_get_userbyid(p.proowner) AS owner,
         obj_description(p.oid, 'pg_proc') AS description
@@ -510,12 +538,13 @@ async def fetch_functions_metadata(conn: asyncpg.Connection, source_config: mode
             
             func_metadata = FunctionMetadata(
                 source_id=source_config.source_id,
+                database_name=db_name,  # 添加数据库名称
                 schema_name=row['schema_name'],
                 function_name=row['function_name'],
                 function_type=row['function_type'],
                 return_type=row['return_type'],
                 parameters=args_list,
-                definition=row['view_definition'],
+                definition=row['definition'],  # 修正列名，之前错误地使用了 'view_definition'
                 language=row['language'],
                 owner=row['owner'],
                 description=row['description'],
@@ -564,24 +593,24 @@ async def save_objects_metadata(metadata_list: List[ObjectMetadata]) -> List[int
                     # 使用 UPSERT 操作保存元数据
                     query = """
                     INSERT INTO lumi_metadata_store.objects_metadata (
-                        source_id, schema_name, object_name, object_type,
+                        source_id, database_name, schema_name, object_name, object_type,
                         owner, description, definition, row_count,
                         last_ddl_time, last_analyzed, properties,
                         created_at, updated_at
                     ) VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+                        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
                         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                     )
-                    ON CONFLICT (source_id, schema_name, object_name, object_type)
+                    ON CONFLICT (source_id, database_name, schema_name, object_name, object_type)
                     DO UPDATE SET
-                        object_type = $4,
-                        owner = $5,
-                        description = $6,
-                        definition = $7,
-                        row_count = $8,
-                        last_ddl_time = $9,
-                        last_analyzed = $10,
-                        properties = $11,
+                        object_type = $5,
+                        owner = $6,
+                        description = $7,
+                        definition = $8,
+                        row_count = $9,
+                        last_ddl_time = $10,
+                        last_analyzed = $11,
+                        properties = $12,
                         updated_at = CURRENT_TIMESTAMP
                     RETURNING object_id
                     """
@@ -589,6 +618,7 @@ async def save_objects_metadata(metadata_list: List[ObjectMetadata]) -> List[int
                     result = await conn.fetchval(
                         query,
                         metadata.source_id,
+                        metadata.database_name,  # 添加数据库名称参数
                         metadata.schema_name,
                         metadata.object_name,
                         metadata.object_type,
@@ -708,6 +738,29 @@ async def save_columns_metadata(metadata_list: List[ColumnMetadata]) -> List[int
 
 
 
+async def save_metadata_to_store(conn: asyncpg.Connection, query: str, params_list: List[Tuple]) -> List[int]:
+    """
+    通用函数，将元数据保存到元数据存储数据库
+    
+    Args:
+        conn: 元数据存储数据库连接
+        query: SQL查询语句
+        params_list: 参数列表，每个元素是一组参数
+        
+    Returns:
+        List[int]: 保存的记录ID列表
+    """
+    if not params_list:
+        return []
+    
+    result_ids = []
+    for params in params_list:
+        result = await conn.fetchval(query, *params)
+        result_ids.append(result)
+    
+    return result_ids
+
+
 async def save_functions_metadata(metadata_list: List[FunctionMetadata]) -> List[int]:
     """
     保存函数元数据到元数据存储
@@ -724,49 +777,29 @@ async def save_functions_metadata(metadata_list: List[FunctionMetadata]) -> List
     
     logger.info(f"正在保存 {len(metadata_list)} 个函数元数据")
     
-    # 创建独立的数据库连接
+    # 使用元数据存储数据库连接池
     try:
-        # 使用RAW_LOGS_DSN创建连接
-        dsn = str(config.settings.RAW_LOGS_DSN)
-        conn = await asyncpg.connect(dsn=dsn)
+        # 获取元数据存储数据库连接池
+        pool = await db_utils.get_db_pool()
         
-        try:
-            function_ids = []
+        async with pool.acquire() as conn:
+            # 准备参数列表
+            params_list = []
             
             for metadata in metadata_list:
                 # 将 properties 转换为 JSON 格式
                 properties_json = json.dumps(metadata.properties) if metadata.properties else None
                 
-                # 使用 UPSERT 操作保存元数据
-                query = """
-                INSERT INTO lumi_metadata_store.functions_metadata (
-                    source_id, schema_name, function_name, function_type,
-                    argument_types, return_type, language, owner,
-                    description, definition, properties, created_at, updated_at
-                ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-                )
-                ON CONFLICT (source_id, schema_name, function_name, argument_types)
-                DO UPDATE SET
-                    function_type = $4,
-                    return_type = $6,
-                    language = $7,
-                    owner = $8,
-                    description = $9,
-                    definition = $10,
-                    properties = $11,
-                    updated_at = CURRENT_TIMESTAMP
-                RETURNING function_id
-                """
+                # 将参数转换为 JSON 格式
+                parameters_json = json.dumps(metadata.parameters) if metadata.parameters else None
                 
-                result = await conn.fetchval(
-                    query,
+                params = (
                     metadata.source_id,
+                    metadata.database_name,
                     metadata.schema_name,
                     metadata.function_name,
                     metadata.function_type,
-                    metadata.argument_types,
+                    parameters_json,
                     metadata.return_type,
                     metadata.language,
                     metadata.owner,
@@ -775,13 +808,36 @@ async def save_functions_metadata(metadata_list: List[FunctionMetadata]) -> List
                     properties_json
                 )
                 
-                function_ids.append(result)
+                params_list.append(params)
+            
+            # 使用 UPSERT 操作保存元数据
+            query = """
+            INSERT INTO lumi_metadata_store.functions_metadata (
+                source_id, database_name, schema_name, function_name, function_type,
+                parameters, return_type, language, owner,
+                description, definition, properties, created_at, updated_at
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            )
+            ON CONFLICT (source_id, database_name, schema_name, function_name, function_type)
+            DO UPDATE SET
+                parameters = $6,
+                return_type = $7,
+                language = $8,
+                owner = $9,
+                description = $10,
+                definition = $11,
+                properties = $12,
+                updated_at = CURRENT_TIMESTAMP
+            RETURNING function_id
+            """
+            
+            # 保存元数据
+            function_ids = await save_metadata_to_store(conn, query, params_list)
             
             logger.info(f"成功保存 {len(function_ids)} 个函数元数据")
             return function_ids
-        finally:
-            # 关闭连接
-            await conn.close()
     except Exception as e:
         logger.error(f"保存函数元数据失败: {str(e)}")
         raise

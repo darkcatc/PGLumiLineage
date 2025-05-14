@@ -454,8 +454,16 @@ async def find_new_log_files(source_name: str, processed_log_files_tracker: Set[
     # 获取所有日志文件
     all_log_files = []
     
-    # 使用glob查找匹配的文件
-    log_files = glob.glob(log_files_pattern)
+    # 检查log_files_pattern是否是目录
+    if os.path.isdir(log_files_pattern):
+        # 如果是目录，则查找目录下的所有CSV文件
+        csv_pattern = os.path.join(log_files_pattern, "*.csv")
+        log_files = glob.glob(csv_pattern)
+        logger.info(f"检测到目录路径，自动查找目录下的CSV文件: {csv_pattern}")
+    else:
+        # 如果不是目录，则使用原有的glob模式
+        log_files = glob.glob(log_files_pattern)
+    
     all_log_files.extend(log_files)
     logger.info(f"找到 {len(log_files)} 个本地日志文件")
     
@@ -472,13 +480,14 @@ async def find_new_log_files(source_name: str, processed_log_files_tracker: Set[
     return new_log_files
 
 
-async def parse_log_file(source_name: str, log_file_path: str) -> List[models.RawSQLLog]:
+async def parse_log_file(source_name: str, log_file_path: str, target_db_name: Optional[str] = None) -> List[models.RawSQLLog]:
     """
     解析日志文件，提取SQL日志条目
     
     Args:
         source_name: 数据源名称
         log_file_path: 日志文件路径
+        target_db_name: 目标数据库名称，如果指定则只处理该数据库的日志
         
     Returns:
         List[models.RawSQLLog]: 解析后的SQL日志条目列表
@@ -539,6 +548,9 @@ async def parse_log_file(source_name: str, log_file_path: str) -> List[models.Ra
                 
                 # 只处理包含SQL语句的行
                 if sql_text and not sql_text.startswith('--'):
+                    # 如果指定了目标数据库名称，则只处理该数据库的日志
+                    if target_db_name and row.get('database_name', '') != target_db_name:
+                        continue  # 跳过非目标数据库的日志
                     try:
                         # 提取客户端地址 (从connection_from字段，格式可能是host:port)
                         client_addr = row.get('connection_from', '')
@@ -781,8 +793,13 @@ async def process_log_files(interval_seconds: int = 60, run_once: bool = False, 
                     new_log_files = await find_new_log_files(current_source_name, processed_log_files[current_source_name])
                     
                     for log_file in new_log_files:
-                        # 解析日志文件
-                        log_entries = await parse_log_file(current_source_name, log_file)
+                        # 获取数据源配置的目标数据库名称
+                        target_db_name = data_source.get('db_name')
+                        if target_db_name:
+                            logger.info(f"将只处理目标数据库 {target_db_name} 的日志")
+                        
+                        # 解析日志文件，并传入目标数据库名称进行过滤
+                        log_entries = await parse_log_file(current_source_name, log_file, target_db_name)
                         
                         if not log_entries:
                             logger.info(f"日志文件 {log_file} 中没有找到有效的SQL日志条目")
