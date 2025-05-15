@@ -733,3 +733,304 @@ LIMIT 500; -- 限制输出结果数量，实际中可能非常多
 
 -- 查看部分结果，例如高提升度的商品对
 -- SELECT * FROM item_association_rules_report ORDER BY lift_A_to_B DESC, confidence_A_to_B DESC LIMIT 20;
+
+CREATE OR REPLACE VIEW unified_sales_detail_view AS
+SELECT
+    'Store' AS sales_channel,
+    ss.ss_sold_date_sk,
+    ss.ss_sold_time_sk,
+    ss.ss_item_sk,
+    ss.ss_customer_sk,
+    ss.ss_cdemo_sk,
+    ss.ss_hdemo_sk,
+    ss.ss_addr_sk AS bill_addr_sk, -- For store sales, addr_sk might be the customer's address if known, or store's for anonymous
+    ss.ss_store_sk AS channel_origin_sk, -- Store SK
+    NULL AS ship_addr_sk, -- Store sales typically don't have separate ship address in this fact
+    ss.ss_promo_sk,
+    CAST(ss.ss_ticket_number AS VARCHAR) AS order_id,
+    ss.ss_quantity,
+    ss.ss_wholesale_cost,
+    ss.ss_list_price,
+    ss.ss_sales_price,
+    ss.ss_ext_discount_amt,
+    ss.ss_ext_sales_price,
+    ss.ss_ext_wholesale_cost,
+    ss.ss_ext_list_price,
+    ss.ss_ext_tax,
+    ss.ss_coupon_amt,
+    NULL AS ext_ship_cost, -- Store sales DDL does not have ext_ship_cost
+    ss.ss_net_paid,
+    ss.ss_net_paid_inc_tax,
+    ss.ss_net_profit,
+    -- Date Dimension
+    d.d_date,
+    d.d_year,
+    d.d_moy,
+    d.d_dom,
+    d.d_quarter_name,
+    d.d_day_name,
+    -- Time Dimension
+    t.t_hour,
+    t.t_minute,
+    t.t_am_pm,
+    -- Item Dimension
+    i.i_item_id,
+    i.i_item_desc,
+    i.i_category,
+    i.i_class,
+    i.i_brand,
+    i.i_product_name,
+    -- Customer Dimension
+    c.c_customer_id,
+    c.c_first_name,
+    c.c_last_name,
+    c.c_email_address,
+    c.c_preferred_cust_flag,
+    -- Customer Demographics
+    cd.cd_gender,
+    cd.cd_marital_status,
+    cd.cd_education_status,
+    -- Household Demographics
+    hd.hd_buy_potential,
+    hd.hd_income_band_sk,
+    ib.ib_lower_bound AS income_lower_bound,
+    ib.ib_upper_bound AS income_upper_bound,
+    -- Customer Billing Address
+    ca_bill.ca_street_number AS bill_ca_street_number,
+    ca_bill.ca_street_name AS bill_ca_street_name,
+    ca_bill.ca_city AS bill_ca_city,
+    ca_bill.ca_state AS bill_ca_state,
+    ca_bill.ca_zip AS bill_ca_zip,
+    ca_bill.ca_country AS bill_ca_country,
+    -- Store Dimension
+    s.s_store_id,
+    s.s_store_name,
+    s.s_city AS store_city,
+    s.s_state AS store_state,
+    -- Promotion Dimension
+    p.p_promo_id,
+    p.p_promo_name,
+    p.p_channel_dmail,
+    p.p_channel_email,
+    p.p_channel_catalog AS promo_p_channel_catalog,
+    p.p_channel_tv,
+    p.p_channel_radio,
+    p.p_channel_press,
+    p.p_channel_event,
+    p.p_channel_demo
+FROM store_sales ss
+LEFT JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk
+LEFT JOIN time_dim t ON ss.ss_sold_time_sk = t.t_time_sk
+LEFT JOIN item i ON ss.ss_item_sk = i.i_item_sk
+LEFT JOIN customer c ON ss.ss_customer_sk = c.c_customer_sk
+LEFT JOIN customer_demographics cd ON ss.ss_cdemo_sk = cd.cd_demo_sk
+LEFT JOIN household_demographics hd ON ss.ss_hdemo_sk = hd.hd_demo_sk
+LEFT JOIN income_band ib ON hd.hd_income_band_sk = ib.ib_income_band_sk
+LEFT JOIN customer_address ca_bill ON ss.ss_addr_sk = ca_bill.ca_address_sk
+LEFT JOIN store s ON ss.ss_store_sk = s.s_store_sk
+LEFT JOIN promotion p ON ss.ss_promo_sk = p.p_promo_sk
+
+UNION ALL
+
+SELECT
+    'Catalog' AS sales_channel,
+    cs.cs_sold_date_sk,
+    cs.cs_sold_time_sk,
+    cs.cs_item_sk,
+    cs.cs_bill_customer_sk AS customer_sk,
+    cs.cs_bill_cdemo_sk AS cdemo_sk,
+    cs.cs_bill_hdemo_sk AS hdemo_sk,
+    cs.cs_bill_addr_sk AS bill_addr_sk,
+    cs.cs_call_center_sk AS channel_origin_sk, -- Call Center SK
+    cs.cs_ship_addr_sk,
+    cs.cs_promo_sk,
+    CAST(cs.cs_order_number AS VARCHAR) AS order_id,
+    cs.cs_quantity,
+    cs.cs_wholesale_cost,
+    cs.cs_list_price,
+    cs.cs_sales_price,
+    cs.cs_ext_discount_amt,
+    cs.cs_ext_sales_price,
+    cs.cs_ext_wholesale_cost,
+    cs.cs_ext_list_price,
+    cs.cs_ext_tax,
+    cs.cs_coupon_amt,
+    cs.cs_ext_ship_cost,
+    cs.cs_net_paid,
+    cs.cs_net_paid_inc_tax,
+    cs.cs_net_profit,
+    -- Dimensions
+    d.d_date, d.d_year, d.d_moy, d.d_dom, d.d_quarter_name, d.d_day_name,
+    t.t_hour, t.t_minute, t.t_am_pm,
+    i.i_item_id, i.i_item_desc, i.i_category, i.i_class, i.i_brand, i.i_product_name,
+    c.c_customer_id, c.c_first_name, c.c_last_name, c.c_email_address, c.c_preferred_cust_flag,
+    cd.cd_gender, cd.cd_marital_status, cd.cd_education_status,
+    hd.hd_buy_potential, hd.hd_income_band_sk, ib.ib_lower_bound, ib.ib_upper_bound,
+    ca_bill.ca_street_number, ca_bill.ca_street_name, ca_bill.ca_city, ca_bill.ca_state, ca_bill.ca_zip, ca_bill.ca_country,
+    cc.cc_call_center_id AS channel_origin_id, cc.cc_name AS channel_origin_name, cc.cc_city AS channel_city, cc.cc_state AS channel_state, -- Call Center info
+    p.p_promo_id, p.p_promo_name, p.p_channel_dmail, p.p_channel_email, p.p_channel_catalog, p.p_channel_tv, p.p_channel_radio, p.p_channel_press, p.p_channel_event, p.p_channel_demo
+FROM catalog_sales cs
+LEFT JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk
+LEFT JOIN time_dim t ON cs.cs_sold_time_sk = t.t_time_sk
+LEFT JOIN item i ON cs.cs_item_sk = i.i_item_sk
+LEFT JOIN customer c ON cs.cs_bill_customer_sk = c.c_customer_sk
+LEFT JOIN customer_demographics cd ON cs.cs_bill_cdemo_sk = cd.cd_demo_sk
+LEFT JOIN household_demographics hd ON cs.cs_bill_hdemo_sk = hd.hd_demo_sk
+LEFT JOIN income_band ib ON hd.hd_income_band_sk = ib.ib_income_band_sk
+LEFT JOIN customer_address ca_bill ON cs.cs_bill_addr_sk = ca_bill.ca_address_sk
+LEFT JOIN call_center cc ON cs.cs_call_center_sk = cc.cc_call_center_sk
+LEFT JOIN promotion p ON cs.cs_promo_sk = p.p_promo_sk
+
+UNION ALL
+
+SELECT
+    'Web' AS sales_channel,
+    ws.ws_sold_date_sk,
+    ws.ws_sold_time_sk,
+    ws.ws_item_sk,
+    ws.ws_bill_customer_sk AS customer_sk,
+    ws.ws_bill_cdemo_sk AS cdemo_sk,
+    ws.ws_bill_hdemo_sk AS hdemo_sk,
+    ws.ws_bill_addr_sk AS bill_addr_sk,
+    ws.ws_web_site_sk AS channel_origin_sk, -- Web Site SK
+    ws.ws_ship_addr_sk,
+    ws.ws_promo_sk,
+    CAST(ws.ws_order_number AS VARCHAR) AS order_id,
+    ws.ws_quantity,
+    ws.ws_wholesale_cost,
+    ws.ws_list_price,
+    ws.ws_sales_price,
+    ws.ws_ext_discount_amt,
+    ws.ws_ext_sales_price,
+    ws.ws_ext_wholesale_cost,
+    ws.ws_ext_list_price,
+    ws.ws_ext_tax,
+    ws.ws_coupon_amt,
+    ws.ws_ext_ship_cost,
+    ws.ws_net_paid,
+    ws.ws_net_paid_inc_tax,
+    ws.ws_net_profit,
+    -- Dimensions
+    d.d_date, d.d_year, d.d_moy, d.d_dom, d.d_quarter_name, d.d_day_name,
+    t.t_hour, t.t_minute, t.t_am_pm,
+    i.i_item_id, i.i_item_desc, i.i_category, i.i_class, i.i_brand, i.i_product_name,
+    c.c_customer_id, c.c_first_name, c.c_last_name, c.c_email_address, c.c_preferred_cust_flag,
+    cd.cd_gender, cd.cd_marital_status, cd.cd_education_status,
+    hd.hd_buy_potential, hd.hd_income_band_sk, ib.ib_lower_bound, ib.ib_upper_bound,
+    ca_bill.ca_street_number, ca_bill.ca_street_name, ca_bill.ca_city, ca_bill.ca_state, ca_bill.ca_zip, ca_bill.ca_country,
+    web.web_site_id AS channel_origin_id, web.web_name AS channel_origin_name, web.web_city AS channel_city, web.web_state AS channel_state, -- Web Site info
+    p.p_promo_id, p.p_promo_name, p.p_channel_dmail, p.p_channel_email, p.p_channel_catalog, p.p_channel_tv, p.p_channel_radio, p.p_channel_press, p.p_channel_event, p.p_channel_demo
+FROM web_sales ws
+LEFT JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk
+LEFT JOIN time_dim t ON ws.ws_sold_time_sk = t.t_time_sk
+LEFT JOIN item i ON ws.ws_item_sk = i.i_item_sk
+LEFT JOIN customer c ON ws.ws_bill_customer_sk = c.c_customer_sk
+LEFT JOIN customer_demographics cd ON ws.ws_bill_cdemo_sk = cd.cd_demo_sk
+LEFT JOIN household_demographics hd ON ws.ws_bill_hdemo_sk = hd.hd_demo_sk
+LEFT JOIN income_band ib ON hd.hd_income_band_sk = ib.ib_income_band_sk
+LEFT JOIN customer_address ca_bill ON ws.ws_bill_addr_sk = ca_bill.ca_address_sk
+LEFT JOIN web_site web ON ws.ws_web_site_sk = web.web_site_sk
+LEFT JOIN promotion p ON ws.ws_promo_sk = p.p_promo_sk;
+
+-- 示例查询宽表视图
+-- SELECT sales_channel, d_year, i_category, SUM(ss_net_profit) AS total_profit
+-- FROM unified_sales_detail_view
+-- WHERE d_year = 2023 -- 假设的年份
+-- GROUP BY sales_channel, d_year, i_category
+-- ORDER BY total_profit DESC;
+
+CREATE OR REPLACE VIEW customer_360_view AS
+WITH customer_sales_summary AS (
+    SELECT
+        customer_sk,
+        COUNT(DISTINCT order_id) AS total_orders,
+        SUM(sales_amount) AS total_purchase_amount,
+        MIN(order_date) AS first_order_date,
+        MAX(order_date) AS last_order_date
+    FROM (
+        SELECT ss_customer_sk AS customer_sk, CAST(ss_ticket_number AS VARCHAR) AS order_id, COALESCE(ss_net_paid_inc_tax,0) AS sales_amount, d.d_date as order_date
+        FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk
+        WHERE ss_customer_sk IS NOT NULL
+        UNION ALL
+        SELECT cs_bill_customer_sk AS customer_sk, CAST(cs_order_number AS VARCHAR) AS order_id, COALESCE(cs_net_paid_inc_ship_tax,0) AS sales_amount, d.d_date as order_date
+        FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk
+        WHERE cs_bill_customer_sk IS NOT NULL
+        UNION ALL
+        SELECT ws_bill_customer_sk AS customer_sk, CAST(ws_order_number AS VARCHAR) AS order_id, COALESCE(ws_net_paid_inc_ship_tax,0) AS sales_amount, d.d_date as order_date
+        FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk
+        WHERE ws_bill_customer_sk IS NOT NULL
+    ) all_sales
+    GROUP BY customer_sk
+)
+SELECT
+    c.c_customer_sk,
+    c.c_customer_id,
+    c.c_salutation,
+    c.c_first_name,
+    c.c_last_name,
+    c.c_email_address,
+    c.c_preferred_cust_flag,
+    c.c_birth_day,
+    c.c_birth_month,
+    c.c_birth_year,
+    c.c_birth_country,
+    c.c_login,
+    c.c_last_review_date,
+    -- Current Demographics
+    cd.cd_gender,
+    cd.cd_marital_status,
+    cd.cd_education_status,
+    cd.cd_purchase_estimate,
+    cd.cd_credit_rating,
+    cd.cd_dep_count AS demo_dep_count,
+    cd.cd_dep_employed_count AS demo_dep_employed_count,
+    cd.cd_dep_college_count AS demo_dep_college_count,
+    -- Current Household Demographics
+    hd.hd_buy_potential,
+    hd.hd_dep_count AS household_dep_count,
+    hd.hd_vehicle_count,
+    ib.ib_lower_bound AS income_lower_bound,
+    ib.ib_upper_bound AS income_upper_bound,
+    -- Current Address
+    ca.ca_street_number,
+    ca.ca_street_name,
+    ca.ca_street_type,
+    ca.ca_suite_number,
+    ca.ca_city,
+    ca.ca_county,
+    ca.ca_state,
+    ca.ca_zip,
+    ca.ca_country,
+    ca.ca_gmt_offset,
+    ca.ca_location_type,
+    -- First Sale/Ship Dates from customer table
+    d_first_sale.d_date AS first_sales_actual_date,
+    d_first_ship.d_date AS first_shipto_actual_date,
+    -- Purchase Summary from sales facts
+    COALESCE(css.total_orders, 0) AS total_lifetime_orders,
+    COALESCE(css.total_purchase_amount, 0) AS total_lifetime_purchase_amount,
+    css.first_order_date AS actual_first_order_date_from_sales, -- Might differ from c_first_sales_date_sk
+    css.last_order_date AS actual_last_order_date_from_sales,
+    (SELECT MAX(d_date) FROM date_dim) - css.last_order_date AS days_since_last_purchase -- Recency
+FROM
+    customer c
+LEFT JOIN
+    customer_demographics cd ON c.c_current_cdemo_sk = cd.cd_demo_sk
+LEFT JOIN
+    household_demographics hd ON c.c_current_hdemo_sk = hd.hd_demo_sk
+LEFT JOIN
+    income_band ib ON hd.hd_income_band_sk = ib.ib_income_band_sk
+LEFT JOIN
+    customer_address ca ON c.c_current_addr_sk = ca.ca_address_sk
+LEFT JOIN
+    date_dim d_first_sale ON c.c_first_sales_date_sk = d_first_sale.d_date_sk
+LEFT JOIN
+    date_dim d_first_ship ON c.c_first_shipto_date_sk = d_first_ship.d_date_sk
+LEFT JOIN
+    customer_sales_summary css ON c.c_customer_sk = css.customer_sk;
+
+-- 示例查询客户360视图
+-- SELECT c_customer_id, c_first_name, c_last_name, total_lifetime_purchase_amount, income_lower_bound, income_upper_bound, ca_state
+-- FROM customer_360_view
+-- WHERE total_lifetime_purchase_amount > 1000
+-- ORDER BY total_lifetime_purchase_amount DESC;

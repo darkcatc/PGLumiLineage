@@ -170,7 +170,7 @@ async def fetch_objects_metadata(conn: asyncpg.Connection, source_config: models
         db_name = 'default_db'
         db_name = 'default_db'
     
-    # 查询获取表和视图的元数据
+    # 查询获取表、视图和物化视图的元数据
     query = """
     WITH tables_info AS (
         -- 从 information_schema.tables 获取表信息
@@ -185,7 +185,7 @@ async def fetch_objects_metadata(conn: asyncpg.Connection, source_config: models
             (SELECT c.oid FROM pg_catalog.pg_class c 
              JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid 
              WHERE n.nspname = t.table_schema AND c.relname = t.table_name) AS oid,
-            NULL AS view_definition
+            NULL AS object_definition
         FROM information_schema.tables t
         WHERE t.table_type = 'BASE TABLE'
           AND t.table_schema NOT IN ('pg_catalog', 'information_schema')
@@ -205,17 +205,37 @@ async def fetch_objects_metadata(conn: asyncpg.Connection, source_config: models
             (SELECT c.oid FROM pg_catalog.pg_class c 
              JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid 
              WHERE n.nspname = v.table_schema AND c.relname = v.table_name) AS oid,
-            v.view_definition
+            v.view_definition AS object_definition
         FROM information_schema.views v
         WHERE v.table_schema NOT IN ('pg_catalog', 'information_schema')
           AND v.table_schema NOT LIKE 'pg_toast%'
           AND v.table_schema NOT LIKE 'pg_temp%'
     ),
+    matviews_info AS (
+        -- 获取物化视图信息
+        SELECT 
+            n.nspname AS schema_name,
+            c.relname AS object_name,
+            'MATERIALIZED VIEW' AS object_type,
+            -- 获取物化视图所有者
+            pg_catalog.pg_get_userbyid(c.relowner) AS owner,
+            c.oid,
+            -- 获取物化视图定义
+            pg_catalog.pg_get_viewdef(c.oid) AS object_definition
+        FROM pg_catalog.pg_class c
+        JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid
+        WHERE c.relkind = 'm'  -- 'm' 表示物化视图
+          AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+          AND n.nspname NOT LIKE 'pg_toast%'
+          AND n.nspname NOT LIKE 'pg_temp%'
+    ),
     combined_objects AS (
-        -- 合并表和视图信息
+        -- 合并表、视图和物化视图信息
         SELECT * FROM tables_info
         UNION ALL
         SELECT * FROM views_info
+        UNION ALL
+        SELECT * FROM matviews_info
     )
     SELECT 
         co.schema_name,
@@ -224,7 +244,55 @@ async def fetch_objects_metadata(conn: asyncpg.Connection, source_config: models
         co.owner,
         -- 从 pg_description 获取对象描述
         pg_catalog.obj_description(co.oid, 'pg_class') AS description,
-        co.view_definition,
+        co.object_definition,
+        -- 获取表的列定义
+        CASE WHEN co.object_type = 'TABLE' THEN 
+            'CREATE TABLE ' || co.schema_name || '.' || co.object_name || ' (\n' ||
+            (SELECT string_agg(
+                '    ' || cols.column_name || ' ' || cols.data_type ||
+                CASE WHEN cols.character_maximum_length IS NOT NULL 
+                     THEN '(' || cols.character_maximum_length || ')' 
+                     ELSE '' END ||
+                CASE WHEN cols.is_nullable = 'NO' THEN ' NOT NULL' ELSE '' END,
+                ',\n'
+                ORDER BY cols.ordinal_position
+            )
+            FROM information_schema.columns cols
+            WHERE cols.table_schema = co.schema_name AND cols.table_name = co.object_name) ||
+            -- 获取主键约束
+            COALESCE(',\n' || (
+                SELECT string_agg(
+                    '    CONSTRAINT ' || conname || ' PRIMARY KEY (' ||
+                    (SELECT string_agg(a.attname, ', ')
+                     FROM pg_catalog.pg_attribute a
+                     JOIN pg_catalog.pg_index i ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                     WHERE i.indrelid = con.conrelid AND i.indisprimary) || ')',
+                    ',\n'
+                )
+                FROM pg_catalog.pg_constraint con
+                WHERE con.conrelid = co.oid AND con.contype = 'p'
+            ), '') ||
+            -- 获取外键约束
+            COALESCE(',\n' || (
+                SELECT string_agg(
+                    '    CONSTRAINT ' || conname || ' FOREIGN KEY (' ||
+                    (SELECT string_agg(a.attname, ', ' ORDER BY u.ord)
+                     FROM pg_catalog.pg_attribute a
+                     JOIN unnest(con.conkey) WITH ORDINALITY AS u(attnum, ord) ON a.attnum = u.attnum AND a.attrelid = con.conrelid) || ') REFERENCES ' ||
+                    (SELECT nspname || '.' || relname
+                     FROM pg_catalog.pg_class c
+                     JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                     WHERE c.oid = con.confrelid) || '(' ||
+                    (SELECT string_agg(a.attname, ', ' ORDER BY u.ord)
+                     FROM pg_catalog.pg_attribute a
+                     JOIN unnest(con.confkey) WITH ORDINALITY AS u(attnum, ord) ON a.attnum = u.attnum AND a.attrelid = con.confrelid) || ')',
+                    ',\n'
+                )
+                FROM pg_catalog.pg_constraint con
+                WHERE con.conrelid = co.oid AND con.contype = 'f'
+            ), '') ||
+            '\n);'
+        ELSE NULL END AS table_ddl,
         -- 仅对表获取行数估计
         CASE WHEN co.object_type = 'TABLE' THEN 
             (SELECT c.reltuples::bigint FROM pg_catalog.pg_class c WHERE c.oid = co.oid)
@@ -269,6 +337,15 @@ async def fetch_objects_metadata(conn: asyncpg.Connection, source_config: models
         
         result = []
         for row in rows:
+            # 根据对象类型选择定义
+            definition = None
+            if row['object_type'] == 'TABLE':
+                # 对于表，使用生成的DDL定义
+                definition = row['table_ddl']
+            elif row['object_type'] in ('VIEW', 'MATERIALIZED VIEW'):
+                # 对于视图和物化视图，使用object_definition
+                definition = row['object_definition']
+                
             obj_metadata = ObjectMetadata(
                 source_id=source_config.source_id,
                 database_name=db_name,  # 添加数据库名称
@@ -277,7 +354,7 @@ async def fetch_objects_metadata(conn: asyncpg.Connection, source_config: models
                 object_type=row['object_type'],
                 owner=row['owner'],
                 description=row['description'],
-                definition=row['view_definition'],
+                definition=definition,  # 使用适当的定义
                 row_count=row['row_count'],
                 last_ddl_time=row['last_ddl_time'],
                 last_analyzed=row['last_analyzed'],

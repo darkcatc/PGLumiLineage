@@ -619,3 +619,500 @@ create table store_sales
     primary key (ss_item_sk, ss_ticket_number)
 );
 
+
+-- Comments for table: customer_address
+COMMENT ON TABLE customer_address IS 'Stores customer address information.';
+COMMENT ON COLUMN customer_address.ca_address_sk IS 'Surrogate key for customer address.';
+COMMENT ON COLUMN customer_address.ca_address_id IS 'Business key for customer address.';
+COMMENT ON COLUMN customer_address.ca_street_number IS 'Street number of the address.';
+COMMENT ON COLUMN customer_address.ca_street_name IS 'Street name of the address.';
+COMMENT ON COLUMN customer_address.ca_street_type IS 'Street type (e.g., St, Ave, Rd).';
+COMMENT ON COLUMN customer_address.ca_suite_number IS 'Suite or apartment number.';
+COMMENT ON COLUMN customer_address.ca_city IS 'City of the address.';
+COMMENT ON COLUMN customer_address.ca_county IS 'County of the address.';
+COMMENT ON COLUMN customer_address.ca_state IS 'State abbreviation of the address.';
+COMMENT ON COLUMN customer_address.ca_zip IS 'ZIP code of the address.';
+COMMENT ON COLUMN customer_address.ca_country IS 'Country of the address.';
+COMMENT ON COLUMN customer_address.ca_gmt_offset IS 'GMT offset for the address location.';
+COMMENT ON COLUMN customer_address.ca_location_type IS 'Type of location (e.g., residential, business).';
+
+-- Comments for table: customer_demographics
+COMMENT ON TABLE customer_demographics IS 'Stores customer demographic information.';
+COMMENT ON COLUMN customer_demographics.cd_demo_sk IS 'Surrogate key for customer demographics.';
+COMMENT ON COLUMN customer_demographics.cd_gender IS 'Gender of the customer (M, F, U).';
+COMMENT ON COLUMN customer_demographics.cd_marital_status IS 'Marital status of the customer (M, S, D, W, U).';
+COMMENT ON COLUMN customer_demographics.cd_education_status IS 'Highest education level of the customer.';
+COMMENT ON COLUMN customer_demographics.cd_purchase_estimate IS 'Estimated purchase amount category for the customer.';
+COMMENT ON COLUMN customer_demographics.cd_credit_rating IS 'Credit rating of the customer.';
+COMMENT ON COLUMN customer_demographics.cd_dep_count IS 'Number of dependents for the customer.';
+COMMENT ON COLUMN customer_demographics.cd_dep_employed_count IS 'Number of employed dependents.';
+COMMENT ON COLUMN customer_demographics.cd_dep_college_count IS 'Number of dependents attending college.';
+
+-- Comments for table: date_dim
+COMMENT ON TABLE date_dim IS 'Dimension table for dates.';
+COMMENT ON COLUMN date_dim.d_date_sk IS 'Surrogate key for date.';
+COMMENT ON COLUMN date_dim.d_date_id IS 'Business key for date (e.g., YYYY-MM-DD).';
+COMMENT ON COLUMN date_dim.d_date IS 'Actual date value.';
+COMMENT ON COLUMN date_dim.d_month_seq IS 'Sequential month number since a base date.';
+COMMENT ON COLUMN date_dim.d_week_seq IS 'Sequential week number since a base date.';
+COMMENT ON COLUMN date_dim.d_quarter_seq IS 'Sequential quarter number since a base date.';
+COMMENT ON COLUMN date_dim.d_year IS 'Year (e.g., 2023).';
+COMMENT ON COLUMN date_dim.d_dow IS 'Day of the week (0=Sunday, 1=Monday, ..., 6=Saturday).';
+COMMENT ON COLUMN date_dim.d_moy IS 'Month of the year (1-12).';
+COMMENT ON COLUMN date_dim.d_dom IS 'Day of the month (1-31).';
+COMMENT ON COLUMN date_dim.d_qoy IS 'Quarter of the year (1-4).';
+COMMENT ON COLUMN date_dim.d_fy_year IS 'Fiscal year.';
+COMMENT ON COLUMN date_dim.d_fy_quarter_seq IS 'Sequential fiscal quarter number.';
+COMMENT ON COLUMN date_dim.d_fy_week_seq IS 'Sequential fiscal week number.';
+COMMENT ON COLUMN date_dim.d_day_name IS 'Name of the day (e.g., Monday).';
+COMMENT ON COLUMN date_dim.d_quarter_name IS 'Name of the quarter (e.g., Q1YYYY).';
+COMMENT ON COLUMN date_dim.d_holiday IS 'Flag indicating if the date is a holiday (Y/N).';
+COMMENT ON COLUMN date_dim.d_weekend IS 'Flag indicating if the date is a weekend (Y/N).';
+COMMENT ON COLUMN date_dim.d_following_holiday IS 'Flag indicating if the date is following a holiday (Y/N).';
+COMMENT ON COLUMN date_dim.d_first_dom IS 'First day of the month surrogate key.';
+COMMENT ON COLUMN date_dim.d_last_dom IS 'Last day of the month surrogate key.';
+COMMENT ON COLUMN date_dim.d_same_day_ly IS 'Surrogate key for the same day last year.';
+COMMENT ON COLUMN date_dim.d_same_day_lq IS 'Surrogate key for the same day last quarter.';
+COMMENT ON COLUMN date_dim.d_current_day IS 'Flag if this date is the current day (Y/N).';
+COMMENT ON COLUMN date_dim.d_current_week IS 'Flag if this date is in the current week (Y/N).';
+COMMENT ON COLUMN date_dim.d_current_month IS 'Flag if this date is in the current month (Y/N).';
+COMMENT ON COLUMN date_dim.d_current_quarter IS 'Flag if this date is in the current quarter (Y/N).';
+COMMENT ON COLUMN date_dim.d_current_year IS 'Flag if this date is in the current year (Y/N).';
+
+-- Comments for table: warehouse
+COMMENT ON TABLE warehouse IS 'Stores warehouse information.';
+COMMENT ON COLUMN warehouse.w_warehouse_sk IS 'Surrogate key for warehouse.';
+COMMENT ON COLUMN warehouse.w_warehouse_id IS 'Business key for warehouse.';
+COMMENT ON COLUMN warehouse.w_warehouse_name IS 'Name of the warehouse.';
+COMMENT ON COLUMN warehouse.w_warehouse_sq_ft IS 'Square footage of the warehouse.';
+COMMENT ON COLUMN warehouse.w_street_number IS 'Street number of the warehouse address.';
+COMMENT ON COLUMN warehouse.w_street_name IS 'Street name of the warehouse address.';
+COMMENT ON COLUMN warehouse.w_street_type IS 'Street type of the warehouse address.';
+COMMENT ON COLUMN warehouse.w_suite_number IS 'Suite number of the warehouse address.';
+COMMENT ON COLUMN warehouse.w_city IS 'City of the warehouse.';
+COMMENT ON COLUMN warehouse.w_county IS 'County of the warehouse.';
+COMMENT ON COLUMN warehouse.w_state IS 'State of the warehouse.';
+COMMENT ON COLUMN warehouse.w_zip IS 'ZIP code of the warehouse.';
+COMMENT ON COLUMN warehouse.w_country IS 'Country of the warehouse.';
+COMMENT ON COLUMN warehouse.w_gmt_offset IS 'GMT offset for the warehouse location.';
+
+-- Comments for table: ship_mode
+COMMENT ON TABLE ship_mode IS 'Dimension table for shipping modes.';
+COMMENT ON COLUMN ship_mode.sm_ship_mode_sk IS 'Surrogate key for shipping mode.';
+COMMENT ON COLUMN ship_mode.sm_ship_mode_id IS 'Business key for shipping mode.';
+COMMENT ON COLUMN ship_mode.sm_type IS 'Type of shipping mode (e.g., AIR, TRUCK, MAIL).';
+COMMENT ON COLUMN ship_mode.sm_code IS 'Shipping mode code.';
+COMMENT ON COLUMN ship_mode.sm_carrier IS 'Shipping carrier name.';
+COMMENT ON COLUMN ship_mode.sm_contract IS 'Contract ID with the carrier.';
+
+-- Comments for table: time_dim
+COMMENT ON TABLE time_dim IS 'Dimension table for time of day.';
+COMMENT ON COLUMN time_dim.t_time_sk IS 'Surrogate key for time.';
+COMMENT ON COLUMN time_dim.t_time_id IS 'Business key for time (e.g., HHMMSS).';
+COMMENT ON COLUMN time_dim.t_time IS 'Time represented as seconds since midnight.';
+COMMENT ON COLUMN time_dim.t_hour IS 'Hour of the day (0-23).';
+COMMENT ON COLUMN time_dim.t_minute IS 'Minute of the hour (0-59).';
+COMMENT ON COLUMN time_dim.t_second IS 'Second of the minute (0-59).';
+COMMENT ON COLUMN time_dim.t_am_pm IS 'AM/PM indicator.';
+COMMENT ON COLUMN time_dim.t_shift IS 'Work shift (e.g., Morning, Afternoon, Evening).';
+COMMENT ON COLUMN time_dim.t_sub_shift IS 'Sub-shift within a shift.';
+COMMENT ON COLUMN time_dim.t_meal_time IS 'Meal time indicator (e.g., Breakfast, Lunch, Dinner).';
+
+-- Comments for table: reason
+COMMENT ON TABLE reason IS 'Dimension table for return reasons.';
+COMMENT ON COLUMN reason.r_reason_sk IS 'Surrogate key for reason.';
+COMMENT ON COLUMN reason.r_reason_id IS 'Business key for reason.';
+COMMENT ON COLUMN reason.r_reason_desc IS 'Description of the reason for return.';
+
+-- Comments for table: income_band
+COMMENT ON TABLE income_band IS 'Dimension table for income bands.';
+COMMENT ON COLUMN income_band.ib_income_band_sk IS 'Surrogate key for income band.';
+COMMENT ON COLUMN income_band.ib_lower_bound IS 'Lower bound of the income band.';
+COMMENT ON COLUMN income_band.ib_upper_bound IS 'Upper bound of the income band.';
+
+-- Comments for table: item
+COMMENT ON TABLE item IS 'Dimension table for items or products.';
+COMMENT ON COLUMN item.i_item_sk IS 'Surrogate key for item.';
+COMMENT ON COLUMN item.i_item_id IS 'Business key for item (SKU).';
+COMMENT ON COLUMN item.i_rec_start_date IS 'Record start date (for versioning).';
+COMMENT ON COLUMN item.i_rec_end_date IS 'Record end date (for versioning).';
+COMMENT ON COLUMN item.i_item_desc IS 'Description of the item.';
+COMMENT ON COLUMN item.i_current_price IS 'Current selling price of the item.';
+COMMENT ON COLUMN item.i_wholesale_cost IS 'Wholesale cost of the item.';
+COMMENT ON COLUMN item.i_brand_id IS 'Identifier for the brand.';
+COMMENT ON COLUMN item.i_brand IS 'Brand name of the item.';
+COMMENT ON COLUMN item.i_class_id IS 'Identifier for the item class.';
+COMMENT ON COLUMN item.i_class IS 'Class name of the item.';
+COMMENT ON COLUMN item.i_category_id IS 'Identifier for the item category.';
+COMMENT ON COLUMN item.i_category IS 'Category name of the item.';
+COMMENT ON COLUMN item.i_manufact_id IS 'Identifier for the manufacturer.';
+COMMENT ON COLUMN item.i_manufact IS 'Manufacturer name of the item.';
+COMMENT ON COLUMN item.i_size IS 'Size of the item (e.g., Small, Medium, Large, specific units).';
+COMMENT ON COLUMN item.i_formulation IS 'Formulation or style of the item.';
+COMMENT ON COLUMN item.i_color IS 'Color of the item.';
+COMMENT ON COLUMN item.i_units IS 'Units of the item (e.g., Each, Lb, Oz).';
+COMMENT ON COLUMN item.i_container IS 'Container type of the item (e.g., Box, Bag, Bottle).';
+COMMENT ON COLUMN item.i_manager_id IS 'Identifier for the product manager responsible for this item.';
+COMMENT ON COLUMN item.i_product_name IS 'Product name of the item.';
+
+-- Comments for table: store
+COMMENT ON TABLE store IS 'Dimension table for physical stores.';
+COMMENT ON COLUMN store.s_store_sk IS 'Surrogate key for store.';
+COMMENT ON COLUMN store.s_store_id IS 'Business key for store.';
+COMMENT ON COLUMN store.s_rec_start_date IS 'Record start date (for versioning).';
+COMMENT ON COLUMN store.s_rec_end_date IS 'Record end date (for versioning).';
+COMMENT ON COLUMN store.s_closed_date_sk IS 'Surrogate key for the date the store was closed (if applicable).';
+COMMENT ON COLUMN store.s_store_name IS 'Name of the store.';
+COMMENT ON COLUMN store.s_number_employees IS 'Number of employees in the store.';
+COMMENT ON COLUMN store.s_floor_space IS 'Floor space of the store in square feet.';
+COMMENT ON COLUMN store.s_hours IS 'Operating hours of the store (e.g., 8AM-10PM).';
+COMMENT ON COLUMN store.s_manager IS 'Name of the store manager.';
+COMMENT ON COLUMN store.s_market_id IS 'Identifier for the market this store belongs to.';
+COMMENT ON COLUMN store.s_geography_class IS 'Geographical classification of the store location.';
+COMMENT ON COLUMN store.s_market_desc IS 'Description of the market.';
+COMMENT ON COLUMN store.s_market_manager IS 'Name of the market manager.';
+COMMENT ON COLUMN store.s_division_id IS 'Identifier for the division this store belongs to.';
+COMMENT ON COLUMN store.s_division_name IS 'Name of the division.';
+COMMENT ON COLUMN store.s_company_id IS 'Identifier for the company this store belongs to.';
+COMMENT ON COLUMN store.s_company_name IS 'Name of the company.';
+COMMENT ON COLUMN store.s_street_number IS 'Street number of the store address.';
+COMMENT ON COLUMN store.s_street_name IS 'Street name of the store address.';
+COMMENT ON COLUMN store.s_street_type IS 'Street type of the store address.';
+COMMENT ON COLUMN store.s_suite_number IS 'Suite number of the store address.';
+COMMENT ON COLUMN store.s_city IS 'City where the store is located.';
+COMMENT ON COLUMN store.s_county IS 'County where the store is located.';
+COMMENT ON COLUMN store.s_state IS 'State where the store is located.';
+COMMENT ON COLUMN store.s_zip IS 'ZIP code of the store.';
+COMMENT ON COLUMN store.s_country IS 'Country where the store is located.';
+COMMENT ON COLUMN store.s_gmt_offset IS 'GMT offset for the store location.';
+COMMENT ON COLUMN store.s_tax_precentage IS 'Sales tax percentage applicable at the store (typo in DDL: precentage).';
+
+-- Comments for table: call_center
+COMMENT ON TABLE call_center IS 'Dimension table for call centers.';
+COMMENT ON COLUMN call_center.cc_call_center_sk IS 'Surrogate key for call center.';
+COMMENT ON COLUMN call_center.cc_call_center_id IS 'Business key for call center.';
+COMMENT ON COLUMN call_center.cc_rec_start_date IS 'Record start date.';
+COMMENT ON COLUMN call_center.cc_rec_end_date IS 'Record end date.';
+COMMENT ON COLUMN call_center.cc_closed_date_sk IS 'Surrogate key for the date call center was closed.';
+COMMENT ON COLUMN call_center.cc_open_date_sk IS 'Surrogate key for the date call center was opened.';
+COMMENT ON COLUMN call_center.cc_name IS 'Name of the call center.';
+COMMENT ON COLUMN call_center.cc_class IS 'Class or type of the call center.';
+COMMENT ON COLUMN call_center.cc_employees IS 'Number of employees in the call center.';
+COMMENT ON COLUMN call_center.cc_sq_ft IS 'Square footage of the call center.';
+COMMENT ON COLUMN call_center.cc_hours IS 'Operating hours of the call center.';
+COMMENT ON COLUMN call_center.cc_manager IS 'Name of the call center manager.';
+COMMENT ON COLUMN call_center.cc_mkt_id IS 'Market ID associated with the call center.';
+COMMENT ON COLUMN call_center.cc_mkt_class IS 'Market class string.';
+COMMENT ON COLUMN call_center.cc_mkt_desc IS 'Market description.';
+COMMENT ON COLUMN call_center.cc_market_manager IS 'Name of the market manager.';
+COMMENT ON COLUMN call_center.cc_division IS 'Division ID.';
+COMMENT ON COLUMN call_center.cc_division_name IS 'Division name.';
+COMMENT ON COLUMN call_center.cc_company IS 'Company ID.';
+COMMENT ON COLUMN call_center.cc_company_name IS 'Company name.';
+COMMENT ON COLUMN call_center.cc_street_number IS 'Street number of the call center address.';
+COMMENT ON COLUMN call_center.cc_street_name IS 'Street name of the call center address.';
+COMMENT ON COLUMN call_center.cc_street_type IS 'Street type of the call center address.';
+COMMENT ON COLUMN call_center.cc_suite_number IS 'Suite number of the call center address.';
+COMMENT ON COLUMN call_center.cc_city IS 'City of the call center.';
+COMMENT ON COLUMN call_center.cc_county IS 'County of the call center.';
+COMMENT ON COLUMN call_center.cc_state IS 'State of the call center.';
+COMMENT ON COLUMN call_center.cc_zip IS 'ZIP code of the call center.';
+COMMENT ON COLUMN call_center.cc_country IS 'Country of the call center.';
+COMMENT ON COLUMN call_center.cc_gmt_offset IS 'GMT offset for the call center location.';
+COMMENT ON COLUMN call_center.cc_tax_percentage IS 'Tax percentage applicable through this call center.';
+
+-- Comments for table: customer
+COMMENT ON TABLE customer IS 'Dimension table for customers.';
+COMMENT ON COLUMN customer.c_customer_sk IS 'Surrogate key for customer.';
+COMMENT ON COLUMN customer.c_customer_id IS 'Business key for customer.';
+COMMENT ON COLUMN customer.c_current_cdemo_sk IS 'Foreign key to customer_demographics for current demographics.';
+COMMENT ON COLUMN customer.c_current_hdemo_sk IS 'Foreign key to household_demographics for current household demographics.';
+COMMENT ON COLUMN customer.c_current_addr_sk IS 'Foreign key to customer_address for current address.';
+COMMENT ON COLUMN customer.c_first_shipto_date_sk IS 'Surrogate key for the date of the first shipment to the customer.';
+COMMENT ON COLUMN customer.c_first_sales_date_sk IS 'Surrogate key for the date of the first sale to the customer.';
+COMMENT ON COLUMN customer.c_salutation IS 'Salutation (e.g., Mr., Ms., Dr.).';
+COMMENT ON COLUMN customer.c_first_name IS 'First name of the customer.';
+COMMENT ON COLUMN customer.c_last_name IS 'Last name of the customer.';
+COMMENT ON COLUMN customer.c_preferred_cust_flag IS 'Flag indicating if the customer is preferred (Y/N).';
+COMMENT ON COLUMN customer.c_birth_day IS 'Day of birth of the customer.';
+COMMENT ON COLUMN customer.c_birth_month IS 'Month of birth of the customer.';
+COMMENT ON COLUMN customer.c_birth_year IS 'Year of birth of the customer.';
+COMMENT ON COLUMN customer.c_birth_country IS 'Country of birth of the customer.';
+COMMENT ON COLUMN customer.c_login IS 'Login username for the customer.';
+COMMENT ON COLUMN customer.c_email_address IS 'Email address of the customer.';
+COMMENT ON COLUMN customer.c_last_review_date IS 'Date of the last review or survey by the customer (YYYYMMDD).'; -- DDL shows char(10), likely date as string
+
+-- Comments for table: web_site
+COMMENT ON TABLE web_site IS 'Dimension table for web sites.';
+COMMENT ON COLUMN web_site.web_site_sk IS 'Surrogate key for web site.';
+COMMENT ON COLUMN web_site.web_site_id IS 'Business key for web site.';
+COMMENT ON COLUMN web_site.web_rec_start_date IS 'Record start date.';
+COMMENT ON COLUMN web_site.web_rec_end_date IS 'Record end date.';
+COMMENT ON COLUMN web_site.web_name IS 'Name of the web site.';
+COMMENT ON COLUMN web_site.web_open_date_sk IS 'Surrogate key for the date web site was opened.';
+COMMENT ON COLUMN web_site.web_close_date_sk IS 'Surrogate key for the date web site was closed.';
+COMMENT ON COLUMN web_site.web_class IS 'Class or type of the web site.';
+COMMENT ON COLUMN web_site.web_manager IS 'Name of the web site manager.';
+COMMENT ON COLUMN web_site.web_mkt_id IS 'Market ID associated with the web site.';
+COMMENT ON COLUMN web_site.web_mkt_class IS 'Market class string.';
+COMMENT ON COLUMN web_site.web_mkt_desc IS 'Market description.';
+COMMENT ON COLUMN web_site.web_market_manager IS 'Name of the market manager.';
+COMMENT ON COLUMN web_site.web_company_id IS 'Company ID.';
+COMMENT ON COLUMN web_site.web_company_name IS 'Company name.';
+COMMENT ON COLUMN web_site.web_street_number IS 'Street number of the web site''s physical address (if any).';
+COMMENT ON COLUMN web_site.web_street_name IS 'Street name of the web site''s physical address.';
+COMMENT ON COLUMN web_site.web_street_type IS 'Street type of the web site''s physical address.';
+COMMENT ON COLUMN web_site.web_suite_number IS 'Suite number of the web site''s physical address.';
+COMMENT ON COLUMN web_site.web_city IS 'City of the web site''s physical address.';
+COMMENT ON COLUMN web_site.web_county IS 'County of the web site''s physical address.';
+COMMENT ON COLUMN web_site.web_state IS 'State of the web site''s physical address.';
+COMMENT ON COLUMN web_site.web_zip IS 'ZIP code of the web site''s physical address.';
+COMMENT ON COLUMN web_site.web_country IS 'Country of the web site''s physical address.';
+COMMENT ON COLUMN web_site.web_gmt_offset IS 'GMT offset for the web site server location.';
+COMMENT ON COLUMN web_site.web_tax_percentage IS 'Tax percentage applicable for sales through this web site.';
+
+-- Comments for table: store_returns
+COMMENT ON TABLE store_returns IS 'Fact table for store returns.';
+COMMENT ON COLUMN store_returns.sr_returned_date_sk IS 'Surrogate key for the date of return.';
+COMMENT ON COLUMN store_returns.sr_return_time_sk IS 'Surrogate key for the time of return.';
+COMMENT ON COLUMN store_returns.sr_item_sk IS 'Foreign key to the item table for the returned item.';
+COMMENT ON COLUMN store_returns.sr_customer_sk IS 'Foreign key to the customer table for the returning customer.';
+COMMENT ON COLUMN store_returns.sr_cdemo_sk IS 'Foreign key to customer_demographics at the time of return.';
+COMMENT ON COLUMN store_returns.sr_hdemo_sk IS 'Foreign key to household_demographics at the time of return.';
+COMMENT ON COLUMN store_returns.sr_addr_sk IS 'Foreign key to customer_address at the time of return.';
+COMMENT ON COLUMN store_returns.sr_store_sk IS 'Foreign key to the store table where the item was returned.';
+COMMENT ON COLUMN store_returns.sr_reason_sk IS 'Foreign key to the reason table for the return reason.';
+COMMENT ON COLUMN store_returns.sr_ticket_number IS 'Ticket number of the original sales transaction.';
+COMMENT ON COLUMN store_returns.sr_return_quantity IS 'Quantity of the item returned.';
+COMMENT ON COLUMN store_returns.sr_return_amt IS 'Return amount before tax.';
+COMMENT ON COLUMN store_returns.sr_return_tax IS 'Tax amount on the return.';
+COMMENT ON COLUMN store_returns.sr_return_amt_inc_tax IS 'Return amount including tax.';
+COMMENT ON COLUMN store_returns.sr_fee IS 'Restocking or return fee.';
+COMMENT ON COLUMN store_returns.sr_return_ship_cost IS 'Shipping cost associated with the return (if any).';
+COMMENT ON COLUMN store_returns.sr_refunded_cash IS 'Amount refunded as cash.';
+COMMENT ON COLUMN store_returns.sr_reversed_charge IS 'Amount refunded via reversing a charge.';
+COMMENT ON COLUMN store_returns.sr_store_credit IS 'Amount refunded as store credit.';
+COMMENT ON COLUMN store_returns.sr_net_loss IS 'Net loss incurred from the return.';
+
+-- Comments for table: household_demographics
+COMMENT ON TABLE household_demographics IS 'Stores household demographic information.';
+COMMENT ON COLUMN household_demographics.hd_demo_sk IS 'Surrogate key for household demographics.';
+COMMENT ON COLUMN household_demographics.hd_income_band_sk IS 'Foreign key to the income_band table.';
+COMMENT ON COLUMN household_demographics.hd_buy_potential IS 'Buying potential of the household (e.g., >10000, 5001-10000).';
+COMMENT ON COLUMN household_demographics.hd_dep_count IS 'Number of dependents in the household.';
+COMMENT ON COLUMN household_demographics.hd_vehicle_count IS 'Number of vehicles owned by the household.';
+
+-- Comments for table: web_page
+COMMENT ON TABLE web_page IS 'Dimension table for web pages.';
+COMMENT ON COLUMN web_page.wp_web_page_sk IS 'Surrogate key for web page.';
+COMMENT ON COLUMN web_page.wp_web_page_id IS 'Business key for web page.';
+COMMENT ON COLUMN web_page.wp_rec_start_date IS 'Record start date.';
+COMMENT ON COLUMN web_page.wp_rec_end_date IS 'Record end date.';
+COMMENT ON COLUMN web_page.wp_creation_date_sk IS 'Surrogate key for the date web page was created.';
+COMMENT ON COLUMN web_page.wp_access_date_sk IS 'Surrogate key for the last access date of the web page metadata.';
+COMMENT ON COLUMN web_page.wp_autogen_flag IS 'Flag indicating if the page is auto-generated (Y/N).';
+COMMENT ON COLUMN web_page.wp_customer_sk IS 'Associated customer SK if page is customer-specific (e.g., account page).';
+COMMENT ON COLUMN web_page.wp_url IS 'URL of the web page.';
+COMMENT ON COLUMN web_page.wp_type IS 'Type or category of the web page (e.g., product, review, search).';
+COMMENT ON COLUMN web_page.wp_char_count IS 'Character count of the page content.';
+COMMENT ON COLUMN web_page.wp_link_count IS 'Number of links on the page.';
+COMMENT ON COLUMN web_page.wp_image_count IS 'Number of images on the page.';
+COMMENT ON COLUMN web_page.wp_max_ad_count IS 'Maximum number of ads that can be displayed on the page.';
+
+-- Comments for table: promotion
+COMMENT ON TABLE promotion IS 'Dimension table for promotions.';
+COMMENT ON COLUMN promotion.p_promo_sk IS 'Surrogate key for promotion.';
+COMMENT ON COLUMN promotion.p_promo_id IS 'Business key for promotion.';
+COMMENT ON COLUMN promotion.p_start_date_sk IS 'Surrogate key for the promotion start date.';
+COMMENT ON COLUMN promotion.p_end_date_sk IS 'Surrogate key for the promotion end date.';
+COMMENT ON COLUMN promotion.p_item_sk IS 'Foreign key to item table if promotion is item-specific.';
+COMMENT ON COLUMN promotion.p_cost IS 'Cost of running the promotion.';
+COMMENT ON COLUMN promotion.p_response_target IS 'Target response for the promotion (1=likely, 0=unlikely to respond to this promo type).';
+COMMENT ON COLUMN promotion.p_promo_name IS 'Name of the promotion (e.g., Super Sunday Sale).';
+COMMENT ON COLUMN promotion.p_channel_dmail IS 'Flag if promotion uses direct mail channel (Y/N).';
+COMMENT ON COLUMN promotion.p_channel_email IS 'Flag if promotion uses email channel (Y/N).';
+COMMENT ON COLUMN promotion.p_channel_catalog IS 'Flag if promotion uses catalog channel (Y/N).';
+COMMENT ON COLUMN promotion.p_channel_tv IS 'Flag if promotion uses TV channel (Y/N).';
+COMMENT ON COLUMN promotion.p_channel_radio IS 'Flag if promotion uses radio channel (Y/N).';
+COMMENT ON COLUMN promotion.p_channel_press IS 'Flag if promotion uses press/print channel (Y/N).';
+COMMENT ON COLUMN promotion.p_channel_event IS 'Flag if promotion uses event channel (Y/N).';
+COMMENT ON COLUMN promotion.p_channel_demo IS 'Flag if promotion uses in-store demo channel (Y/N).';
+COMMENT ON COLUMN promotion.p_channel_details IS 'Details about channels used.';
+COMMENT ON COLUMN promotion.p_purpose IS 'Purpose of the promotion (e.g., clearance, brand building).';
+COMMENT ON COLUMN promotion.p_discount_active IS 'Flag if promotion involves an active discount (Y/N).';
+
+-- Comments for table: catalog_page
+COMMENT ON TABLE catalog_page IS 'Dimension table for catalog pages.';
+COMMENT ON COLUMN catalog_page.cp_catalog_page_sk IS 'Surrogate key for catalog page.';
+COMMENT ON COLUMN catalog_page.cp_catalog_page_id IS 'Business key for catalog page.';
+COMMENT ON COLUMN catalog_page.cp_start_date_sk IS 'Surrogate key for the date this catalog page becomes active.';
+COMMENT ON COLUMN catalog_page.cp_end_date_sk IS 'Surrogate key for the date this catalog page expires.';
+COMMENT ON COLUMN catalog_page.cp_department IS 'Department featured on the catalog page.';
+COMMENT ON COLUMN catalog_page.cp_catalog_number IS 'Catalog number.';
+COMMENT ON COLUMN catalog_page.cp_catalog_page_number IS 'Page number within the catalog.';
+COMMENT ON COLUMN catalog_page.cp_description IS 'Description of the catalog page content.';
+COMMENT ON COLUMN catalog_page.cp_type IS 'Type of catalog page (e.g., electronics, apparel, seasonal).';
+
+-- Comments for table: inventory
+COMMENT ON TABLE inventory IS 'Fact table for item inventory levels.';
+COMMENT ON COLUMN inventory.inv_date_sk IS 'Surrogate key for the date of inventory snapshot.';
+COMMENT ON COLUMN inventory.inv_item_sk IS 'Foreign key to the item table.';
+COMMENT ON COLUMN inventory.inv_warehouse_sk IS 'Foreign key to the warehouse table.';
+COMMENT ON COLUMN inventory.inv_quantity_on_hand IS 'Quantity of the item on hand in the warehouse on that date.';
+
+-- Comments for table: catalog_returns
+COMMENT ON TABLE catalog_returns IS 'Fact table for catalog returns.';
+COMMENT ON COLUMN catalog_returns.cr_returned_date_sk IS 'Surrogate key for the date of return.';
+COMMENT ON COLUMN catalog_returns.cr_returned_time_sk IS 'Surrogate key for the time of return.';
+COMMENT ON COLUMN catalog_returns.cr_item_sk IS 'Foreign key to item table for the returned item.';
+COMMENT ON COLUMN catalog_returns.cr_refunded_customer_sk IS 'FK to customer who received refund (may be different from returning).';
+COMMENT ON COLUMN catalog_returns.cr_refunded_cdemo_sk IS 'FK to customer_demographics for refunded customer.';
+COMMENT ON COLUMN catalog_returns.cr_refunded_hdemo_sk IS 'FK to household_demographics for refunded customer.';
+COMMENT ON COLUMN catalog_returns.cr_refunded_addr_sk IS 'FK to customer_address for refunded customer.';
+COMMENT ON COLUMN catalog_returns.cr_returning_customer_sk IS 'FK to customer who initiated return.';
+COMMENT ON COLUMN catalog_returns.cr_returning_cdemo_sk IS 'FK to customer_demographics for returning customer.';
+COMMENT ON COLUMN catalog_returns.cr_returning_hdemo_sk IS 'FK to household_demographics for returning customer.';
+COMMENT ON COLUMN catalog_returns.cr_returning_addr_sk IS 'FK to customer_address for returning customer.';
+COMMENT ON COLUMN catalog_returns.cr_call_center_sk IS 'FK to call_center if return was processed via call center.';
+COMMENT ON COLUMN catalog_returns.cr_catalog_page_sk IS 'FK to catalog_page from which the item was originally ordered.';
+COMMENT ON COLUMN catalog_returns.cr_ship_mode_sk IS 'FK to ship_mode used for returning item.';
+COMMENT ON COLUMN catalog_returns.cr_warehouse_sk IS 'FK to warehouse where item was returned.';
+COMMENT ON COLUMN catalog_returns.cr_reason_sk IS 'FK to reason for the return.';
+COMMENT ON COLUMN catalog_returns.cr_order_number IS 'Original catalog sales order number.';
+COMMENT ON COLUMN catalog_returns.cr_return_quantity IS 'Quantity of the item returned.';
+COMMENT ON COLUMN catalog_returns.cr_return_amount IS 'Return amount before tax.';
+COMMENT ON COLUMN catalog_returns.cr_return_tax IS 'Tax amount on the return.';
+COMMENT ON COLUMN catalog_returns.cr_return_amt_inc_tax IS 'Return amount including tax.';
+COMMENT ON COLUMN catalog_returns.cr_fee IS 'Restocking or return fee.';
+COMMENT ON COLUMN catalog_returns.cr_return_ship_cost IS 'Shipping cost for returning the item.';
+COMMENT ON COLUMN catalog_returns.cr_refunded_cash IS 'Amount refunded as cash.';
+COMMENT ON COLUMN catalog_returns.cr_reversed_charge IS 'Amount refunded via reversing a charge.';
+COMMENT ON COLUMN catalog_returns.cr_store_credit IS 'Amount refunded as store credit.';
+COMMENT ON COLUMN catalog_returns.cr_net_loss IS 'Net loss incurred from this catalog return.';
+
+-- Comments for table: web_returns
+COMMENT ON TABLE web_returns IS 'Fact table for web returns.';
+COMMENT ON COLUMN web_returns.wr_returned_date_sk IS 'Surrogate key for the date of return.';
+COMMENT ON COLUMN web_returns.wr_returned_time_sk IS 'Surrogate key for the time of return.';
+COMMENT ON COLUMN web_returns.wr_item_sk IS 'Foreign key to item table for the returned item.';
+COMMENT ON COLUMN web_returns.wr_refunded_customer_sk IS 'FK to customer who received refund.';
+COMMENT ON COLUMN web_returns.wr_refunded_cdemo_sk IS 'FK to customer_demographics for refunded customer.';
+COMMENT ON COLUMN web_returns.wr_refunded_hdemo_sk IS 'FK to household_demographics for refunded customer.';
+COMMENT ON COLUMN web_returns.wr_refunded_addr_sk IS 'FK to customer_address for refunded customer.';
+COMMENT ON COLUMN web_returns.wr_returning_customer_sk IS 'FK to customer who initiated return.';
+COMMENT ON COLUMN web_returns.wr_returning_cdemo_sk IS 'FK to customer_demographics for returning customer.';
+COMMENT ON COLUMN web_returns.wr_returning_hdemo_sk IS 'FK to household_demographics for returning customer.';
+COMMENT ON COLUMN web_returns.wr_returning_addr_sk IS 'FK to customer_address for returning customer.';
+COMMENT ON COLUMN web_returns.wr_web_page_sk IS 'FK to web_page from which the item was originally ordered/returned.';
+COMMENT ON COLUMN web_returns.wr_reason_sk IS 'FK to reason for the return.';
+COMMENT ON COLUMN web_returns.wr_order_number IS 'Original web sales order number.';
+COMMENT ON COLUMN web_returns.wr_return_quantity IS 'Quantity of the item returned.';
+COMMENT ON COLUMN web_returns.wr_return_amt IS 'Return amount before tax.';
+COMMENT ON COLUMN web_returns.wr_return_tax IS 'Tax amount on the return.';
+COMMENT ON COLUMN web_returns.wr_return_amt_inc_tax IS 'Return amount including tax.';
+COMMENT ON COLUMN web_returns.wr_fee IS 'Restocking or return fee.';
+COMMENT ON COLUMN web_returns.wr_return_ship_cost IS 'Shipping cost for returning the item.';
+COMMENT ON COLUMN web_returns.wr_refunded_cash IS 'Amount refunded as cash.';
+COMMENT ON COLUMN web_returns.wr_reversed_charge IS 'Amount refunded via reversing a charge.';
+COMMENT ON COLUMN web_returns.wr_account_credit IS 'Amount refunded as account credit.';
+COMMENT ON COLUMN web_returns.wr_net_loss IS 'Net loss incurred from this web return.';
+
+-- Comments for table: web_sales
+COMMENT ON TABLE web_sales IS 'Fact table for web sales.';
+COMMENT ON COLUMN web_sales.ws_sold_date_sk IS 'Surrogate key for the date of sale.';
+COMMENT ON COLUMN web_sales.ws_sold_time_sk IS 'Surrogate key for the time of sale.';
+COMMENT ON COLUMN web_sales.ws_ship_date_sk IS 'Surrogate key for the date item was shipped.';
+COMMENT ON COLUMN web_sales.ws_item_sk IS 'Foreign key to the item table.';
+COMMENT ON COLUMN web_sales.ws_bill_customer_sk IS 'FK to customer for billing.';
+COMMENT ON COLUMN web_sales.ws_bill_cdemo_sk IS 'FK to customer_demographics for billing customer.';
+COMMENT ON COLUMN web_sales.ws_bill_hdemo_sk IS 'FK to household_demographics for billing customer.';
+COMMENT ON COLUMN web_sales.ws_bill_addr_sk IS 'FK to customer_address for billing address.';
+COMMENT ON COLUMN web_sales.ws_ship_customer_sk IS 'FK to customer for shipping (can be different from billing).';
+COMMENT ON COLUMN web_sales.ws_ship_cdemo_sk IS 'FK to customer_demographics for shipping customer.';
+COMMENT ON COLUMN web_sales.ws_ship_hdemo_sk IS 'FK to household_demographics for shipping customer.';
+COMMENT ON COLUMN web_sales.ws_ship_addr_sk IS 'FK to customer_address for shipping address.';
+COMMENT ON COLUMN web_sales.ws_web_page_sk IS 'FK to web_page from which the sale originated.';
+COMMENT ON COLUMN web_sales.ws_web_site_sk IS 'FK to web_site from which the sale originated.';
+COMMENT ON COLUMN web_sales.ws_ship_mode_sk IS 'FK to ship_mode used for this sale.';
+COMMENT ON COLUMN web_sales.ws_warehouse_sk IS 'FK to warehouse from which item was shipped.';
+COMMENT ON COLUMN web_sales.ws_promo_sk IS 'FK to promotion applied to this sale.';
+COMMENT ON COLUMN web_sales.ws_order_number IS 'Web sales order number.';
+COMMENT ON COLUMN web_sales.ws_quantity IS 'Quantity of the item sold.';
+COMMENT ON COLUMN web_sales.ws_wholesale_cost IS 'Wholesale cost of the item(s) sold.';
+COMMENT ON COLUMN web_sales.ws_list_price IS 'List price of the item(s) sold.';
+COMMENT ON COLUMN web_sales.ws_sales_price IS 'Actual sales price after discounts (excluding tax, shipping).';
+COMMENT ON COLUMN web_sales.ws_ext_discount_amt IS 'Extended discount amount for this line item.';
+COMMENT ON COLUMN web_sales.ws_ext_sales_price IS 'Extended sales price (quantity * sales_price).';
+COMMENT ON COLUMN web_sales.ws_ext_wholesale_cost IS 'Extended wholesale cost (quantity * wholesale_cost).';
+COMMENT ON COLUMN web_sales.ws_ext_list_price IS 'Extended list price (quantity * list_price).';
+COMMENT ON COLUMN web_sales.ws_ext_tax IS 'Tax amount for this line item.';
+COMMENT ON COLUMN web_sales.ws_coupon_amt IS 'Coupon amount applied to this line item.';
+COMMENT ON COLUMN web_sales.ws_ext_ship_cost IS 'Shipping cost for this line item.';
+COMMENT ON COLUMN web_sales.ws_net_paid IS 'Net amount paid by customer (excluding tax and shipping).';
+COMMENT ON COLUMN web_sales.ws_net_paid_inc_tax IS 'Net amount paid by customer (including tax, excluding shipping).';
+COMMENT ON COLUMN web_sales.ws_net_paid_inc_ship IS 'Net amount paid by customer (including shipping, excluding tax).';
+COMMENT ON COLUMN web_sales.ws_net_paid_inc_ship_tax IS 'Net amount paid by customer (including tax and shipping).';
+COMMENT ON COLUMN web_sales.ws_net_profit IS 'Net profit for this line item.';
+
+-- Comments for table: catalog_sales
+COMMENT ON TABLE catalog_sales IS 'Fact table for catalog sales.';
+COMMENT ON COLUMN catalog_sales.cs_sold_date_sk IS 'Surrogate key for the date of sale.';
+COMMENT ON COLUMN catalog_sales.cs_sold_time_sk IS 'Surrogate key for the time of sale.';
+COMMENT ON COLUMN catalog_sales.cs_ship_date_sk IS 'Surrogate key for the date item was shipped.';
+COMMENT ON COLUMN catalog_sales.cs_bill_customer_sk IS 'FK to customer for billing.';
+COMMENT ON COLUMN catalog_sales.cs_bill_cdemo_sk IS 'FK to customer_demographics for billing customer.';
+COMMENT ON COLUMN catalog_sales.cs_bill_hdemo_sk IS 'FK to household_demographics for billing customer.';
+COMMENT ON COLUMN catalog_sales.cs_bill_addr_sk IS 'FK to customer_address for billing address.';
+COMMENT ON COLUMN catalog_sales.cs_ship_customer_sk IS 'FK to customer for shipping.';
+COMMENT ON COLUMN catalog_sales.cs_ship_cdemo_sk IS 'FK to customer_demographics for shipping customer.';
+COMMENT ON COLUMN catalog_sales.cs_ship_hdemo_sk IS 'FK to household_demographics for shipping customer.';
+COMMENT ON COLUMN catalog_sales.cs_ship_addr_sk IS 'FK to customer_address for shipping address.';
+COMMENT ON COLUMN catalog_sales.cs_call_center_sk IS 'FK to call_center if sale was processed via call center.';
+COMMENT ON COLUMN catalog_sales.cs_catalog_page_sk IS 'FK to catalog_page from which sale originated.';
+COMMENT ON COLUMN catalog_sales.cs_ship_mode_sk IS 'FK to ship_mode used.';
+COMMENT ON COLUMN catalog_sales.cs_warehouse_sk IS 'FK to warehouse from which item was shipped.';
+COMMENT ON COLUMN catalog_sales.cs_item_sk IS 'Foreign key to the item table.';
+COMMENT ON COLUMN catalog_sales.cs_promo_sk IS 'FK to promotion applied.';
+COMMENT ON COLUMN catalog_sales.cs_order_number IS 'Catalog sales order number.';
+COMMENT ON COLUMN catalog_sales.cs_quantity IS 'Quantity of the item sold.';
+COMMENT ON COLUMN catalog_sales.cs_wholesale_cost IS 'Wholesale cost.';
+COMMENT ON COLUMN catalog_sales.cs_list_price IS 'List price.';
+COMMENT ON COLUMN catalog_sales.cs_sales_price IS 'Actual sales price.';
+COMMENT ON COLUMN catalog_sales.cs_ext_discount_amt IS 'Extended discount amount.';
+COMMENT ON COLUMN catalog_sales.cs_ext_sales_price IS 'Extended sales price.';
+COMMENT ON COLUMN catalog_sales.cs_ext_wholesale_cost IS 'Extended wholesale cost.';
+COMMENT ON COLUMN catalog_sales.cs_ext_list_price IS 'Extended list price.';
+COMMENT ON COLUMN catalog_sales.cs_ext_tax IS 'Tax amount.';
+COMMENT ON COLUMN catalog_sales.cs_coupon_amt IS 'Coupon amount.';
+COMMENT ON COLUMN catalog_sales.cs_ext_ship_cost IS 'Shipping cost.';
+COMMENT ON COLUMN catalog_sales.cs_net_paid IS 'Net paid (excluding tax, shipping).';
+COMMENT ON COLUMN catalog_sales.cs_net_paid_inc_tax IS 'Net paid (including tax, excluding shipping).';
+COMMENT ON COLUMN catalog_sales.cs_net_paid_inc_ship IS 'Net paid (including shipping, excluding tax).';
+COMMENT ON COLUMN catalog_sales.cs_net_paid_inc_ship_tax IS 'Net paid (including tax and shipping).';
+COMMENT ON COLUMN catalog_sales.cs_net_profit IS 'Net profit.';
+
+-- Comments for table: store_sales
+COMMENT ON TABLE store_sales IS 'Fact table for store sales.';
+COMMENT ON COLUMN store_sales.ss_sold_date_sk IS 'Surrogate key for the date of sale.';
+COMMENT ON COLUMN store_sales.ss_sold_time_sk IS 'Surrogate key for the time of sale.';
+COMMENT ON COLUMN store_sales.ss_item_sk IS 'Foreign key to the item table.';
+COMMENT ON COLUMN store_sales.ss_customer_sk IS 'FK to customer who made the purchase.';
+COMMENT ON COLUMN store_sales.ss_cdemo_sk IS 'FK to customer_demographics for purchasing customer.';
+COMMENT ON COLUMN store_sales.ss_hdemo_sk IS 'FK to household_demographics for purchasing customer.';
+COMMENT ON COLUMN store_sales.ss_addr_sk IS 'FK to customer_address for purchasing customer (likely store address for anonymous sales).';
+COMMENT ON COLUMN store_sales.ss_store_sk IS 'FK to store where sale occurred.';
+COMMENT ON COLUMN store_sales.ss_promo_sk IS 'FK to promotion applied.';
+COMMENT ON COLUMN store_sales.ss_ticket_number IS 'Store sales ticket number (unique within a store/day or globally).';
+COMMENT ON COLUMN store_sales.ss_quantity IS 'Quantity of the item sold.';
+COMMENT ON COLUMN store_sales.ss_wholesale_cost IS 'Wholesale cost.';
+COMMENT ON COLUMN store_sales.ss_list_price IS 'List price.';
+COMMENT ON COLUMN store_sales.ss_sales_price IS 'Actual sales price.';
+COMMENT ON COLUMN store_sales.ss_ext_discount_amt IS 'Extended discount amount.';
+COMMENT ON COLUMN store_sales.ss_ext_sales_price IS 'Extended sales price.';
+COMMENT ON COLUMN store_sales.ss_ext_wholesale_cost IS 'Extended wholesale cost.';
+COMMENT ON COLUMN store_sales.ss_ext_list_price IS 'Extended list price.';
+COMMENT ON COLUMN store_sales.ss_ext_tax IS 'Tax amount.';
+COMMENT ON COLUMN store_sales.ss_coupon_amt IS 'Coupon amount.';
+COMMENT ON COLUMN store_sales.ss_net_paid IS 'Net paid (excluding tax).';
+COMMENT ON COLUMN store_sales.ss_net_paid_inc_tax IS 'Net paid (including tax).';
+COMMENT ON COLUMN store_sales.ss_net_profit IS 'Net profit.';
