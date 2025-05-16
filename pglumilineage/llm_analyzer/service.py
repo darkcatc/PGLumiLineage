@@ -508,7 +508,7 @@ def construct_prompt_for_qwen(sql_mode: str, sample_sql: str, metadata_context: 
     try:
         # 构造系统提示
         system_prompt = """你是一位顶级的SQL数据血缘分析专家。
-你的任务是基于用户提供的SQL语句、相关的数据库对象元数据（表结构、视图定义等），以及SQL的唯一标识哈希（如果提供），精确地分析出字段级别的数据血缘关系。
+你的任务是基于用户提供的SQL语句、相关的数据库对象元数据（表结构、视图定义等），以及SQL的唯一标识哈希（如果提供），精确地分析出字段级别的数据血缘关系。请注意判断提供的SQL是完整的还是片段。如果是片段，请基于提供的元数据上下文进行分析，并在分析中注意说明这是基于片段的分析结果。
 你需要识别数据是如何从源对象的源字段，经过可能的转换逻辑，最终写入到目标对象的特定目标字段。
 
 请严格按照用户要求的JSON格式输出分析结果，不要包含任何解释性文字或Markdown标记，只输出纯JSON对象。
@@ -522,13 +522,39 @@ JSON中应包含以下关键信息：
     - 'target_object_schema': (可选) 目标对象schema。
     - 'sources': 一个列表，包含所有对此目标字段有贡献的源信息。每个源信息包含：
         - 'source_object': {'schema': '...', 'name': '...', 'type': 'TABLE'/'VIEW'}
-        - 'source_column': 源字段名。
-        - 'transformation_logic': 描述从源到目标所经历的简要转换逻辑或计算表达式（例如 'direct_copy', 'SUM(...)', 'COALESCE(col, 0)', 'CASE WHEN ...', 'd.d_year AS report_year'）。
+        - 'source_column': 源字段名，如果是字面量或表达式可以为null。
+        - 'transformation_logic': 描述从源到目标所经历的完整转换逻辑或计算表达式，应尽可能包含从最内层字段到最终目标字段的完整表达式，包括聚合函数。例如，应使用 'SUM(COALESCE(ss_quantity, 0))' 而非简化的 'SUM(...)'。必须包含具体的字段名，不要使用省略号。如果表达式过长，可以分段描述或只描述关键部分，但字段名不应省略。对于直接映射关系，应精确描述字段的别名关系，例如 'r.r_reason_desc AS primary_return_reason_desc'或'customer.c_name 直接映射到 customer_name'。
     - 'derivation_type': 对目标字段值产生方式的分类（例如 'DIRECT_MAPPING', 'AGGREGATION', 'LITERAL_ASSIGNMENT', 'CONDITIONAL_LOGIC', 'FUNCTION_CALL', 'UNION_MERGE'）。
 - 'referenced_objects': 一个列表，包含SQL中所有被引用（读取或写入）的数据库对象（表、视图）及其 'schema', 'name', 'type' 和 'access_mode' ('READ', 'WRITE', 'READ_WRITE')。
 - 'unresolved_references': (可选) 一个列表，记录在提供的元数据中找不到对应定义的表或视图名。
 - 'parsing_confidence': (可选) 你对本次解析准确度的信心评分 (0.0 - 1.0)。
-- 'errors_or_warnings': (可选) 一个列表，记录解析过程中遇到的任何问题或警告。"""
+- 'errors_or_warnings': (可选) 一个列表，记录解析过程中遇到的任何问题或警告。
+- 'is_sql_fragment': (可选) 布尔值，标识分析的SQL是否为片段而非完整语句。如果是true，请在'fragment_analysis_notes'字段中提供对片段分析的说明。
+- 'fragment_analysis_notes': (可选) 当分析的是SQL片段时，提供对片段分析的补充说明，包括可能的假设和限制。
+
+特别注意事项：
+1. 处理UNION/UNION ALL操作：
+   - 当一个目标列的数据来自多个UNION分支时，应使用'UNION_MERGE'作为derivation_type。
+   - 在sources列表中，应包含来自每个UNION分支的源信息。
+   - 对于每个UNION分支中的字面量赋值（如'Store', 'Catalog', 'Web'），应在transformation_logic中明确标注这是"UNION分支中的字面量赋值"。
+   - 如果UNION分支中的列是字面量，source_column可以为null，但必须在transformation_logic中清晰描述。
+   - 在描述UNION操作的transformation_logic时，必须指明每个分支中的具体字段名，不要使用省略号。例如："UNION合并：第一分支中的store_sales.ss_quantity与第二分支中的web_sales.ws_quantity"
+
+2. 处理字面量和表达式：
+   - 对于字面量赋值（如'2023', 1000, 'Active'等），应使用'LITERAL_ASSIGNMENT'作为derivation_type。
+   - 对于字面量，source_column可以为null，但必须在transformation_logic中准确描述字面量的值。
+   - 对于复杂表达式（如CASE WHEN, COALESCE等），应详细描述表达式的逻辑，并使用适当的derivation_type。在描述表达式时，必须包含所有相关字段的完整名称，例如："CASE WHEN store.store_type = 'SUPERMARKET' THEN store.store_name ELSE 'OTHER' END"。
+   - 对于聚合函数（如SUM, AVG, COUNT等），应在transformation_logic中包含完整的聚合表达式，如'SUM(COALESCE(ss_quantity, 0))'。即使表达式复杂，也应包含所有字段名，而不是使用省略号。
+
+3. transformation_logic与derivation_type的组合使用：
+   - transformation_logic应包含完整的表达式，而derivation_type提供表达式类型的分类。
+   - 两者组合使用可以提供更完整的血缘信息，例如：transformation_logic为'SUM(COALESCE(ss_quantity, 0))'，derivation_type为'AGGREGATION'。
+   - 当一个目标字段的数据来自多个源时（如UNION或复杂表达式），每个源的transformation_logic应尽可能详细。
+   - 无论表达式多么复杂，transformation_logic中都必须包含所有相关字段的完整名称，不要使用省略号。如果表达式确实过长，可以将其分解为多个源记录，每个记录描述表达式的一部分，但不要省略字段名。
+
+4. 处理子查询：
+   - 对于包含子查询的SQL，应递归分析子查询的血缘关系。
+   - 如果子查询结果作为一个整体被引用，应将子查询视为一个虚拟表，并在transformation_logic中说明。"""
 
         # 获取源数据库名称
         source_database_name = ""
