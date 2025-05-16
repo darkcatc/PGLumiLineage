@@ -1,0 +1,1487 @@
+{
+  "source_database_name": "tpcds",
+  "tables_metadata": [
+    {
+      "schema": "public",
+      "name": "monthly_channel_returns_analysis_report",
+      "type": "TABLE",
+      "columns": [
+        {
+          "name": "sales_year_month",
+          "type": "character varying(7)",
+          "nullable": true,
+          "primary_key": false,
+          "description": null
+        },
+        {
+          "name": "channel",
+          "type": "character varying(20)",
+          "nullable": true,
+          "primary_key": false,
+          "description": null
+        },
+        {
+          "name": "total_sold_quantity",
+          "type": "bigint",
+          "nullable": true,
+          "primary_key": false,
+          "description": null
+        },
+        {
+          "name": "total_returned_quantity",
+          "type": "bigint",
+          "nullable": true,
+          "primary_key": false,
+          "description": null
+        },
+        {
+          "name": "return_rate_by_quantity",
+          "type": "numeric(7,4)",
+          "nullable": true,
+          "primary_key": false,
+          "description": null
+        },
+        {
+          "name": "primary_return_reason_desc",
+          "type": "character(100)",
+          "nullable": true,
+          "primary_key": false,
+          "description": null
+        },
+        {
+          "name": "primary_reason_returned_quantity",
+          "type": "bigint",
+          "nullable": true,
+          "primary_key": false,
+          "description": null
+        }
+      ],
+      "row_count": 183,
+      "description": null
+    },
+    {
+      "schema": "public",
+      "name": "date_dim",
+      "type": "TABLE",
+      "columns": [
+        {
+          "name": "d_date_sk",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Surrogate key for date."
+        },
+        {
+          "name": "d_date_id",
+          "type": "character(16)",
+          "nullable": false,
+          "primary_key": false,
+          "description": "Business key for date (e.g., YYYY-MM-DD)."
+        },
+        {
+          "name": "d_date",
+          "type": "date",
+          "nullable": false,
+          "primary_key": false,
+          "description": "Actual date value."
+        },
+        {
+          "name": "d_month_seq",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Sequential month number since a base date."
+        },
+        {
+          "name": "d_week_seq",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Sequential week number since a base date."
+        },
+        {
+          "name": "d_quarter_seq",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Sequential quarter number since a base date."
+        },
+        {
+          "name": "d_year",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Year (e.g., 2023)."
+        },
+        {
+          "name": "d_dow",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Day of the week (0=Sunday, 1=Monday, ..., 6=Saturday)."
+        },
+        {
+          "name": "d_moy",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Month of the year (1-12)."
+        },
+        {
+          "name": "d_dom",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Day of the month (1-31)."
+        },
+        {
+          "name": "d_qoy",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Quarter of the year (1-4)."
+        },
+        {
+          "name": "d_fy_year",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Fiscal year."
+        },
+        {
+          "name": "d_fy_quarter_seq",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Sequential fiscal quarter number."
+        },
+        {
+          "name": "d_fy_week_seq",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Sequential fiscal week number."
+        },
+        {
+          "name": "d_day_name",
+          "type": "character(9)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Name of the day (e.g., Monday)."
+        },
+        {
+          "name": "d_quarter_name",
+          "type": "character(6)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Name of the quarter (e.g., Q1YYYY)."
+        },
+        {
+          "name": "d_holiday",
+          "type": "character(1)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Flag indicating if the date is a holiday (Y/N)."
+        },
+        {
+          "name": "d_weekend",
+          "type": "character(1)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Flag indicating if the date is a weekend (Y/N)."
+        },
+        {
+          "name": "d_following_holiday",
+          "type": "character(1)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Flag indicating if the date is following a holiday (Y/N)."
+        },
+        {
+          "name": "d_first_dom",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "First day of the month surrogate key."
+        },
+        {
+          "name": "d_last_dom",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Last day of the month surrogate key."
+        },
+        {
+          "name": "d_same_day_ly",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the same day last year."
+        },
+        {
+          "name": "d_same_day_lq",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the same day last quarter."
+        },
+        {
+          "name": "d_current_day",
+          "type": "character(1)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Flag if this date is the current day (Y/N)."
+        },
+        {
+          "name": "d_current_week",
+          "type": "character(1)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Flag if this date is in the current week (Y/N)."
+        },
+        {
+          "name": "d_current_month",
+          "type": "character(1)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Flag if this date is in the current month (Y/N)."
+        },
+        {
+          "name": "d_current_quarter",
+          "type": "character(1)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Flag if this date is in the current quarter (Y/N)."
+        },
+        {
+          "name": "d_current_year",
+          "type": "character(1)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Flag if this date is in the current year (Y/N)."
+        }
+      ],
+      "row_count": 73049,
+      "description": "Dimension table for dates."
+    },
+    {
+      "schema": "public",
+      "name": "reason",
+      "type": "TABLE",
+      "columns": [
+        {
+          "name": "r_reason_sk",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Surrogate key for reason."
+        },
+        {
+          "name": "r_reason_id",
+          "type": "character(16)",
+          "nullable": false,
+          "primary_key": false,
+          "description": "Business key for reason."
+        },
+        {
+          "name": "r_reason_desc",
+          "type": "character(100)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Description of the reason for return."
+        }
+      ],
+      "row_count": 75,
+      "description": "Dimension table for return reasons."
+    },
+    {
+      "schema": "public",
+      "name": "web_sales",
+      "type": "TABLE",
+      "columns": [
+        {
+          "name": "ws_sold_date_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the date of sale."
+        },
+        {
+          "name": "ws_sold_time_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the time of sale."
+        },
+        {
+          "name": "ws_ship_date_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the date item was shipped."
+        },
+        {
+          "name": "ws_item_sk",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Foreign key to the item table."
+        },
+        {
+          "name": "ws_bill_customer_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer for billing."
+        },
+        {
+          "name": "ws_bill_cdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_demographics for billing customer."
+        },
+        {
+          "name": "ws_bill_hdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to household_demographics for billing customer."
+        },
+        {
+          "name": "ws_bill_addr_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_address for billing address."
+        },
+        {
+          "name": "ws_ship_customer_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer for shipping (can be different from billing)."
+        },
+        {
+          "name": "ws_ship_cdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_demographics for shipping customer."
+        },
+        {
+          "name": "ws_ship_hdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to household_demographics for shipping customer."
+        },
+        {
+          "name": "ws_ship_addr_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_address for shipping address."
+        },
+        {
+          "name": "ws_web_page_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to web_page from which the sale originated."
+        },
+        {
+          "name": "ws_web_site_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to web_site from which the sale originated."
+        },
+        {
+          "name": "ws_ship_mode_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to ship_mode used for this sale."
+        },
+        {
+          "name": "ws_warehouse_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to warehouse from which item was shipped."
+        },
+        {
+          "name": "ws_promo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to promotion applied to this sale."
+        },
+        {
+          "name": "ws_order_number",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Web sales order number."
+        },
+        {
+          "name": "ws_quantity",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Quantity of the item sold."
+        },
+        {
+          "name": "ws_wholesale_cost",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Wholesale cost of the item(s) sold."
+        },
+        {
+          "name": "ws_list_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "List price of the item(s) sold."
+        },
+        {
+          "name": "ws_sales_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Actual sales price after discounts (excluding tax, shipping)."
+        },
+        {
+          "name": "ws_ext_discount_amt",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended discount amount for this line item."
+        },
+        {
+          "name": "ws_ext_sales_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended sales price (quantity * sales_price)."
+        },
+        {
+          "name": "ws_ext_wholesale_cost",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended wholesale cost (quantity * wholesale_cost)."
+        },
+        {
+          "name": "ws_ext_list_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended list price (quantity * list_price)."
+        },
+        {
+          "name": "ws_ext_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Tax amount for this line item."
+        },
+        {
+          "name": "ws_coupon_amt",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Coupon amount applied to this line item."
+        },
+        {
+          "name": "ws_ext_ship_cost",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Shipping cost for this line item."
+        },
+        {
+          "name": "ws_net_paid",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net amount paid by customer (excluding tax and shipping)."
+        },
+        {
+          "name": "ws_net_paid_inc_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net amount paid by customer (including tax, excluding shipping)."
+        },
+        {
+          "name": "ws_net_paid_inc_ship",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net amount paid by customer (including shipping, excluding tax)."
+        },
+        {
+          "name": "ws_net_paid_inc_ship_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net amount paid by customer (including tax and shipping)."
+        },
+        {
+          "name": "ws_net_profit",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net profit for this line item."
+        }
+      ],
+      "row_count": 719384,
+      "description": "Fact table for web sales."
+    },
+    {
+      "schema": "public",
+      "name": "web_returns",
+      "type": "TABLE",
+      "columns": [
+        {
+          "name": "wr_returned_date_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the date of return."
+        },
+        {
+          "name": "wr_returned_time_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the time of return."
+        },
+        {
+          "name": "wr_item_sk",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Foreign key to item table for the returned item."
+        },
+        {
+          "name": "wr_refunded_customer_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer who received refund."
+        },
+        {
+          "name": "wr_refunded_cdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_demographics for refunded customer."
+        },
+        {
+          "name": "wr_refunded_hdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to household_demographics for refunded customer."
+        },
+        {
+          "name": "wr_refunded_addr_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_address for refunded customer."
+        },
+        {
+          "name": "wr_returning_customer_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer who initiated return."
+        },
+        {
+          "name": "wr_returning_cdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_demographics for returning customer."
+        },
+        {
+          "name": "wr_returning_hdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to household_demographics for returning customer."
+        },
+        {
+          "name": "wr_returning_addr_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_address for returning customer."
+        },
+        {
+          "name": "wr_web_page_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to web_page from which the item was originally ordered/returned."
+        },
+        {
+          "name": "wr_reason_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to reason for the return."
+        },
+        {
+          "name": "wr_order_number",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Original web sales order number."
+        },
+        {
+          "name": "wr_return_quantity",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Quantity of the item returned."
+        },
+        {
+          "name": "wr_return_amt",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Return amount before tax."
+        },
+        {
+          "name": "wr_return_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Tax amount on the return."
+        },
+        {
+          "name": "wr_return_amt_inc_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Return amount including tax."
+        },
+        {
+          "name": "wr_fee",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Restocking or return fee."
+        },
+        {
+          "name": "wr_return_ship_cost",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Shipping cost for returning the item."
+        },
+        {
+          "name": "wr_refunded_cash",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Amount refunded as cash."
+        },
+        {
+          "name": "wr_reversed_charge",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Amount refunded via reversing a charge."
+        },
+        {
+          "name": "wr_account_credit",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Amount refunded as account credit."
+        },
+        {
+          "name": "wr_net_loss",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net loss incurred from this web return."
+        }
+      ],
+      "row_count": 71763,
+      "description": "Fact table for web returns."
+    },
+    {
+      "schema": "public",
+      "name": "store_sales",
+      "type": "TABLE",
+      "columns": [
+        {
+          "name": "ss_sold_date_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the date of sale."
+        },
+        {
+          "name": "ss_sold_time_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the time of sale."
+        },
+        {
+          "name": "ss_item_sk",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Foreign key to the item table."
+        },
+        {
+          "name": "ss_customer_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer who made the purchase."
+        },
+        {
+          "name": "ss_cdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_demographics for purchasing customer."
+        },
+        {
+          "name": "ss_hdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to household_demographics for purchasing customer."
+        },
+        {
+          "name": "ss_addr_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_address for purchasing customer (likely store address for anonymous sales)."
+        },
+        {
+          "name": "ss_store_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to store where sale occurred."
+        },
+        {
+          "name": "ss_promo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to promotion applied."
+        },
+        {
+          "name": "ss_ticket_number",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Store sales ticket number (unique within a store/day or globally)."
+        },
+        {
+          "name": "ss_quantity",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Quantity of the item sold."
+        },
+        {
+          "name": "ss_wholesale_cost",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Wholesale cost."
+        },
+        {
+          "name": "ss_list_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "List price."
+        },
+        {
+          "name": "ss_sales_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Actual sales price."
+        },
+        {
+          "name": "ss_ext_discount_amt",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended discount amount."
+        },
+        {
+          "name": "ss_ext_sales_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended sales price."
+        },
+        {
+          "name": "ss_ext_wholesale_cost",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended wholesale cost."
+        },
+        {
+          "name": "ss_ext_list_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended list price."
+        },
+        {
+          "name": "ss_ext_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Tax amount."
+        },
+        {
+          "name": "ss_coupon_amt",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Coupon amount."
+        },
+        {
+          "name": "ss_net_paid",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net paid (excluding tax)."
+        },
+        {
+          "name": "ss_net_paid_inc_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net paid (including tax)."
+        },
+        {
+          "name": "ss_net_profit",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net profit."
+        }
+      ],
+      "row_count": 2880293,
+      "description": "Fact table for store sales."
+    },
+    {
+      "schema": "public",
+      "name": "catalog_sales",
+      "type": "TABLE",
+      "columns": [
+        {
+          "name": "cs_sold_date_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the date of sale."
+        },
+        {
+          "name": "cs_sold_time_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the time of sale."
+        },
+        {
+          "name": "cs_ship_date_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the date item was shipped."
+        },
+        {
+          "name": "cs_bill_customer_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer for billing."
+        },
+        {
+          "name": "cs_bill_cdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_demographics for billing customer."
+        },
+        {
+          "name": "cs_bill_hdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to household_demographics for billing customer."
+        },
+        {
+          "name": "cs_bill_addr_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_address for billing address."
+        },
+        {
+          "name": "cs_ship_customer_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer for shipping."
+        },
+        {
+          "name": "cs_ship_cdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_demographics for shipping customer."
+        },
+        {
+          "name": "cs_ship_hdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to household_demographics for shipping customer."
+        },
+        {
+          "name": "cs_ship_addr_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_address for shipping address."
+        },
+        {
+          "name": "cs_call_center_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to call_center if sale was processed via call center."
+        },
+        {
+          "name": "cs_catalog_page_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to catalog_page from which sale originated."
+        },
+        {
+          "name": "cs_ship_mode_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to ship_mode used."
+        },
+        {
+          "name": "cs_warehouse_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to warehouse from which item was shipped."
+        },
+        {
+          "name": "cs_item_sk",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Foreign key to the item table."
+        },
+        {
+          "name": "cs_promo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to promotion applied."
+        },
+        {
+          "name": "cs_order_number",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Catalog sales order number."
+        },
+        {
+          "name": "cs_quantity",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Quantity of the item sold."
+        },
+        {
+          "name": "cs_wholesale_cost",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Wholesale cost."
+        },
+        {
+          "name": "cs_list_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "List price."
+        },
+        {
+          "name": "cs_sales_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Actual sales price."
+        },
+        {
+          "name": "cs_ext_discount_amt",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended discount amount."
+        },
+        {
+          "name": "cs_ext_sales_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended sales price."
+        },
+        {
+          "name": "cs_ext_wholesale_cost",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended wholesale cost."
+        },
+        {
+          "name": "cs_ext_list_price",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Extended list price."
+        },
+        {
+          "name": "cs_ext_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Tax amount."
+        },
+        {
+          "name": "cs_coupon_amt",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Coupon amount."
+        },
+        {
+          "name": "cs_ext_ship_cost",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Shipping cost."
+        },
+        {
+          "name": "cs_net_paid",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net paid (excluding tax, shipping)."
+        },
+        {
+          "name": "cs_net_paid_inc_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net paid (including tax, excluding shipping)."
+        },
+        {
+          "name": "cs_net_paid_inc_ship",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net paid (including shipping, excluding tax)."
+        },
+        {
+          "name": "cs_net_paid_inc_ship_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net paid (including tax and shipping)."
+        },
+        {
+          "name": "cs_net_profit",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net profit."
+        }
+      ],
+      "row_count": 1441565,
+      "description": "Fact table for catalog sales."
+    },
+    {
+      "schema": "public",
+      "name": "store_returns",
+      "type": "TABLE",
+      "columns": [
+        {
+          "name": "sr_returned_date_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the date of return."
+        },
+        {
+          "name": "sr_return_time_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the time of return."
+        },
+        {
+          "name": "sr_item_sk",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Foreign key to the item table for the returned item."
+        },
+        {
+          "name": "sr_customer_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Foreign key to the customer table for the returning customer."
+        },
+        {
+          "name": "sr_cdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Foreign key to customer_demographics at the time of return."
+        },
+        {
+          "name": "sr_hdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Foreign key to household_demographics at the time of return."
+        },
+        {
+          "name": "sr_addr_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Foreign key to customer_address at the time of return."
+        },
+        {
+          "name": "sr_store_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Foreign key to the store table where the item was returned."
+        },
+        {
+          "name": "sr_reason_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Foreign key to the reason table for the return reason."
+        },
+        {
+          "name": "sr_ticket_number",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Ticket number of the original sales transaction."
+        },
+        {
+          "name": "sr_return_quantity",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Quantity of the item returned."
+        },
+        {
+          "name": "sr_return_amt",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Return amount before tax."
+        },
+        {
+          "name": "sr_return_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Tax amount on the return."
+        },
+        {
+          "name": "sr_return_amt_inc_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Return amount including tax."
+        },
+        {
+          "name": "sr_fee",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Restocking or return fee."
+        },
+        {
+          "name": "sr_return_ship_cost",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Shipping cost associated with the return (if any)."
+        },
+        {
+          "name": "sr_refunded_cash",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Amount refunded as cash."
+        },
+        {
+          "name": "sr_reversed_charge",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Amount refunded via reversing a charge."
+        },
+        {
+          "name": "sr_store_credit",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Amount refunded as store credit."
+        },
+        {
+          "name": "sr_net_loss",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net loss incurred from the return."
+        }
+      ],
+      "row_count": 287514,
+      "description": "Fact table for store returns."
+    },
+    {
+      "schema": "public",
+      "name": "catalog_returns",
+      "type": "TABLE",
+      "columns": [
+        {
+          "name": "cr_returned_date_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the date of return."
+        },
+        {
+          "name": "cr_returned_time_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Surrogate key for the time of return."
+        },
+        {
+          "name": "cr_item_sk",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Foreign key to item table for the returned item."
+        },
+        {
+          "name": "cr_refunded_customer_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer who received refund (may be different from returning)."
+        },
+        {
+          "name": "cr_refunded_cdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_demographics for refunded customer."
+        },
+        {
+          "name": "cr_refunded_hdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to household_demographics for refunded customer."
+        },
+        {
+          "name": "cr_refunded_addr_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_address for refunded customer."
+        },
+        {
+          "name": "cr_returning_customer_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer who initiated return."
+        },
+        {
+          "name": "cr_returning_cdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_demographics for returning customer."
+        },
+        {
+          "name": "cr_returning_hdemo_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to household_demographics for returning customer."
+        },
+        {
+          "name": "cr_returning_addr_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to customer_address for returning customer."
+        },
+        {
+          "name": "cr_call_center_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to call_center if return was processed via call center."
+        },
+        {
+          "name": "cr_catalog_page_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to catalog_page from which the item was originally ordered."
+        },
+        {
+          "name": "cr_ship_mode_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to ship_mode used for returning item."
+        },
+        {
+          "name": "cr_warehouse_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to warehouse where item was returned."
+        },
+        {
+          "name": "cr_reason_sk",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "FK to reason for the return."
+        },
+        {
+          "name": "cr_order_number",
+          "type": "integer",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Original catalog sales order number."
+        },
+        {
+          "name": "cr_return_quantity",
+          "type": "integer",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Quantity of the item returned."
+        },
+        {
+          "name": "cr_return_amount",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Return amount before tax."
+        },
+        {
+          "name": "cr_return_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Tax amount on the return."
+        },
+        {
+          "name": "cr_return_amt_inc_tax",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Return amount including tax."
+        },
+        {
+          "name": "cr_fee",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Restocking or return fee."
+        },
+        {
+          "name": "cr_return_ship_cost",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Shipping cost for returning the item."
+        },
+        {
+          "name": "cr_refunded_cash",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Amount refunded as cash."
+        },
+        {
+          "name": "cr_reversed_charge",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Amount refunded via reversing a charge."
+        },
+        {
+          "name": "cr_store_credit",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Amount refunded as store credit."
+        },
+        {
+          "name": "cr_net_loss",
+          "type": "numeric(7,2)",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Net loss incurred from this catalog return."
+        }
+      ],
+      "row_count": 144067,
+      "description": "Fact table for catalog returns."
+    }
+  ],
+  "view_definitions": []
+}

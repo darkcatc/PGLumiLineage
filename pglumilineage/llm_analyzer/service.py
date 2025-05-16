@@ -166,13 +166,31 @@ async def fetch_metadata_context_for_sql(sql_pattern: models.AnalyticalSQLPatter
     """
     从元数据存储中获取 SQL 相关的元数据上下文
     
-    包括表、视图、列的定义和关系等信息
+    包括表、视图、物化视图的定义、列信息及其关系等
     
     Args:
-        sql_pattern: SQL 模式对象
+        sql_pattern: SQL 模式对象，包含 normalized_sql_text, sample_raw_sql_text, source_database_name
         
     Returns:
-        Dict: 元数据上下文字典
+        Dict: 元数据上下文字典，包含以下信息：
+            - source_database_name: 源数据库名称
+            - tables_metadata: 表和视图的元数据列表，每个元素包含：
+                - schema: 模式名
+                - name: 表/视图名
+                - type: 对象类型（TABLE, VIEW, MATERIALIZED VIEW）
+                - columns: 列信息列表，每个元素包含：
+                    - name: 列名
+                    - type: 数据类型
+                    - nullable: 是否可为空
+                    - primary_key: 是否为主键
+                    - description: 列描述
+                    - foreign_key_to: 外键关系信息（如果存在）
+                - row_count: 行数（如果可用）
+                - description: 表/视图描述
+            - view_definitions: 视图定义列表，每个元素包含：
+                - schema: 模式名
+                - name: 视图名
+                - definition: 视图定义SQL
     """
     try:
         # 初始化返回结果
@@ -216,8 +234,88 @@ async def fetch_metadata_context_for_sql(sql_pattern: models.AnalyticalSQLPatter
                 import sqlglot
                 from sqlglot import exp
                 
-                # 解析 SQL 语句
-                parsed_sql = sqlglot.parse_one(sql_pattern.normalized_sql_text)
+                # 解析 SQL 语句，只使用原始 SQL，不尝试解析泛化后的 SQL
+                # 注意：我们使用 sample_raw_sql_text 而不是 normalized_sql_text，因为后者已经被泛化，包含占位符
+                try:
+                    # 尝试使用 sqlglot 解析原始 SQL
+                    logger.info(f"尝试解析原始 SQL: {sql_pattern.sample_raw_sql_text[:100]}...")
+                    parsed_sql = sqlglot.parse_one(sql_pattern.sample_raw_sql_text)
+                except Exception as e:
+                    # 如果解析失败，尝试使用简单的文本处理提取表名
+                    logger.warning(f"SQL 解析失败: {str(e)}, 将使用正则表达式提取表名")
+                    
+                    # 使用正则表达式提取表名
+                    import re
+                    
+                    # 尝试提取常见的SQL语句中的表名
+                    table_patterns = [
+                        # SELECT ... FROM table_name
+                        r'\bFROM\s+([\w\.]+)',
+                        # INSERT INTO table_name
+                        r'\bINSERT\s+INTO\s+([\w\.]+)',
+                        # UPDATE table_name
+                        r'\bUPDATE\s+([\w\.]+)',
+                        # DELETE FROM table_name
+                        r'\bDELETE\s+FROM\s+([\w\.]+)',
+                        # CREATE TABLE table_name
+                        r'\bCREATE\s+TABLE\s+([\w\.]+)',
+                        # ALTER TABLE table_name
+                        r'\bALTER\s+TABLE\s+([\w\.]+)',
+                        # JOIN table_name
+                        r'\bJOIN\s+([\w\.]+)',
+                        # MERGE INTO table_name
+                        r'\bMERGE\s+INTO\s+([\w\.]+)'
+                    ]
+                    
+                    # 将SQL转换为大写以便于匹配
+                    sql_upper = sql_pattern.sample_raw_sql_text.upper()
+                    
+                    # 存储提取到的表名
+                    tables_info = []
+                    
+                    for pattern in table_patterns:
+                        matches = re.finditer(pattern, sql_upper)
+                        for match in matches:
+                            table_ref = match.group(1)
+                            
+                            # 处理模式名和表名
+                            if '.' in table_ref:
+                                schema_name, table_name = table_ref.split('.', 1)
+                            else:
+                                schema_name = 'public'  # 默认使用 public 模式
+                                table_name = table_ref
+                            
+                            # 将表信息添加到列表中
+                            tables_info.append({
+                                "schema": schema_name,
+                                "name": table_name,
+                                "alias": None
+                            })
+                    
+                    # 去重
+                    unique_tables = []
+                    for table in tables_info:
+                        if table not in unique_tables:
+                            unique_tables.append(table)
+                    
+                    logger.info(f"使用正则表达式从 SQL 中提取到 {len(unique_tables)} 个表/视图引用")
+                    
+                    # 创建一个空的对象来模拟解析结果
+                    class MockParsedSQL:
+                        def find_all(self, exp_type):
+                            # 返回一个对象列表，每个对象模拟一个表引用
+                            class MockTableRef:
+                                def __init__(self, schema, name, alias):
+                                    self.args = {
+                                        'db': schema,
+                                        'this': name,
+                                        'alias': alias
+                                    }
+                            
+                            return [MockTableRef(t["schema"], t["name"], t["alias"]) for t in unique_tables]
+                    
+                    # 使用模拟的解析结果
+                    parsed_sql = MockParsedSQL()
                 
                 # 提取所有表引用
                 table_refs = parsed_sql.find_all(exp.Table)
@@ -225,9 +323,12 @@ async def fetch_metadata_context_for_sql(sql_pattern: models.AnalyticalSQLPatter
                 # 处理每个表引用
                 tables_info = []
                 for table_ref in table_refs:
-                    schema_name = table_ref.args.get('db') or 'public'  # 默认使用 public schema
-                    table_name = table_ref.args.get('this')
-                    table_alias = table_ref.args.get('alias')
+                    # 确保 schema_name 是字符串类型
+                    schema_name = str(table_ref.args.get('db') or 'public')  # 默认使用 public schema
+                    # 确保 table_name 是字符串类型
+                    table_name = str(table_ref.args.get('this'))
+                    # 确保 table_alias 是字符串类型（如果存在）
+                    table_alias = str(table_ref.args.get('alias')) if table_ref.args.get('alias') else None
                     
                     if not table_name:
                         continue
@@ -285,13 +386,18 @@ async def fetch_metadata_context_for_sql(sql_pattern: models.AnalyticalSQLPatter
                     row_count = object_row['row_count']
                     description = object_row['description']
                     
-                    # b. 查询列元数据
+                    # b. 查询列元数据（包括外键信息）
                     columns_query = f"""
                     SELECT 
-                        column_name, 
-                        data_type, 
-                        is_nullable, 
+                        column_name,
+                        data_type,
+                        is_nullable,
+                        default_value,
                         is_primary_key,
+                        is_unique,
+                        foreign_key_to_table_schema,
+                        foreign_key_to_table_name,
+                        foreign_key_to_column_name,
                         description
                     FROM 
                         {metadata_schema}.columns_metadata 
@@ -306,13 +412,40 @@ async def fetch_metadata_context_for_sql(sql_pattern: models.AnalyticalSQLPatter
                     # 构造列信息列表
                     columns = []
                     for col in columns_rows:
-                        columns.append({
+                        # 直接使用data_type字段
+                        column_info = {
                             "name": col['column_name'],
-                            "type": col['data_type'],
+                            "type": col['data_type'],  # 直接使用数据库中存储的数据类型
                             "nullable": col['is_nullable'],
                             "primary_key": col['is_primary_key'],
                             "description": col['description']
-                        })
+                        }
+                        
+                        # 添加默认值信息（如果有）
+                        if col['default_value']:
+                            column_info["default_value"] = col['default_value']
+                        
+                        # 添加唯一约束信息
+                        if col['is_unique']:
+                            column_info["unique"] = True
+                        
+                        # 添加外键信息（如果有）
+                        if col['foreign_key_to_table_schema'] and col['foreign_key_to_table_name'] and col['foreign_key_to_column_name']:
+                            # 保留旧的格式以保持兼容性
+                            column_info["foreign_key_to"] = {
+                                "schema": col['foreign_key_to_table_schema'],
+                                "table": col['foreign_key_to_table_name'],
+                                "column": col['foreign_key_to_column_name']
+                            }
+                            
+                            # 添加新的外键引用格式
+                            column_info["foreign_key_reference"] = {
+                                "table_schema": col['foreign_key_to_table_schema'],
+                                "table_name": col['foreign_key_to_table_name'],
+                                "column_name": col['foreign_key_to_column_name']
+                            }
+                        
+                        columns.append(column_info)
                     
                     # 构造对象元数据
                     object_metadata = {
@@ -327,11 +460,12 @@ async def fetch_metadata_context_for_sql(sql_pattern: models.AnalyticalSQLPatter
                     # 将对象元数据添加到相应的列表中
                     metadata_context["tables_metadata"].append(object_metadata)
                     
-                    # 如果是视图，将定义添加到视图定义列表中
-                    if object_type == 'VIEW' and definition:
+                    # 如果是视图或物化视图，将定义添加到视图定义列表中
+                    if (object_type == 'VIEW' or object_type == 'MATERIALIZED VIEW') and definition:
                         metadata_context["view_definitions"].append({
                             "schema": schema_name,
                             "name": table_name,
+                            "type": object_type,
                             "definition": definition
                         })
             except sqlglot.errors.ParseError as e:
@@ -339,7 +473,19 @@ async def fetch_metadata_context_for_sql(sql_pattern: models.AnalyticalSQLPatter
                 # 如果解析失败，返回空的元数据上下文
                 return metadata_context
                 
-        logger.info(f"获取到 SQL 模式 {sql_pattern.sql_hash[:8]}... 的元数据上下文，包含 {len(metadata_context['tables_metadata'])} 个表/视图的元数据")
+        # 添加一些统计信息到日志
+        tables_count = sum(1 for item in metadata_context['tables_metadata'] if item['type'] == 'TABLE')
+        views_count = sum(1 for item in metadata_context['tables_metadata'] if item['type'] == 'VIEW')
+        materialized_views_count = sum(1 for item in metadata_context['tables_metadata'] if item['type'] == 'MATERIALIZED VIEW')
+        columns_count = sum(len(item['columns']) for item in metadata_context['tables_metadata'])
+        
+        logger.info(f"获取到 SQL 模式 {sql_pattern.sql_hash[:8]}... 的元数据上下文")
+        logger.info(f"  - 表: {tables_count}个")
+        logger.info(f"  - 视图: {views_count}个")
+        logger.info(f"  - 物化视图: {materialized_views_count}个")
+        logger.info(f"  - 总列数: {columns_count}个")
+        logger.info(f"  - 视图定义: {len(metadata_context['view_definitions'])}个")
+        
         return metadata_context
         
     except Exception as e:
@@ -535,7 +681,7 @@ async def call_qwen_api(messages: List[Dict[str, str]], model_name: str = None) 
         # 获取配置信息
         api_key = None
         base_url = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
-        default_model = 'qwen-max'
+        default_model = 'qwen-plus-latest'
         
         # 尝试从不同的配置路径获取API密钥
         # 1. 尝试直接从配置文件中获取

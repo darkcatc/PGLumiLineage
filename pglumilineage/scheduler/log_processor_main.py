@@ -102,17 +102,18 @@ async def get_sync_schedules() -> List[Dict[str, Any]]:
             # 查询活跃的调度规则
             query = """
             SELECT 
-                schedule_id, 
-                source_name, 
-                interval_seconds, 
-                is_active, 
-                last_run, 
-                next_run,
-                created_at,
-                updated_at
-            FROM lumi_config.source_sync_schedules
-            WHERE is_active = TRUE
-            ORDER BY source_name
+                s.schedule_id, 
+                d.source_name, 
+                s.sync_interval_seconds as interval_seconds, 
+                s.is_schedule_active as is_active, 
+                s.last_sync_success_at as last_run, 
+                NULL as next_run,
+                s.created_at,
+                s.updated_at
+            FROM lumi_config.source_sync_schedules s
+            JOIN lumi_config.data_sources d ON s.source_id = d.source_id
+            WHERE s.is_schedule_active = TRUE
+            ORDER BY d.source_name
             """
             
             rows = await conn.fetch(query)

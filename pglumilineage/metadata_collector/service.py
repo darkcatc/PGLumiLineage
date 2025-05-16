@@ -509,11 +509,28 @@ async def fetch_columns_metadata(conn: asyncpg.Connection, object_id: int, schem
         
         result = []
         for row in rows:
+            # 构建完整的数据类型定义
+            data_type = row['data_type']
+            
+            # 对于字符类型，添加长度信息
+            if row['max_length'] is not None and ('char' in data_type.lower() or 'text' in data_type.lower()):
+                if 'varying' in data_type.lower() or 'varchar' in data_type.lower():
+                    data_type = f"character varying({row['max_length']})"
+                elif 'character' in data_type.lower() and 'varying' not in data_type.lower():
+                    data_type = f"character({row['max_length']})"
+            
+            # 对于数值类型，添加精度和小数位数信息
+            if row['numeric_precision'] is not None and ('numeric' in data_type.lower() or 'decimal' in data_type.lower()):
+                if row['numeric_scale'] is not None:
+                    data_type = f"{data_type}({row['numeric_precision']},{row['numeric_scale']})"
+                else:
+                    data_type = f"{data_type}({row['numeric_precision']})"
+            
             col_metadata = ColumnMetadata(
                 object_id=object_id,
                 column_name=row['column_name'],
                 ordinal_position=row['ordinal_position'],
-                data_type=row['data_type'],
+                data_type=data_type,  # 使用完整的数据类型定义
                 max_length=row['max_length'],
                 numeric_precision=row['numeric_precision'],
                 numeric_scale=row['numeric_scale'],
