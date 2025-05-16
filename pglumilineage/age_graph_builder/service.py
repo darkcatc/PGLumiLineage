@@ -11,13 +11,61 @@ AGE图谱构建服务
 
 import logging
 import json
-from typing import List, Dict, Any, Optional
+import re
+from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 
 from pglumilineage.common import models
 
 # 设置日志
 logger = logging.getLogger(__name__)
+
+
+def convert_cypher_for_age(cypher_stmt: str) -> str:
+    """
+    转换Cypher语句以适应AGE 1.5.0版本
+    
+    Args:
+        cypher_stmt: 原始Cypher语句
+        
+    Returns:
+        str: 转换后的Cypher语句
+    """
+    # 替换标签语法
+    # 例如：MERGE (db:Database {name: 'tpcds'})
+    # 转换为：MERGE (db {name: 'tpcds', label: 'Database'})
+    converted_stmt = re.sub(r'(\w+):(\w+)\s+({[^}]+})', r'\1 \3, label: "\2"', cypher_stmt)
+    
+    # 替换WHERE条件中的标签语法
+    # 例如：WHERE (obj:Table OR obj:View)
+    # 转换为：WHERE (obj.label = 'Table' OR obj.label = 'View')
+    converted_stmt = re.sub(r'WHERE\s+\((\w+):(\w+)\s+OR\s+\w+:(\w+)\)', r'WHERE (\1.label = "\2" OR \1.label = "\3")', converted_stmt)
+    
+    # 替换关系类型语法
+    # 例如：MERGE (a)-[:REL_TYPE]->(b)
+    # 转换为：MERGE (a)-[r {label: 'REL_TYPE'}]->(b)
+    converted_stmt = re.sub(r'-\[:(\w+)\]->', r'-[r {label: "\1"}]->', converted_stmt)
+    
+    # 替换ON CREATE SET和ON MATCH SET语法
+    # AGE 1.5.0可能不支持这些语法
+    if "ON CREATE SET" in converted_stmt:
+        # 提取ON CREATE SET部分的属性设置
+        create_set_match = re.search(r'ON\s+CREATE\s+SET\s+([^O]+?)(?:ON\s+MATCH\s+SET|$)', converted_stmt, re.DOTALL)
+        if create_set_match:
+            create_set = create_set_match.group(1).strip()
+            # 移除ON CREATE SET部分
+            converted_stmt = re.sub(r'ON\s+CREATE\s+SET\s+([^O]+?)(?:ON\s+MATCH\s+SET|$)', '', converted_stmt, flags=re.DOTALL)
+            # 添加普通的SET语句
+            if not converted_stmt.strip().endswith(';'):
+                converted_stmt = converted_stmt.strip() + " SET " + create_set
+    
+    # 移除ON MATCH SET部分
+    converted_stmt = re.sub(r'ON\s+MATCH\s+SET\s+.+', '', converted_stmt, flags=re.DOTALL)
+    
+    # 替换datetime()函数
+    converted_stmt = converted_stmt.replace('datetime()', 'current_timestamp')
+    
+    return converted_stmt
 
 
 def transform_json_to_cypher(pattern_info: models.AnalyticalSQLPattern) -> List[str]:
@@ -305,7 +353,18 @@ def transform_json_to_cypher(pattern_info: models.AnalyticalSQLPattern) -> List[
         else:
             executable_statements.append(stmt)
     
-    return executable_statements
+    # 转换为AGE 1.5.0兼容的Cypher语句
+    age_compatible_statements = []
+    for stmt in executable_statements:
+        if isinstance(stmt, str):
+            age_compatible_statements.append(convert_cypher_for_age(stmt))
+        else:
+            # 如果是带参数的语句，转换query部分
+            converted_query = convert_cypher_for_age(stmt['query'])
+            stmt['query'] = converted_query
+            age_compatible_statements.append(stmt)
+    
+    return age_compatible_statements
 
 
 async def build_graph_for_pattern(pattern_info: models.AnalyticalSQLPattern) -> bool:
