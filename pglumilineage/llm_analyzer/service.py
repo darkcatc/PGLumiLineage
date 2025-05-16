@@ -825,31 +825,41 @@ def parse_llm_response(response_content: str) -> Optional[Dict]:
         
         if json_match:
             json_str = json_match.group(1)
-            logger.debug(f"从 markdown 代码块中提取到 JSON 字符串")
+            logger.info(f"成功从 markdown 代码块中提取到 JSON 字符串")
         else:
             # 如果没有 markdown 格式，尝试直接解析整个响应
             json_str = response_content
-            logger.debug(f"使用完整响应作为 JSON 字符串")
+            logger.info(f"未找到 markdown 代码块，使用完整响应作为 JSON 字符串")
         
-        # 清理 JSON 字符串，处理可能的格式问题
-        # 替换单引号为双引号（如果存在）
-        json_str = json_str.replace("'", "\"")
-        
-        # 删除可能的 JavaScript 注释
-        json_str = re.sub(r'\s*//.*?[\r\n]', '\n', json_str)
-        
-        # 解析 JSON
-        relations_json = json.loads(json_str)
-        
-        # 记录成功解析的信息
-        logger.info(f"成功解析 LLM 响应为 JSON 对象")
-        
-        # 返回解析后的 JSON 对象
-        return relations_json
+        # 尝试直接解析 JSON
+        try:
+            relations_json = json.loads(json_str)
+            logger.info(f"成功解析 LLM 响应为 JSON 对象")
+            return relations_json
+        except json.JSONDecodeError as first_error:
+            logger.warning(f"直接解析 JSON 失败: {str(first_error)}，尝试预处理后再解析")
+            
+            # 清理 JSON 字符串，处理可能的格式问题
+            # 删除可能的 JavaScript 注释
+            json_str = re.sub(r'\s*//.*?[\r\n]', '\n', json_str)
+            
+            # 尝试再次解析
+            relations_json = json.loads(json_str)
+            logger.info(f"预处理后成功解析 LLM 响应为 JSON 对象")
+            return relations_json
         
     except json.JSONDecodeError as e:
         logger.error(f"解析 LLM 响应 JSON 失败: {str(e)}")
-        logger.debug(f"尝试解析的内容: {response_content[:500]}...")
+        logger.debug(f"尝试解析的内容: {json_str[:500]}...")
+        
+        # 保存失败的 JSON 内容到文件，方便调试
+        try:
+            with open("failed_json_parse.txt", "w", encoding="utf-8") as f:
+                f.write(json_str)
+            logger.info("已将解析失败的 JSON 内容保存到 failed_json_parse.txt")
+        except Exception as write_error:
+            logger.warning(f"保存失败的 JSON 内容时出错: {str(write_error)}")
+        
         return None
     except Exception as e:
         logger.error(f"解析 LLM 响应失败: {str(e)}")
