@@ -1,0 +1,138 @@
+# 特殊情况Cypher语句生成结果
+
+## 生成的Cypher语句 (共 12 条):
+
+### 语句 1
+
+```cypher
+
+    MERGE (db:Database {name: 'test_db'})
+    
+```
+
+### 语句 2
+
+```cypher
+
+        MERGE (schema:Schema {name: 'public', database_name: 'test_db'})
+        WITH schema
+        MATCH (db:Database {name: 'test_db'})
+        MERGE (db)-[:HAS_SCHEMA]->(schema)
+        
+```
+
+### 语句 3
+
+```cypher
+
+        MERGE (table:Table {name: 'special_table', schema_name: 'public', database_name: 'test_db', object_type: 'TABLE'})
+        WITH table
+        MATCH (schema:Schema {name: 'public', database_name: 'test_db'})
+        MERGE (schema)-[:HAS_OBJECT]->(table)
+        
+```
+
+### 语句 4
+
+```cypher
+
+        MERGE (table:Table {name: 'source_table', schema_name: 'public', database_name: 'test_db', object_type: 'TABLE'})
+        WITH table
+        MATCH (schema:Schema {name: 'public', database_name: 'test_db'})
+        MERGE (schema)-[:HAS_OBJECT]->(table)
+        
+```
+
+### 语句 5
+
+```cypher
+
+        MERGE (table:Table {name: 'source_table', schema_name: 'public', database_name: 'test_db', object_type: 'TABLE'})
+        WITH table
+        MATCH (schema:Schema {name: 'public', database_name: 'test_db'})
+        MERGE (schema)-[:HAS_OBJECT]->(table)
+        
+```
+
+### 语句 6
+
+```cypher
+
+        MERGE (table:Table {name: 'special_table', schema_name: 'public', database_name: 'test_db', object_type: 'TABLE'})
+        WITH table
+        MATCH (schema:Schema {name: 'public', database_name: 'test_db'})
+        MERGE (schema)-[:HAS_OBJECT]->(table)
+        
+```
+
+### 语句 7
+
+```cypher
+
+    MERGE (sp:SqlPattern {sql_hash: 'special_hash'})
+    SET sp.normalized_sql = 'SELECT \'Literal Value\' as special_column',
+        sp.sample_sql = 'SELECT \'Literal Value\' as special_column',
+        sp.source_database_name = 'test_db',
+        sp.updated_at = datetime()
+    
+```
+
+### 语句 8
+
+```cypher
+
+        MERGE (tgt_col:Column {fqn: 'test_db.public.special_table.special_column', name: 'special_column'})
+        WITH tgt_col
+        MATCH (tgt_obj) WHERE (tgt_obj:Table OR tgt_obj:View) AND tgt_obj.name = 'special_table' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'test_db'
+        MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)
+        
+```
+
+### 语句 9
+
+```cypher
+
+                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'source_table' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'test_db'
+                MATCH (tgt_col:Column {fqn: 'test_db.public.special_table.special_column'})
+                MERGE (src_obj)-[df:DATA_FLOW {sql_hash: 'special_hash'}]->(tgt_col)
+                ON CREATE SET df.transformation_logic = '\'Literal Value\' as special_column',
+                              df.derivation_type = 'LITERAL_ASSIGNMENT',
+                              df.created_at = datetime(),
+                              df.last_seen_at = datetime()
+                ON MATCH SET df.transformation_logic = '\'Literal Value\' as special_column',
+                             df.derivation_type = 'LITERAL_ASSIGNMENT',
+                             df.last_seen_at = datetime()
+                
+```
+
+### 语句 10
+
+```cypher
+
+                MATCH (sp:SqlPattern {sql_hash: 'special_hash'})
+                MATCH (src_obj)-[df:DATA_FLOW {sql_hash: 'special_hash'}]->(tgt_col:Column {fqn: 'test_db.public.special_table.special_column'})
+                WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'source_table' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'test_db'
+                MERGE (sp)-[:GENERATES_FLOW]->(df)
+                
+```
+
+### 语句 11
+
+```cypher
+
+            MATCH (sp:SqlPattern {sql_hash: 'special_hash'})
+            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = 'source_table' AND obj.schema_name = 'public' AND obj.database_name = 'test_db'
+            MERGE (sp)-[:READS_FROM]->(obj)
+            
+```
+
+### 语句 12
+
+```cypher
+
+            MATCH (sp:SqlPattern {sql_hash: 'special_hash'})
+            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = 'special_table' AND obj.schema_name = 'public' AND obj.database_name = 'test_db'
+            MERGE (sp)-[:WRITES_TO]->(obj)
+            
+```
+
