@@ -1,0 +1,1568 @@
+# 转换后的Cypher语句 (适用于AGE 1.5.0)
+
+-- 语句 1
+
+MERGE (db {name: 'tpcds'}, label: "Database")
+
+-- 语句 2
+
+MERGE (db)
+
+-- 语句 3
+
+MERGE (schema)
+
+-- 语句 4
+
+MATCH (db {label: "Node"})
+MATCH (schema {label: "Node"})
+MERGE (db)-[:HAS_SCHEMA]->(schema) MERGE (db)-[:HAS_SCHEMA]->(schema)
+
+-- 语句 5
+
+MERGE (schema)
+
+-- 语句 6
+
+MERGE (table)
+
+-- 语句 7
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 8
+
+MERGE (schema)
+
+-- 语句 9
+
+MERGE (table)
+
+-- 语句 10
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 11
+
+MERGE (schema)
+
+-- 语句 12
+
+MERGE (table)
+
+-- 语句 13
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 14
+
+MERGE (schema)
+
+-- 语句 15
+
+MERGE (table)
+
+-- 语句 16
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 17
+
+MERGE (schema)
+
+-- 语句 18
+
+MERGE (table)
+
+-- 语句 19
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 20
+
+MERGE (schema)
+
+-- 语句 21
+
+MERGE (table)
+
+-- 语句 22
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 23
+
+MERGE (schema)
+
+-- 语句 24
+
+MERGE (table)
+
+-- 语句 25
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 26
+
+MERGE (schema)
+
+-- 语句 27
+
+MERGE (table)
+
+-- 语句 28
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 29
+
+MERGE (schema)
+
+-- 语句 30
+
+MERGE (table)
+
+-- 语句 31
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 32
+
+MERGE (schema)
+
+-- 语句 33
+
+MERGE (table)
+
+-- 语句 34
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 35
+
+MERGE (schema)
+
+-- 语句 36
+
+MERGE (table)
+
+-- 语句 37
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 38
+
+MERGE (schema)
+
+-- 语句 39
+
+MERGE (table)
+
+-- 语句 40
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 41
+
+MERGE (schema)
+
+-- 语句 42
+
+MERGE (table)
+
+-- 语句 43
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 44
+
+MERGE (schema)
+
+-- 语句 45
+
+MERGE (table)
+
+-- 语句 46
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 47
+
+MERGE (schema)
+
+-- 语句 48
+
+MERGE (table)
+
+-- 语句 49
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 50
+
+MERGE (schema)
+
+-- 语句 51
+
+MERGE (table)
+
+-- 语句 52
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 53
+
+MERGE (schema)
+
+-- 语句 54
+
+MERGE (table)
+
+-- 语句 55
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 56
+
+MERGE (schema)
+
+-- 语句 57
+
+MERGE (table)
+
+-- 语句 58
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 59
+
+MERGE (schema)
+
+-- 语句 60
+
+MERGE (table)
+
+-- 语句 61
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 62
+
+MERGE (schema)
+
+-- 语句 63
+
+MERGE (table)
+
+-- 语句 64
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 65
+
+MERGE (schema)
+
+-- 语句 66
+
+MERGE (table)
+
+-- 语句 67
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 68
+
+MERGE (schema)
+
+-- 语句 69
+
+MERGE (table)
+
+-- 语句 70
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 71
+
+MERGE (schema)
+
+-- 语句 72
+
+MERGE (table)
+
+-- 语句 73
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 74
+
+MERGE (schema)
+
+-- 语句 75
+
+MERGE (table)
+
+-- 语句 76
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 77
+
+MERGE (schema)
+
+-- 语句 78
+
+MERGE (table)
+
+-- 语句 79
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 80
+
+MERGE (schema)
+
+-- 语句 81
+
+MERGE (table)
+
+-- 语句 82
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 83
+
+MERGE (schema)
+
+-- 语句 84
+
+MERGE (table)
+
+-- 语句 85
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 86
+
+MERGE (schema)
+
+-- 语句 87
+
+MERGE (table)
+
+-- 语句 88
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 89
+
+MERGE (schema)
+
+-- 语句 90
+
+MERGE (table)
+
+-- 语句 91
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 92
+
+MERGE (schema)
+
+-- 语句 93
+
+MERGE (table)
+
+-- 语句 94
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 95
+
+MERGE (schema)
+
+-- 语句 96
+
+MERGE (table)
+
+-- 语句 97
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 98
+
+MERGE (schema)
+
+-- 语句 99
+
+MERGE (table)
+
+-- 语句 100
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 101
+
+MERGE (schema)
+
+-- 语句 102
+
+MERGE (table)
+
+-- 语句 103
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 104
+
+MERGE (schema)
+
+-- 语句 105
+
+MERGE (table)
+
+-- 语句 106
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 107
+
+MERGE (schema)
+
+-- 语句 108
+
+MERGE (table)
+
+-- 语句 109
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 110
+
+MERGE (schema)
+
+-- 语句 111
+
+MERGE (table)
+
+-- 语句 112
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 113
+
+MERGE (schema)
+
+-- 语句 114
+
+MERGE (table)
+
+-- 语句 115
+
+MATCH (schema {label: "Node"})
+MATCH (table {label: "Node"})
+MERGE (schema)-[:HAS_OBJECT]->(table) MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 116
+
+MERGE (sp {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}, label: "SqlPattern")
+    SET sp.normalized_sql = 'SELECT /* 规范化后的SQL */ ...',
+        sp.sample_sql = 'SELECT /* 原始SQL示例 */ ...',
+        sp.source_database_name = 'tpcds',
+        sp.updated_at = current_timestamp
+
+-- 语句 117
+
+MERGE (tgt_obj)
+
+-- 语句 118
+
+MERGE (tgt_col)
+
+-- 语句 119
+
+MATCH (tgt_obj {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)
+
+-- 语句 120
+
+MERGE (src_obj)
+
+-- 语句 121
+
+MERGE (src_col)
+
+-- 语句 122
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 123
+
+MERGE (src_col)
+
+-- 语句 124
+
+MERGE (tgt_col)
+
+-- 语句 125
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 126
+
+MERGE (sp)
+
+-- 语句 127
+
+MERGE (df)
+
+-- 语句 128
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 129
+
+MERGE (tgt_obj)
+
+-- 语句 130
+
+MERGE (tgt_col)
+
+-- 语句 131
+
+MATCH (tgt_obj {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)
+
+-- 语句 132
+
+MERGE (src_obj)
+
+-- 语句 133
+
+MERGE (tgt_col)
+
+-- 语句 134
+
+MATCH (src_obj {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_obj)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 135
+
+MERGE (sp)
+
+-- 语句 136
+
+MERGE (df)
+
+-- 语句 137
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 138
+
+MERGE (src_obj)
+
+-- 语句 139
+
+MERGE (tgt_col)
+
+-- 语句 140
+
+MATCH (src_obj {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_obj)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 141
+
+MERGE (sp)
+
+-- 语句 142
+
+MERGE (df)
+
+-- 语句 143
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 144
+
+MERGE (src_obj)
+
+-- 语句 145
+
+MERGE (tgt_col)
+
+-- 语句 146
+
+MATCH (src_obj {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_obj)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 147
+
+MERGE (sp)
+
+-- 语句 148
+
+MERGE (df)
+
+-- 语句 149
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 150
+
+MERGE (tgt_obj)
+
+-- 语句 151
+
+MERGE (tgt_col)
+
+-- 语句 152
+
+MATCH (tgt_obj {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)
+
+-- 语句 153
+
+MERGE (src_obj)
+
+-- 语句 154
+
+MERGE (src_col)
+
+-- 语句 155
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 156
+
+MERGE (src_col)
+
+-- 语句 157
+
+MERGE (tgt_col)
+
+-- 语句 158
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 159
+
+MERGE (sp)
+
+-- 语句 160
+
+MERGE (df)
+
+-- 语句 161
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 162
+
+MERGE (src_obj)
+
+-- 语句 163
+
+MERGE (src_col)
+
+-- 语句 164
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 165
+
+MERGE (src_col)
+
+-- 语句 166
+
+MERGE (tgt_col)
+
+-- 语句 167
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 168
+
+MERGE (sp)
+
+-- 语句 169
+
+MERGE (df)
+
+-- 语句 170
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 171
+
+MERGE (src_obj)
+
+-- 语句 172
+
+MERGE (src_col)
+
+-- 语句 173
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 174
+
+MERGE (src_col)
+
+-- 语句 175
+
+MERGE (tgt_col)
+
+-- 语句 176
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 177
+
+MERGE (sp)
+
+-- 语句 178
+
+MERGE (df)
+
+-- 语句 179
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 180
+
+MERGE (tgt_obj)
+
+-- 语句 181
+
+MERGE (tgt_col)
+
+-- 语句 182
+
+MATCH (tgt_obj {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)
+
+-- 语句 183
+
+MERGE (src_obj)
+
+-- 语句 184
+
+MERGE (src_col)
+
+-- 语句 185
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 186
+
+MERGE (src_col)
+
+-- 语句 187
+
+MERGE (tgt_col)
+
+-- 语句 188
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 189
+
+MERGE (sp)
+
+-- 语句 190
+
+MERGE (df)
+
+-- 语句 191
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 192
+
+MERGE (src_obj)
+
+-- 语句 193
+
+MERGE (src_col)
+
+-- 语句 194
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 195
+
+MERGE (src_col)
+
+-- 语句 196
+
+MERGE (tgt_col)
+
+-- 语句 197
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 198
+
+MERGE (sp)
+
+-- 语句 199
+
+MERGE (df)
+
+-- 语句 200
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 201
+
+MERGE (src_obj)
+
+-- 语句 202
+
+MERGE (src_col)
+
+-- 语句 203
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 204
+
+MERGE (src_col)
+
+-- 语句 205
+
+MERGE (tgt_col)
+
+-- 语句 206
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 207
+
+MERGE (sp)
+
+-- 语句 208
+
+MERGE (df)
+
+-- 语句 209
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 210
+
+MERGE (tgt_obj)
+
+-- 语句 211
+
+MERGE (tgt_col)
+
+-- 语句 212
+
+MATCH (tgt_obj {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)
+
+-- 语句 213
+
+MERGE (src_obj)
+
+-- 语句 214
+
+MERGE (src_col)
+
+-- 语句 215
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 216
+
+MERGE (src_col)
+
+-- 语句 217
+
+MERGE (tgt_col)
+
+-- 语句 218
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 219
+
+MERGE (sp)
+
+-- 语句 220
+
+MERGE (df)
+
+-- 语句 221
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 222
+
+MERGE (src_obj)
+
+-- 语句 223
+
+MERGE (src_col)
+
+-- 语句 224
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 225
+
+MERGE (src_col)
+
+-- 语句 226
+
+MERGE (tgt_col)
+
+-- 语句 227
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 228
+
+MERGE (sp)
+
+-- 语句 229
+
+MERGE (df)
+
+-- 语句 230
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 231
+
+MERGE (src_obj)
+
+-- 语句 232
+
+MERGE (src_col)
+
+-- 语句 233
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 234
+
+MERGE (src_col)
+
+-- 语句 235
+
+MERGE (tgt_col)
+
+-- 语句 236
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 237
+
+MERGE (sp)
+
+-- 语句 238
+
+MERGE (df)
+
+-- 语句 239
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 240
+
+MERGE (src_obj)
+
+-- 语句 241
+
+MERGE (src_col)
+
+-- 语句 242
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 243
+
+MERGE (src_col)
+
+-- 语句 244
+
+MERGE (tgt_col)
+
+-- 语句 245
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 246
+
+MERGE (sp)
+
+-- 语句 247
+
+MERGE (df)
+
+-- 语句 248
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 249
+
+MERGE (src_obj)
+
+-- 语句 250
+
+MERGE (src_col)
+
+-- 语句 251
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 252
+
+MERGE (src_col)
+
+-- 语句 253
+
+MERGE (tgt_col)
+
+-- 语句 254
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 255
+
+MERGE (sp)
+
+-- 语句 256
+
+MERGE (df)
+
+-- 语句 257
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 258
+
+MERGE (src_obj)
+
+-- 语句 259
+
+MERGE (src_col)
+
+-- 语句 260
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 261
+
+MERGE (src_col)
+
+-- 语句 262
+
+MERGE (tgt_col)
+
+-- 语句 263
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 264
+
+MERGE (sp)
+
+-- 语句 265
+
+MERGE (df)
+
+-- 语句 266
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 267
+
+MERGE (tgt_obj)
+
+-- 语句 268
+
+MERGE (tgt_col)
+
+-- 语句 269
+
+MATCH (tgt_obj {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)
+
+-- 语句 270
+
+MERGE (src_obj)
+
+-- 语句 271
+
+MERGE (src_col)
+
+-- 语句 272
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 273
+
+MERGE (src_col)
+
+-- 语句 274
+
+MERGE (tgt_col)
+
+-- 语句 275
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 276
+
+MERGE (sp)
+
+-- 语句 277
+
+MERGE (df)
+
+-- 语句 278
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 279
+
+MERGE (tgt_obj)
+
+-- 语句 280
+
+MERGE (tgt_col)
+
+-- 语句 281
+
+MATCH (tgt_obj {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)
+
+-- 语句 282
+
+MERGE (src_obj)
+
+-- 语句 283
+
+MERGE (src_col)
+
+-- 语句 284
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 285
+
+MERGE (src_col)
+
+-- 语句 286
+
+MERGE (tgt_col)
+
+-- 语句 287
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 288
+
+MERGE (sp)
+
+-- 语句 289
+
+MERGE (df)
+
+-- 语句 290
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 291
+
+MERGE (src_obj)
+
+-- 语句 292
+
+MERGE (src_col)
+
+-- 语句 293
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 294
+
+MERGE (src_col)
+
+-- 语句 295
+
+MERGE (tgt_col)
+
+-- 语句 296
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 297
+
+MERGE (sp)
+
+-- 语句 298
+
+MERGE (df)
+
+-- 语句 299
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 300
+
+MERGE (src_obj)
+
+-- 语句 301
+
+MERGE (src_col)
+
+-- 语句 302
+
+MATCH (src_obj {label: "Node"})
+MATCH (src_col {label: "Node"})
+MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
+
+-- 语句 303
+
+MERGE (src_col)
+
+-- 语句 304
+
+MERGE (tgt_col)
+
+-- 语句 305
+
+MATCH (src_col {label: "Node"})
+MATCH (tgt_col {label: "Node"})
+MERGE (src_col)-[:DATA_FLOW]->(tgt_col)
+
+-- 语句 306
+
+MERGE (sp)
+
+-- 语句 307
+
+MERGE (df)
+
+-- 语句 308
+
+MATCH (sp {label: "Node"})
+MATCH (df {label: "Node"})
+MERGE (sp)-[:GENERATES_FLOW]->(df) MERGE (sp)-[:GENERATES_FLOW]->(df)
+
+-- 语句 309
+
+MERGE (sp)
+
+-- 语句 310
+
+MERGE (obj)
+
+-- 语句 311
+
+MATCH (sp {label: "Node"})
+MATCH (obj {label: "Node"})
+MERGE (sp)-[:READS_FROM]->(obj)
+
+-- 语句 312
+
+MERGE (sp)
+
+-- 语句 313
+
+MERGE (obj)
+
+-- 语句 314
+
+MATCH (sp {label: "Node"})
+MATCH (obj {label: "Node"})
+MERGE (sp)-[:READS_FROM]->(obj)
+
+-- 语句 315
+
+MERGE (sp)
+
+-- 语句 316
+
+MERGE (obj)
+
+-- 语句 317
+
+MATCH (sp {label: "Node"})
+MATCH (obj {label: "Node"})
+MERGE (sp)-[:READS_FROM]->(obj)
+
+-- 语句 318
+
+MERGE (sp)
+
+-- 语句 319
+
+MERGE (obj)
+
+-- 语句 320
+
+MATCH (sp {label: "Node"})
+MATCH (obj {label: "Node"})
+MERGE (sp)-[:READS_FROM]->(obj)
+
+-- 语句 321
+
+MERGE (sp)
+
+-- 语句 322
+
+MERGE (obj)
+
+-- 语句 323
+
+MATCH (sp {label: "Node"})
+MATCH (obj {label: "Node"})
+MERGE (sp)-[:READS_FROM]->(obj)
+
+-- 语句 324
+
+MERGE (sp)
+
+-- 语句 325
+
+MERGE (obj)
+
+-- 语句 326
+
+MATCH (sp {label: "Node"})
+MATCH (obj {label: "Node"})
+MERGE (sp)-[:READS_FROM]->(obj)
+
+-- 语句 327
+
+MERGE (sp)
+
+-- 语句 328
+
+MERGE (obj)
+
+-- 语句 329
+
+MATCH (sp {label: "Node"})
+MATCH (obj {label: "Node"})
+MERGE (sp)-[:READS_FROM]->(obj)
+
+-- 语句 330
+
+MERGE (sp)
+
+-- 语句 331
+
+MERGE (obj)
+
+-- 语句 332
+
+MATCH (sp {label: "Node"})
+MATCH (obj {label: "Node"})
+MERGE (sp)-[:READS_FROM]->(obj)
+
+-- 语句 333
+
+MERGE (sp)
+
+-- 语句 334
+
+MERGE (obj)
+
+-- 语句 335
+
+MATCH (sp {label: "Node"})
+MATCH (obj {label: "Node"})
+MERGE (sp)-[:WRITES_TO]->(obj)
+

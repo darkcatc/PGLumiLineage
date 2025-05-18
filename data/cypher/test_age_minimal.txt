@@ -1,0 +1,35 @@
+# 简化版 AGE 1.5.0 兼容的 Cypher 语句
+
+-- 语句 1
+
+MERGE (db {name: 'tpcds', label: 'Database'})
+
+-- 语句 2
+
+MERGE (schema {name: 'public', database_name: 'tpcds', label: 'Schema'})
+
+-- 语句 3
+
+MATCH (db {label: 'Database', name: 'tpcds'})
+MATCH (schema {label: 'Schema', name: 'public', database_name: 'tpcds'})
+MERGE (db)-[:HAS_SCHEMA]->(schema)
+
+-- 语句 4
+
+MERGE (table {name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE', label: 'Table'})
+
+-- 语句 5
+
+MATCH (schema {label: 'Schema', name: 'public', database_name: 'tpcds'})
+MATCH (table {label: 'Table', name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds'})
+MERGE (schema)-[:HAS_OBJECT]->(table)
+
+-- 语句 6
+
+MERGE (sp {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8', sql_type: 'CREATE_VIEW', database_name: 'tpcds', schema_name: 'public', object_name: 'monthly_channel_returns_analysis_report', label: 'SqlPattern'})
+
+-- 语句 7
+
+MATCH (sp {label: 'SqlPattern', sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+MATCH (table {label: 'Table', name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds'})
+MERGE (sp)-[:WRITES_TO]->(table)

@@ -1,6 +1,6 @@
 # PGLumiLineage 项目进度与设计决策追溯系统
 
-**最后更新时间**：2025-05-16
+**最后更新时间**：2025-05-18
 
 ## 项目当前状态
 
@@ -15,9 +15,11 @@ PGLumiLineage 是一个基于 PostgreSQL 的自动化数据血缘分析与知识
 - 知识图谱构建
 - 灵活配置与调度系统
 - 血缘关系可视化API接口
+- AGE图数据库兼容性适配
 
 ### 正在进行的工作
 
+- 基于AntV G6的前端可视化模块开发
 - LLM 分析器提示词优化，提高数据血缘分析的准确性
 - 临时表处理逻辑完善
 - 进度日志与设计决策追溯系统建立
@@ -33,6 +35,7 @@ PGLumiLineage 是一个基于 PostgreSQL 的自动化数据血缘分析与知识
 - [LLM分析器 (llm_analyzer)](./llm_analyzer_decisions.md)
 - [AGE图谱构建器 (age_graph_builder)](./age_builder_decisions.md)
 - [血缘关系 API (api)](./api_decisions.md)
+- [血缘关系可视化 UI (frontend)](./ui_decisions.md)
 - [调度与编排服务 (scheduler)](./scheduler_decisions.md)
 - [通用模块与配置 (common)](./common_decisions.md)
 - [数据库设计 (iwdb_schemas)](./database_design_decisions.md)
