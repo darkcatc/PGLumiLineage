@@ -11,6 +11,7 @@
 
 from typing import List, Dict, Any, Optional
 import logging
+import json
 from .models import GraphResponse, ObjectDetailsResponse, PathResponse, NodeType, Node, Edge, EdgeType
 from .repository import LineageRepository
 

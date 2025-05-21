@@ -16,6 +16,7 @@ from .models import NodeType
 
 # 设置日志
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class LineageRepository:
@@ -237,26 +238,20 @@ class LineageRepository:
     async def query_subgraph(self, root_node_type: NodeType, root_node_fqn: str, depth: int = 1,
                         relationship_types: List[str] = None) -> Dict[str, Any]:
         """
-        查询以指定节点为起点的子图。
+        查询子图。
 
         Args:
             root_node_type: 根节点类型
-            root_node_fqn: 根节点的完全限定名
-            depth: 最大深度
-            relationship_types: 关系类型过滤
+            root_node_fqn: 根节点的全限定名称
+            depth: 查询的深度
+            relationship_types: 关系类型列表
 
         Returns:
-            Dict[str, Any]: 子图数据
+            子图数据，包含节点和关系
         """
+        logger.info(f"查询子图: root_node_type={root_node_type}, root_node_fqn={root_node_fqn}, depth={depth}")
+        
         try:
-            logger.info(f"查询子图: root_node_type={root_node_type}, root_node_fqn={root_node_fqn}, depth={depth}")
-            
-            # 使用直接SQL查询获取节点
-            conn = await asyncpg.connect(**self.db_config)
-            
-            # 设置搜索路径
-            await conn.execute("SET search_path = ag_catalog, \"$user\", public;")
-            
             # 解析完全限定名
             parts = root_node_fqn.split('.')
             if len(parts) >= 3:
@@ -268,82 +263,119 @@ class LineageRepository:
                 database_name = ""
                 schema_name = ""
             
-            # 查询节点
-            query = f"""
+            logger.debug(f"解析FQN: database_name={database_name}, schema_name={schema_name}, object_name={object_name}")
+            
+            # 使用直接SQL查询获取节点
+            conn = await asyncpg.connect(**self.db_config)
+            
+            # 设置搜索路径
+            await conn.execute("SET search_path = ag_catalog, \"$user\", public;")
+            
+            # 使用正确的 AGE 1.5.0 Cypher 查询语法
+            # 在 AGE 中，第一层定义的 properties 是不用写的，直接使用 n.name 而不是 n.properties.name
+            check_node_query = f"""
             SELECT * FROM cypher('{self.graph_name}', $$ 
                 MATCH (n)
-                WHERE n.label = '{root_node_type.value}'
-            """    
-            
-            if len(parts) >= 3:
-                query += f"""
-                  AND n.name = '{object_name}'
-                  AND n.schema_name = '{schema_name}'
-                  AND n.database_name = '{database_name}'
-                """
-            else:
-                query += f"""
-                  AND n.name = '{object_name}'
-                """
-            
-            query += """
-                RETURN n LIMIT 1
+                WHERE n.label = '{root_node_type.value}' AND 
+                      n.name = '{object_name}'
+                {f"AND n.schema_name = '{schema_name}'" if len(parts) >= 3 else ""}
+                {f"AND n.database_name = '{database_name}'" if len(parts) >= 3 else ""}
+                RETURN n
+                LIMIT 1
             $$) as (n agtype);
             """
             
-            result = await conn.fetch(query)
-            nodes = []
-            node_ids = set()
+            logger.debug(f"检查节点存在性查询: {check_node_query}")
             
-            for row in result:
-                node_str = row['n']
-                if node_str:
-                    node = self._parse_age_vertex(node_str)
-                    if node and 'id' in node:
-                        nodes.append(node)
-                        node_ids.add(node['id'])
+            check_result = await conn.fetch(check_node_query)
             
-            # 如果找到了节点，查询其关系
+            if not check_result or len(check_result) == 0:
+                logger.warning(f"未找到节点: type={root_node_type.value}, name={object_name}, schema={schema_name if len(parts) >= 3 else 'N/A'}, db={database_name if len(parts) >= 3 else 'N/A'}")
+                await conn.close()
+                return {"nodes": [], "relationships": []}
+            
+            logger.info(f"找到节点: {check_result[0]['n']}")
+            
+            # 添加根节点
+            root_node = self._parse_age_vertex(check_result[0]['n'])
+            root_node_id = root_node['id']
+            nodes = [root_node]
+            
+            logger.debug(f"根节点ID: {root_node_id}")
+            
+            # 查询与根节点直接相连的关系，使用正确的 AGE 1.5.0 Cypher 查询语法
+            rel_query = f"""
+            SELECT * FROM cypher('{self.graph_name}', $$ 
+                MATCH (n)-[r]->(m) 
+                WHERE id(n) = {root_node_id} OR id(m) = {root_node_id}
+                RETURN r
+            $$) as (r agtype);
+            """
+            
+            logger.debug(f"关系查询SQL: {rel_query}")
+            rel_result = await conn.fetch(rel_query)
+            logger.debug(f"关系查询结果行数: {len(rel_result)}")
+            
+            # 解析关系并收集相关节点ID
+            related_node_ids = set()
             relationships = []
-            if nodes and depth > 0:
-                # 查询节点的关系
-                for node in nodes:
-                    if 'id' in node:
-                        # 查询has_column关系
-                        rel_query = f"""
-                        SELECT * FROM cypher('{self.graph_name}', $$ 
-                            MATCH (n)-[r]->(m)
-                            WHERE id(n) = {node['id']}
-                            RETURN r, m
-                        $$) as (r agtype, m agtype);
-                        """
+            
+            for row in rel_result:
+                rel_str = row['r']
+                logger.debug(f"原始关系数据: {rel_str}")
+                if rel_str:
+                    rel = self._parse_age_edge(rel_str)
+                    if rel and 'id' in rel:
+                        logger.debug(f"解析后的关系数据: {rel}")
                         
-                        rel_result = await conn.fetch(rel_query)
+                        # 收集关系中的节点ID
+                        start_id = rel.get('start_id')
+                        end_id = rel.get('end_id')
                         
-                        for rel_row in rel_result:
-                            rel_str = rel_row['r']
-                            related_node_str = rel_row['m']
-                            
-                            if rel_str and related_node_str:
-                                rel = self._parse_age_edge(rel_str)
-                                related_node = self._parse_age_vertex(related_node_str)
-                                
-                                if rel and related_node and 'id' in related_node:
-                                    relationships.append(rel)
-                                    
-                                    # 添加相关节点，如果还没有添加过
-                                    if related_node['id'] not in node_ids:
-                                        nodes.append(related_node)
-                                        node_ids.add(related_node['id'])
+                        if start_id and start_id != root_node_id:
+                            related_node_ids.add(start_id)
+                        if end_id and end_id != root_node_id:
+                            related_node_ids.add(end_id)
+                        
+                        # 将关系添加到结果中
+                        relationships.append(rel)
+            
+            # 查询相关节点
+            if related_node_ids:
+                related_ids_str = ", ".join([str(id) for id in related_node_ids])
+                node_query = f"""
+                SELECT * FROM cypher('{self.graph_name}', $$ 
+                    MATCH (n) 
+                    WHERE id(n) IN [{related_ids_str}]
+                    RETURN n
+                $$) as (n agtype);
+                """
+                
+                logger.debug(f"相关节点查询SQL: {node_query}")
+                node_result = await conn.fetch(node_query)
+                logger.debug(f"相关节点查询结果行数: {len(node_result)}")
+                
+                # 解析相关节点
+                for row in node_result:
+                    node_str = row['n']
+                    logger.debug(f"原始节点数据: {node_str}")
+                    if node_str:
+                        node = self._parse_age_vertex(node_str)
+                        if node and 'id' in node:
+                            logger.debug(f"解析后的节点数据: {node}")
+                            nodes.append(node)
             
             await conn.close()
             
+            logger.info(f"查询子图完成: 找到 {len(nodes)} 个节点和 {len(relationships)} 个关系")
             return {
                 "nodes": nodes,
                 "relationships": relationships
             }
         except Exception as e:
             logger.error(f"查询子图时发生错误: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             # 返回空结果
             return {
                 "nodes": [],

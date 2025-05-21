@@ -142,3 +142,106 @@ MATCH (n {label: 'Table', fqn: 'db.schema.table'}) RETURN n
 # 错误的格式（在 AGE 1.5.0 中不起作用）
 MATCH (n:Table {fqn: 'db.schema.table'}) RETURN n
 ```
+
+### AGE 1.5.0中的$符号转义问题
+
+| 决策日期 | 决策内容 | 主要理由 | 讨论的关键点 |
+|---------|---------|---------|------------|
+| 2024-07-21 | 解决AGE 1.5.0中的$符号转义问题 | 在PostgreSQL中执行Cypher查询时，$符号有特殊含义，需要正确转义 | 当使用psql命令行或其他SQL客户端执行Cypher查询时，$符号的转义处理不当会导致查询失败 |
+
+#### 问题描述
+
+在使用PostgreSQL执行AGE Cypher查询时，我们需要使用如下格式的SQL语句：
+
+```sql
+SELECT * FROM cypher('graph_name', $$ MATCH (n) RETURN n $$) as (n agtype);
+```
+
+这里的问题是：
+
+1. PostgreSQL使用`$$`来包裹Cypher查询，以避免内部的单引号和双引号需要转义
+2. 当Cypher查询中包含`$`符号时（如参数化查询），会与Psql的变量替换机制冲突
+3. 当使用命令行执行包含`$`的查询时，可能需要额外的shell转义
+
+#### 解决方案
+
+我们采用了以下解决方案：
+
+1. **在Python代码中执行Cypher查询时**：
+   ```python
+   query = f"SELECT * FROM cypher('{graph_name}', $$ {cypher_stmt} $$) AS (result agtype);"
+   await conn.execute(query)
+   ```
+   这种方式不需要额外转义`$`符号，因为`$$`字符串字面量会正确处理。
+
+2. **在命令行使用psql执行Cypher查询时**：
+   - 如果直接在命令行使用`-c`参数，需要额外转义`$`符号：
+     ```bash
+     psql -U username -d dbname -c "SELECT * FROM cypher('graph_name', \$\$ MATCH (n) RETURN n \$\$) as (n agtype);"
+     ```
+   - 更好的方法是将Cypher查询保存到文件中，然后使用`-f`参数执行：
+     ```bash
+     psql -U username -d dbname -f query.sql
+     ```
+     其中`query.sql`文件内容为：
+     ```sql
+     SELECT * FROM cypher('graph_name', $$ MATCH (n) RETURN n $$) as (n agtype);
+     ```
+
+3. **在代码中构建Cypher查询时**：
+   - 避免在Cypher查询中使用`$`符号作为参数占位符
+   - 使用字符串插值来构建Cypher查询，而不是使用参数化查询
+   - 对于需要动态构建的查询，使用如下方式：
+     ```python
+     def _interpolate_params(self, query: str, params: Dict[str, Any] = None) -> str:
+         """Cypher查询参数插值函数"""
+         if not params:
+             return query
+         
+         interpolated_query = query
+         
+         for key, value in params.items():
+             param_placeholder = "${" + key + "}"
+             
+             if param_placeholder not in interpolated_query:
+                 continue
+             
+             # 根据参数类型进行适当的处理
+             if value is None:
+                 replacement = "NULL"
+             elif isinstance(value, bool):
+                 replacement = str(value).lower()
+             elif isinstance(value, (int, float)):
+                 replacement = str(value)
+             elif isinstance(value, str):
+                 replacement = f"'{value.replace('\'', '\\'')}'"
+             # ...其他类型的处理...
+             
+             # 替换查询中的占位符
+             interpolated_query = interpolated_query.replace(param_placeholder, replacement)
+         
+         return interpolated_query
+     ```
+
+通过以上方法，我们成功解决了AGE 1.5.0中的`$`符号转义问题，确保了Cypher查询的正确执行。
+
+## 节点ID和属性访问的特殊处理
+
+在AGE 1.5.0中，节点ID和属性的访问方式与之前版本有显著不同，需要特别注意以下几点：
+
+1. **节点ID的访问**：
+   - 在AGE 1.5.0中，必须使用`id(n)`函数来获取节点ID，而不是直接访问`n.id`
+   - 错误示例：`WHERE n.id = 123`
+   - 正确示例：`WHERE id(n) = 123`
+
+2. **属性的直接访问**：
+   - 在AGE 1.5.0中，属性可以直接通过点符号访问，不需要通过`properties`中间层，而且Return的时候也不能使用`properties`，否则会返回`null`，age针对第一层的`properties`会进行透明化处理，即`n.properties.name`等价于`n.name`
+   - 错误示例：`WHERE n.properties.name = 'customer'`
+   - 正确示例：`WHERE n.name = 'customer'`
+
+3. **节点标签的处理**：
+   - 在AGE 1.5.0中，节点标签通过`label`属性访问，而不是通过`:Label`语法
+   - 错误示例：`MATCH (n:Table)`
+   - 正确示例：`MATCH (n) WHERE n.label = 'table'`
+
+这些变化要求我们在编写Cypher查询时必须遵循AGE 1.5.0的语法规范，否则会导致查询失败或返回错误的结果。在我们的实现中，已经针对这些变化进行了适配，确保查询能够正确执行。
