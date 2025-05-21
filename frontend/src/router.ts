@@ -62,7 +62,7 @@ const router = createRouter({
 })
 
 // 路由前置守卫，设置页面标题
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   // 设置页面标题
   if (to.meta.title) {
     document.title = to.meta.title as string

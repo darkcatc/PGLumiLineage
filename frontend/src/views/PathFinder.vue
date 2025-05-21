@@ -146,12 +146,13 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import GraphContainer from '@/components/graph/GraphContainer.vue';
 import { lineageApi } from '@/services/api';
 import { NodeType, EdgeType, PathResponse, PathQueryParams } from '@/types/api';
-import { NODE_STYLE_MAP, EDGE_STYLE_MAP } from '@/types/graph';
+import { NODE_STYLE_MAP } from '@/types/graph';
+import { ElMessage } from 'element-plus';
 
 // 路由实例
 const router = useRouter();

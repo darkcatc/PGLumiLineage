@@ -1,0 +1,1286 @@
+-- 语句 1
+
+
+    MERGE (db {label: "database", name: 'tpcds'})
+    
+
+-- 语句 2
+
+
+        MERGE (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        WITH schema
+        MATCH (db {label: "database", name: 'tpcds'})
+        MERGE (db)-[:has_schema]->(schema)
+        
+
+-- 语句 3
+
+
+        MERGE (t_table {label: "table", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 4
+
+
+        MERGE (t_table {label: "table", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 5
+
+
+        MERGE (t_table {label: "table", name: 'date_dim', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 6
+
+
+        MERGE (t_table {label: "table", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 7
+
+
+        MERGE (t_table {label: "table", name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 8
+
+
+        MERGE (t_table {label: "table", name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 9
+
+
+        MERGE (t_table {label: "table", name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 10
+
+
+        MERGE (t_table {label: "table", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 11
+
+
+        MERGE (t_table {label: "table", name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 12
+
+
+        MERGE (t_table {label: "table", name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 13
+
+
+        MERGE (t_table {label: "table", name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 14
+
+
+        MERGE (t_table {label: "table", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 15
+
+
+        MERGE (t_table {label: "table", name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 16
+
+
+        MERGE (t_table {label: "table", name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 17
+
+
+        MERGE (t_table {label: "table", name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 18
+
+
+        MERGE (t_table {label: "table", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 19
+
+
+        MERGE (t_table {label: "table", name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 20
+
+
+        MERGE (t_table {label: "table", name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 21
+
+
+        MERGE (t_table {label: "table", name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 22
+
+
+        MERGE (t_table {label: "table", name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 23
+
+
+        MERGE (t_table {label: "table", name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 24
+
+
+        MERGE (t_table {label: "table", name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 25
+
+
+        MERGE (t_table {label: "table", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 26
+
+
+        MERGE (t_table {label: "table", name: 'reason', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 27
+
+
+        MERGE (t_table {label: "table", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 28
+
+
+        MERGE (t_table {label: "table", name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 29
+
+
+        MERGE (t_table {label: "table", name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 30
+
+
+        MERGE (t_table {label: "table", name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 31
+
+
+        MERGE (t_table {label: "table", name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 32
+
+
+        MERGE (t_table {label: "table", name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 33
+
+
+        MERGE (t_table {label: "table", name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 34
+
+
+        MERGE (t_table {label: "table", name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 35
+
+
+        MERGE (t_table {label: "table", name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 36
+
+
+        MERGE (t_table {label: "table", name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 37
+
+
+        MERGE (t_table {label: "table", name: 'date_dim', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 38
+
+
+        MERGE (t_table {label: "table", name: 'reason', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 39
+
+
+        MERGE (t_table {label: "table", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})
+        WITH t_table as table
+        MATCH (schema {label: "schema", name: 'public', database_name: 'tpcds'})
+        MERGE (schema)-[:has_object]->(table)
+        
+
+-- 语句 40
+
+
+    MERGE (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+    SET sp.normalized_sql = 'SELECT 1',
+        sp.sample_sql = 'SELECT 1',
+        sp.source_database_name = 'tpcds',
+        sp.updated_at = '2025-05-20 17:35:58'
+    
+
+-- 语句 41
+
+
+        MERGE (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.sales_year_month', name: 'sales_year_month'})
+        WITH tgt_col
+        MATCH (tgt_obj) WHERE (tgt_obj.label = "table" OR tgt_obj.label = "view") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'
+        MERGE (tgt_obj)-[:has_column]->(tgt_col)
+        
+
+-- 语句 42
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.date_dim.d_date', name: 'd_date'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'date_dim' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 43
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.date_dim.d_date'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.sales_year_month'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'TO_CHAR(d.d_date, \'YYYY-MM\')',
+                    df.derivation_type = 'FUNCTION_CALL',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 44
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.date_dim.d_date'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.sales_year_month'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 45
+
+
+        MERGE (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel', name: 'channel'})
+        WITH tgt_col
+        MATCH (tgt_obj) WHERE (tgt_obj.label = "table" OR tgt_obj.label = "view") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'
+        MERGE (tgt_obj)-[:has_column]->(tgt_col)
+        
+
+-- 语句 46
+
+
+                // 步骤 1: 匹配源对象和目标列
+                MATCH (src_obj) WHERE src_obj.label IN ["table", "view"] AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_obj)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = '\'Store\' as channel (UNION分支中的字面量赋值)',
+                    df.derivation_type = 'UNION_MERGE',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_obj) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 47
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_obj) WHERE src_obj.label IN ["table", "view"] AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})
+                MERGE (sp)-[:generates]->(src_obj)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 48
+
+
+                // 步骤 1: 匹配源对象和目标列
+                MATCH (src_obj) WHERE src_obj.label IN ["table", "view"] AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_obj)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = '\'Catalog\' as channel (UNION分支中的字面量赋值)',
+                    df.derivation_type = 'UNION_MERGE',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_obj) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 49
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_obj) WHERE src_obj.label IN ["table", "view"] AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})
+                MERGE (sp)-[:generates]->(src_obj)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 50
+
+
+                // 步骤 1: 匹配源对象和目标列
+                MATCH (src_obj) WHERE src_obj.label IN ["table", "view"] AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_obj)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = '\'Web\' as channel (UNION分支中的字面量赋值)',
+                    df.derivation_type = 'UNION_MERGE',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_obj) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 51
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_obj) WHERE src_obj.label IN ["table", "view"] AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})
+                MERGE (sp)-[:generates]->(src_obj)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 52
+
+
+        MERGE (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity', name: 'total_sold_quantity'})
+        WITH tgt_col
+        MATCH (tgt_obj) WHERE (tgt_obj.label = "table" OR tgt_obj.label = "view") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'
+        MERGE (tgt_obj)-[:has_column]->(tgt_col)
+        
+
+-- 语句 53
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.store_sales.ss_quantity', name: 'ss_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 54
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.store_sales.ss_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(ss_quantity, 0)',
+                    df.derivation_type = 'AGGREGATION',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 55
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.store_sales.ss_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 56
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.catalog_sales.cs_quantity', name: 'cs_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 57
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.catalog_sales.cs_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(cs_quantity, 0)',
+                    df.derivation_type = 'AGGREGATION',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 58
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.catalog_sales.cs_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 59
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.web_sales.ws_quantity', name: 'ws_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 60
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.web_sales.ws_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(ws_quantity, 0)',
+                    df.derivation_type = 'AGGREGATION',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 61
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.web_sales.ws_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 62
+
+
+        MERGE (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity', name: 'total_returned_quantity'})
+        WITH tgt_col
+        MATCH (tgt_obj) WHERE (tgt_obj.label = "table" OR tgt_obj.label = "view") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'
+        MERGE (tgt_obj)-[:has_column]->(tgt_col)
+        
+
+-- 语句 63
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.store_returns.sr_return_quantity', name: 'sr_return_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'store_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 64
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.store_returns.sr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',
+                    df.derivation_type = 'AGGREGATION',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 65
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.store_returns.sr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 66
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.catalog_returns.cr_return_quantity', name: 'cr_return_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'catalog_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 67
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',
+                    df.derivation_type = 'AGGREGATION',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 68
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 69
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.web_returns.wr_return_quantity', name: 'wr_return_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'web_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 70
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.web_returns.wr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',
+                    df.derivation_type = 'AGGREGATION',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 71
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.web_returns.wr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 72
+
+
+        MERGE (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity', name: 'return_rate_by_quantity'})
+        WITH tgt_col
+        MATCH (tgt_obj) WHERE (tgt_obj.label = "table" OR tgt_obj.label = "view") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'
+        MERGE (tgt_obj)-[:has_column]->(tgt_col)
+        
+
+-- 语句 73
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.store_sales.ss_quantity', name: 'ss_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 74
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.store_sales.ss_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(ss_quantity, 0)',
+                    df.derivation_type = 'CONDITIONAL_LOGIC',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 75
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.store_sales.ss_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 76
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.catalog_sales.cs_quantity', name: 'cs_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 77
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.catalog_sales.cs_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(cs_quantity, 0)',
+                    df.derivation_type = 'CONDITIONAL_LOGIC',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 78
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.catalog_sales.cs_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 79
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.web_sales.ws_quantity', name: 'ws_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 80
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.web_sales.ws_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(ws_quantity, 0)',
+                    df.derivation_type = 'CONDITIONAL_LOGIC',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 81
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.web_sales.ws_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 82
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.store_returns.sr_return_quantity', name: 'sr_return_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'store_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 83
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.store_returns.sr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',
+                    df.derivation_type = 'CONDITIONAL_LOGIC',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 84
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.store_returns.sr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 85
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.catalog_returns.cr_return_quantity', name: 'cr_return_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'catalog_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 86
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',
+                    df.derivation_type = 'CONDITIONAL_LOGIC',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 87
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 88
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.web_returns.wr_return_quantity', name: 'wr_return_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'web_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 89
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.web_returns.wr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',
+                    df.derivation_type = 'CONDITIONAL_LOGIC',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 90
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.web_returns.wr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 91
+
+
+        MERGE (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_return_reason_desc', name: 'primary_return_reason_desc'})
+        WITH tgt_col
+        MATCH (tgt_obj) WHERE (tgt_obj.label = "table" OR tgt_obj.label = "view") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'
+        MERGE (tgt_obj)-[:has_column]->(tgt_col)
+        
+
+-- 语句 92
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.reason.r_reason_desc', name: 'r_reason_desc'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'reason' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 93
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.reason.r_reason_desc'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_return_reason_desc'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'r.r_reason_desc AS primary_return_reason_desc',
+                    df.derivation_type = 'DIRECT_MAPPING',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 94
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.reason.r_reason_desc'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_return_reason_desc'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 95
+
+
+        MERGE (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity', name: 'primary_reason_returned_quantity'})
+        WITH tgt_col
+        MATCH (tgt_obj) WHERE (tgt_obj.label = "table" OR tgt_obj.label = "view") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'
+        MERGE (tgt_obj)-[:has_column]->(tgt_col)
+        
+
+-- 语句 96
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.store_returns.sr_return_quantity', name: 'sr_return_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'store_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 97
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.store_returns.sr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',
+                    df.derivation_type = 'LITERAL_ASSIGNMENT',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 98
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.store_returns.sr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 99
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.catalog_returns.cr_return_quantity', name: 'cr_return_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'catalog_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 100
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',
+                    df.derivation_type = 'LITERAL_ASSIGNMENT',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 101
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 102
+
+
+                MERGE (src_col {label: "column", fqn: 'tpcds.public.web_returns.wr_return_quantity', name: 'wr_return_quantity'})
+                WITH src_col
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = 'web_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'
+                MERGE (src_obj)-[:has_column]->(src_col)
+                
+
+-- 语句 103
+
+
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.web_returns.wr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',
+                    df.derivation_type = 'LITERAL_ASSIGNMENT',
+                    df.last_seen_at = '2025-05-20 17:35:58'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '2025-05-20 17:35:58')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
+                
+
+-- 语句 104
+
+
+                MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+                MATCH (src_col {label: "column", fqn: 'tpcds.public.web_returns.wr_return_quantity'})
+                MATCH (tgt_col {label: "column", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
+                
+
+-- 语句 105
+
+
+            MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+            MATCH (obj) WHERE (obj.label = "table" OR obj.label = "view") AND obj.name = 'store_sales' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'
+            MERGE (sp)-[:reads_from]->(obj)
+            
+
+-- 语句 106
+
+
+            MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+            MATCH (obj) WHERE (obj.label = "table" OR obj.label = "view") AND obj.name = 'catalog_sales' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'
+            MERGE (sp)-[:reads_from]->(obj)
+            
+
+-- 语句 107
+
+
+            MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+            MATCH (obj) WHERE (obj.label = "table" OR obj.label = "view") AND obj.name = 'web_sales' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'
+            MERGE (sp)-[:reads_from]->(obj)
+            
+
+-- 语句 108
+
+
+            MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+            MATCH (obj) WHERE (obj.label = "table" OR obj.label = "view") AND obj.name = 'store_returns' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'
+            MERGE (sp)-[:reads_from]->(obj)
+            
+
+-- 语句 109
+
+
+            MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+            MATCH (obj) WHERE (obj.label = "table" OR obj.label = "view") AND obj.name = 'catalog_returns' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'
+            MERGE (sp)-[:reads_from]->(obj)
+            
+
+-- 语句 110
+
+
+            MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+            MATCH (obj) WHERE (obj.label = "table" OR obj.label = "view") AND obj.name = 'web_returns' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'
+            MERGE (sp)-[:reads_from]->(obj)
+            
+
+-- 语句 111
+
+
+            MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+            MATCH (obj) WHERE (obj.label = "table" OR obj.label = "view") AND obj.name = 'date_dim' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'
+            MERGE (sp)-[:reads_from]->(obj)
+            
+
+-- 语句 112
+
+
+            MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+            MATCH (obj) WHERE (obj.label = "table" OR obj.label = "view") AND obj.name = 'reason' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'
+            MERGE (sp)-[:reads_from]->(obj)
+            
+
+-- 语句 113
+
+
+            MATCH (sp {label: "sqlpattern", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})
+            MATCH (obj) WHERE (obj.label = "table" OR obj.label = "view") AND obj.name = 'monthly_channel_returns_analysis_report' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'
+            MERGE (sp)-[:writes_to]->(obj)
+            
+

@@ -2,7 +2,7 @@
   <div class="app-header">
     <div class="logo">
       <router-link to="/">
-        <img src="@/assets/logo.png" alt="PGLumiLineage" />
+        <img src="@/assets/logo.svg" alt="PGLumiLineage" />
         <span>PGLumiLineage</span>
       </router-link>
     </div>
@@ -35,9 +35,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Search, Moon, Sunny, QuestionFilled } from '@element-plus/icons-vue';
+import { ElMessageBox } from 'element-plus';
 
 // 路由实例
 const router = useRouter();

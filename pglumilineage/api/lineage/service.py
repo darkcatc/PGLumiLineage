@@ -119,38 +119,121 @@ class LineageService:
             GraphResponse: 格式化后的图响应
         """
         nodes = []
+        logger.info(f"待格式化的节点数据类型: {type(graph_data['nodes'])}, 数量: {len(graph_data['nodes'])}")
+        
         for node_data in graph_data["nodes"]:
             try:
-                node_type = NodeType(node_data["type"])
-            except ValueError:
-                # 如果节点类型不在枚举中，使用默认值
-                logger.warning(f"未知节点类型: {node_data['type']}, 使用TABLE作为默认值")
-                node_type = NodeType.TABLE
-            
-            nodes.append(Node(
-                id=node_data["id"],
-                type=node_type,
-                label=node_data["label"],
-                fqn=node_data.get("fqn"),
-                properties=node_data.get("properties", {})
-            ))
+                logger.info(f"处理节点数据: {node_data}, 类型: {type(node_data)}")
+                
+                # 如果节点数据是字符串，尝试解析为JSON
+                if isinstance(node_data, str):
+                    try:
+                        # 如果是AGE的vertex类型字符串，需要先处理
+                        if "::vertex" in node_data:
+                            node_data = node_data.replace("::vertex", "")
+                        node_data = json.loads(node_data)
+                    except json.JSONDecodeError as e:
+                        logger.error(f"解析节点JSON数据失败: {e}, 数据: {node_data}")
+                        continue
+                
+                # 从AGE节点中提取数据
+                node_id = str(node_data.get("id", ""))
+                
+                # 从properties中获取节点类型和标签
+                properties = node_data.get("properties", {})
+                node_label = properties.get("label", "")
+                
+                # 根据label确定节点类型
+                if node_label == "table":
+                    node_type = NodeType.TABLE
+                elif node_label == "view":
+                    node_type = NodeType.VIEW
+                elif node_label == "column":
+                    node_type = NodeType.COLUMN
+                elif node_label == "schema":
+                    node_type = NodeType.SCHEMA
+                elif node_label == "database":
+                    node_type = NodeType.DATABASE
+                elif node_label == "sqlpattern":
+                    node_type = NodeType.SQL_PATTERN
+                else:
+                    # 默认为表
+                    logger.warning(f"未知节点类型: {node_label}, 使用TABLE作为默认值")
+                    node_type = NodeType.TABLE
+                
+                # 构建FQN
+                fqn = None
+                if "fqn" in properties:
+                    fqn = properties["fqn"]
+                elif all(k in properties for k in ["name", "schema_name", "database_name"]):
+                    fqn = f"{properties['database_name']}.{properties['schema_name']}.{properties['name']}"
+                
+                # 创建节点对象
+                nodes.append(Node(
+                    id=node_id,
+                    type=node_type,
+                    label=properties.get("name", node_label),
+                    fqn=fqn,
+                    properties=properties
+                ))
+            except Exception as e:
+                logger.error(f"处理节点数据时发生错误: {e}, 节点数据: {node_data}")
+                continue
         
         edges = []
-        for edge_data in graph_data["edges"]:
+        logger.info(f"待格式化的关系数据类型: {type(graph_data.get('relationships', []))}, 数量: {len(graph_data.get('relationships', []))}")
+        
+        for edge_data in graph_data.get("relationships", []):
             try:
-                edge_type = EdgeType(edge_data["type"])
-            except ValueError:
-                # 如果边类型不在枚举中，使用默认值
-                logger.warning(f"未知边类型: {edge_data['type']}, 使用DEPENDS_ON作为默认值")
-                edge_type = EdgeType.DEPENDS_ON
-            
-            edges.append(Edge(
-                id=edge_data["id"],
-                source=edge_data["source"],
-                target=edge_data["target"],
-                type=edge_type,
-                label=edge_data["label"],
-                properties=edge_data.get("properties", {})
-            ))
+                logger.info(f"处理关系数据: {edge_data}, 类型: {type(edge_data)}")
+                
+                # 如果关系数据是字符串，尝试解析为JSON
+                if isinstance(edge_data, str):
+                    try:
+                        # 如果是AGE的edge类型字符串，需要先处理
+                        if "::edge" in edge_data:
+                            edge_data = edge_data.replace("::edge", "")
+                        edge_data = json.loads(edge_data)
+                    except json.JSONDecodeError as e:
+                        logger.error(f"解析关系JSON数据失败: {e}, 数据: {edge_data}")
+                        continue
+                
+                # 从AGE关系中提取数据
+                edge_id = str(edge_data.get("id", ""))
+                start_id = str(edge_data.get("start_id", ""))
+                end_id = str(edge_data.get("end_id", ""))
+                
+                # 从properties中获取关系类型
+                properties = edge_data.get("properties", {})
+                edge_label = edge_data.get("label", "").lower()
+                
+                # 根据关系类型确定边类型
+                if edge_label == "has_schema" or edge_label == "has_object" or edge_label == "has_column":
+                    edge_type = EdgeType.CONTAINS
+                elif edge_label == "reads_from":
+                    edge_type = EdgeType.READS
+                elif edge_label == "writes_to":
+                    edge_type = EdgeType.WRITES
+                elif edge_label == "data_flow":
+                    edge_type = EdgeType.DATA_FLOW
+                elif edge_label == "generates":
+                    edge_type = EdgeType.GENERATES_FLOW
+                else:
+                    # 默认为依赖关系
+                    logger.warning(f"未知关系类型: {edge_label}, 使用DEPENDS_ON作为默认值")
+                    edge_type = EdgeType.DEPENDS_ON
+                
+                # 创建边对象
+                edges.append(Edge(
+                    id=edge_id,
+                    source=start_id,
+                    target=end_id,
+                    type=edge_type,
+                    label=edge_data.get("label", ""),
+                    properties=edge_data.get("properties", {})
+                ))
+            except Exception as e:
+                logger.error(f"处理关系数据时发生错误: {e}, 关系数据: {edge_data}")
+                continue
         
         return GraphResponse(nodes=nodes, edges=edges)

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200px" height="200px" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>PGLumiLineage Logo</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <circle fill="#409EFF" cx="100" cy="100" r="90"></circle>
+        <path d="M60,60 L140,60 L140,80 L100,80 L100,140 L80,140 L80,80 L60,80 Z" fill="#FFFFFF"></path>
+        <path d="M120,100 L160,100 L160,120 L120,120 Z" fill="#FFFFFF"></path>
+        <path d="M40,100 L80,100 L80,120 L40,120 Z" fill="#FFFFFF"></path>
+    </g>
+</svg>

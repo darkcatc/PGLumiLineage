@@ -79,15 +79,15 @@ const nodeTypeOptions = [
 ];
 
 // 图数据
-const graphData = ref<{ nodes: any[]; edges: any[] } | null>(null);
+const graphData = ref<{ nodes: any[]; edges: any[] } | undefined>(undefined);
 const loading = ref(false);
-const error = ref<string | null>(null);
+const error = ref<string | undefined>(undefined);
 
 // 选中项
-const selectedItem = ref<any | null>(null);
-const selectedItemType = ref<'node' | 'edge' | null>(null);
+const selectedItem = ref<any | undefined>(undefined);
+const selectedItemType = ref<'node' | 'edge' | undefined>(undefined);
 const detailsLoading = ref(false);
-const detailsError = ref<string | null>(null);
+const detailsError = ref<string | undefined>(undefined);
 
 // 获取血缘图数据
 const fetchLineageGraph = async () => {
@@ -98,7 +98,7 @@ const fetchLineageGraph = async () => {
   }
   
   loading.value = true;
-  error.value = null;
+  error.value = undefined;
   
   try {
     const response = await lineageApi.getLineageGraph(queryParams);
@@ -109,7 +109,7 @@ const fetchLineageGraph = async () => {
       query: {
         type: queryParams.root_node_type,
         fqn: queryParams.root_node_fqn,
-        depth: queryParams.depth.toString()
+        depth: queryParams.depth ? queryParams.depth.toString() : '1'
       }
     });
   } catch (err: any) {

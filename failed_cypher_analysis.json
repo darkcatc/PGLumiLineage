@@ -1,0 +1,1132 @@
+[
+  {
+    "index": 1,
+    "original_statement": "MERGE (db:Database {name: 'tpcds'})",
+    "converted_statement": "MERGE (db {label: \"database\", name: 'tpcds'})",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 2,
+    "original_statement": "MERGE (schema:Schema {name: 'public', database_name: 'tpcds'})\n        WITH schema\n        MATCH (db:Database {name: 'tpcds'})\n        MERGE (db)-[:HAS_SCHEMA]->(schema)",
+    "converted_statement": "MERGE (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        WITH schema\n        MATCH (db {label: \"database\", name: 'tpcds'})\n        MERGE (db)-[:has_schema]->(schema)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 3,
+    "original_statement": "MERGE (table:Table {name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 4,
+    "original_statement": "MERGE (table:Table {name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 5,
+    "original_statement": "MERGE (table:Table {name: 'date_dim', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'date_dim', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 6,
+    "original_statement": "MERGE (table:Table {name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 7,
+    "original_statement": "MERGE (table:Table {name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 8,
+    "original_statement": "MERGE (table:Table {name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 9,
+    "original_statement": "MERGE (table:Table {name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 10,
+    "original_statement": "MERGE (table:Table {name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 11,
+    "original_statement": "MERGE (table:Table {name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 12,
+    "original_statement": "MERGE (table:Table {name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 13,
+    "original_statement": "MERGE (table:Table {name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 14,
+    "original_statement": "MERGE (table:Table {name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 15,
+    "original_statement": "MERGE (table:Table {name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 16,
+    "original_statement": "MERGE (table:Table {name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 17,
+    "original_statement": "MERGE (table:Table {name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 18,
+    "original_statement": "MERGE (table:Table {name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 19,
+    "original_statement": "MERGE (table:Table {name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 20,
+    "original_statement": "MERGE (table:Table {name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 21,
+    "original_statement": "MERGE (table:Table {name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 22,
+    "original_statement": "MERGE (table:Table {name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 23,
+    "original_statement": "MERGE (table:Table {name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 24,
+    "original_statement": "MERGE (table:Table {name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 25,
+    "original_statement": "MERGE (table:Table {name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 26,
+    "original_statement": "MERGE (table:Table {name: 'reason', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'reason', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 27,
+    "original_statement": "MERGE (table:Table {name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 28,
+    "original_statement": "MERGE (table:Table {name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 29,
+    "original_statement": "MERGE (table:Table {name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 30,
+    "original_statement": "MERGE (table:Table {name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 31,
+    "original_statement": "MERGE (table:Table {name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'store_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 32,
+    "original_statement": "MERGE (table:Table {name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'catalog_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 33,
+    "original_statement": "MERGE (table:Table {name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'web_sales', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 34,
+    "original_statement": "MERGE (table:Table {name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'store_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 35,
+    "original_statement": "MERGE (table:Table {name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'catalog_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 36,
+    "original_statement": "MERGE (table:Table {name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'web_returns', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 37,
+    "original_statement": "MERGE (table:Table {name: 'date_dim', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'date_dim', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 38,
+    "original_statement": "MERGE (table:Table {name: 'reason', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'reason', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 39,
+    "original_statement": "MERGE (table:Table {name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema:Schema {name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:HAS_OBJECT]->(table)",
+    "converted_statement": "MERGE (table {label: \"table\", name: 'monthly_channel_returns_analysis_report', schema_name: 'public', database_name: 'tpcds', object_type: 'TABLE'})\n        WITH table\n        MATCH (schema {label: \"schema\", name: 'public', database_name: 'tpcds'})\n        MERGE (schema)-[:has_object]->(table)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 40,
+    "original_statement": "MERGE (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n    SET sp.normalized_sql = 'SELECT /* 规范化后的SQL */ ...',\n        sp.sample_sql = 'SELECT /* 原始SQL示例 */ ...',\n        sp.source_database_name = 'tpcds',\n        sp.updated_at = datetime()",
+    "converted_statement": "MERGE (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n    SET sp.normalized_sql = 'SELECT /* 规范化后的SQL */ ...',\n        sp.sample_sql = 'SELECT /* 原始SQL示例 */ ...',\n        sp.source_database_name = 'tpcds',\n        sp.updated_at = datetime()",
+    "success": false,
+    "error": "function ag_catalog.age_datetime() does not exist\nHINT:  No function matches the given name and argument types. You might need to add explicit type casts.",
+    "error_type": "UNKNOWN_ERROR",
+    "diagnosis": "未知错误",
+    "fix_suggestion": "检查语句的整体结构和语法"
+  },
+  {
+    "index": 41,
+    "original_statement": "MERGE (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.sales_year_month', name: 'sales_year_month'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj:Table OR tgt_obj:View) AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)",
+    "converted_statement": "MERGE (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.sales_year_month', name: 'sales_year_month'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj.label = \"Table\" OR tgt_obj.label = \"View\") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:has_column]->(tgt_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 42,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.date_dim.d_date', name: 'd_date'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'date_dim' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.date_dim.d_date', name: 'd_date'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'date_dim' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 43,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.date_dim.d_date'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.sales_year_month'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'TO_CHAR(d.d_date, \\'YYYY-MM\\')',\n                              df.derivation_type = 'FUNCTION_CALL',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'TO_CHAR(d.d_date, \\'YYYY-MM\\')',\n                             df.derivation_type = 'FUNCTION_CALL',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.date_dim.d_date'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.sales_year_month'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'TO_CHAR(d.d_date, \\'YYYY-MM\\')',\n                              df.derivation_type = 'FUNCTION_CALL',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'TO_CHAR(d.d_date, \\'YYYY-MM\\')',\n                             df.derivation_type = 'FUNCTION_CALL',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 44,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.date_dim.d_date'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.sales_year_month'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.date_dim.d_date'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.sales_year_month'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 45,
+    "original_statement": "MERGE (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel', name: 'channel'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj:Table OR tgt_obj:View) AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)",
+    "converted_statement": "MERGE (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel', name: 'channel'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj.label = \"Table\" OR tgt_obj.label = \"View\") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:has_column]->(tgt_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 46,
+    "original_statement": "MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                MERGE (src_obj)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = '\\'Store\\' as channel (UNION分支中的字面量赋值)',\n                              df.derivation_type = 'UNION_MERGE',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = '\\'Store\\' as channel (UNION分支中的字面量赋值)',\n                             df.derivation_type = 'UNION_MERGE',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                MERGE (src_obj)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = '\\'Store\\' as channel (UNION分支中的字面量赋值)',\n                              df.derivation_type = 'UNION_MERGE',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = '\\'Store\\' as channel (UNION分支中的字面量赋值)',\n                             df.derivation_type = 'UNION_MERGE',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 47,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_obj)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_obj)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 48,
+    "original_statement": "MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                MERGE (src_obj)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = '\\'Catalog\\' as channel (UNION分支中的字面量赋值)',\n                              df.derivation_type = 'UNION_MERGE',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = '\\'Catalog\\' as channel (UNION分支中的字面量赋值)',\n                             df.derivation_type = 'UNION_MERGE',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                MERGE (src_obj)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = '\\'Catalog\\' as channel (UNION分支中的字面量赋值)',\n                              df.derivation_type = 'UNION_MERGE',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = '\\'Catalog\\' as channel (UNION分支中的字面量赋值)',\n                             df.derivation_type = 'UNION_MERGE',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 49,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_obj)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_obj)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 50,
+    "original_statement": "MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                MERGE (src_obj)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = '\\'Web\\' as channel (UNION分支中的字面量赋值)',\n                              df.derivation_type = 'UNION_MERGE',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = '\\'Web\\' as channel (UNION分支中的字面量赋值)',\n                             df.derivation_type = 'UNION_MERGE',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                MERGE (src_obj)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = '\\'Web\\' as channel (UNION分支中的字面量赋值)',\n                              df.derivation_type = 'UNION_MERGE',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = '\\'Web\\' as channel (UNION分支中的字面量赋值)',\n                             df.derivation_type = 'UNION_MERGE',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 51,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_obj)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_obj)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.channel'})\n                WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 52,
+    "original_statement": "MERGE (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity', name: 'total_sold_quantity'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj:Table OR tgt_obj:View) AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)",
+    "converted_statement": "MERGE (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity', name: 'total_sold_quantity'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj.label = \"Table\" OR tgt_obj.label = \"View\") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:has_column]->(tgt_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 53,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.store_sales.ss_quantity', name: 'ss_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.store_sales.ss_quantity', name: 'ss_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 54,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.store_sales.ss_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(ss_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(ss_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.store_sales.ss_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(ss_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(ss_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 55,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.store_sales.ss_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.store_sales.ss_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 56,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.catalog_sales.cs_quantity', name: 'cs_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.catalog_sales.cs_quantity', name: 'cs_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 57,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.catalog_sales.cs_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(cs_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(cs_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.catalog_sales.cs_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(cs_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(cs_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 58,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.catalog_sales.cs_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.catalog_sales.cs_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 59,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.web_sales.ws_quantity', name: 'ws_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.web_sales.ws_quantity', name: 'ws_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 60,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.web_sales.ws_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(ws_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(ws_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.web_sales.ws_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(ws_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(ws_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 61,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.web_sales.ws_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.web_sales.ws_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_sold_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 62,
+    "original_statement": "MERGE (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity', name: 'total_returned_quantity'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj:Table OR tgt_obj:View) AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)",
+    "converted_statement": "MERGE (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity', name: 'total_returned_quantity'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj.label = \"Table\" OR tgt_obj.label = \"View\") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:has_column]->(tgt_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 63,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.store_returns.sr_return_quantity', name: 'sr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'store_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.store_returns.sr_return_quantity', name: 'sr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'store_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 64,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.store_returns.sr_return_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.store_returns.sr_return_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 65,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.store_returns.sr_return_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.store_returns.sr_return_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 66,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.catalog_returns.cr_return_quantity', name: 'cr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'catalog_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.catalog_returns.cr_return_quantity', name: 'cr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'catalog_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 67,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 68,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 69,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.web_returns.wr_return_quantity', name: 'wr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'web_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.web_returns.wr_return_quantity', name: 'wr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'web_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 70,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.web_returns.wr_return_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.web_returns.wr_return_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                              df.derivation_type = 'AGGREGATION',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                             df.derivation_type = 'AGGREGATION',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 71,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.web_returns.wr_return_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.web_returns.wr_return_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.total_returned_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 72,
+    "original_statement": "MERGE (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity', name: 'return_rate_by_quantity'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj:Table OR tgt_obj:View) AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)",
+    "converted_statement": "MERGE (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity', name: 'return_rate_by_quantity'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj.label = \"Table\" OR tgt_obj.label = \"View\") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:has_column]->(tgt_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 73,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.store_sales.ss_quantity', name: 'ss_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.store_sales.ss_quantity', name: 'ss_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'store_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 74,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.store_sales.ss_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(ss_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(ss_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.store_sales.ss_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(ss_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(ss_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 75,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.store_sales.ss_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.store_sales.ss_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 76,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.catalog_sales.cs_quantity', name: 'cs_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.catalog_sales.cs_quantity', name: 'cs_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'catalog_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 77,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.catalog_sales.cs_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(cs_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(cs_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.catalog_sales.cs_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(cs_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(cs_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 78,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.catalog_sales.cs_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.catalog_sales.cs_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 79,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.web_sales.ws_quantity', name: 'ws_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.web_sales.ws_quantity', name: 'ws_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'web_sales' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 80,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.web_sales.ws_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(ws_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(ws_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.web_sales.ws_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(ws_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(ws_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 81,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.web_sales.ws_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.web_sales.ws_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 82,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.store_returns.sr_return_quantity', name: 'sr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'store_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.store_returns.sr_return_quantity', name: 'sr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'store_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 83,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.store_returns.sr_return_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.store_returns.sr_return_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 84,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.store_returns.sr_return_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.store_returns.sr_return_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 85,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.catalog_returns.cr_return_quantity', name: 'cr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'catalog_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.catalog_returns.cr_return_quantity', name: 'cr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'catalog_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 86,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 87,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 88,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.web_returns.wr_return_quantity', name: 'wr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'web_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.web_returns.wr_return_quantity', name: 'wr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'web_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 89,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.web_returns.wr_return_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.web_returns.wr_return_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                              df.derivation_type = 'CONDITIONAL_LOGIC',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                             df.derivation_type = 'CONDITIONAL_LOGIC',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 90,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.web_returns.wr_return_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.web_returns.wr_return_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.return_rate_by_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 91,
+    "original_statement": "MERGE (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_return_reason_desc', name: 'primary_return_reason_desc'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj:Table OR tgt_obj:View) AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)",
+    "converted_statement": "MERGE (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_return_reason_desc', name: 'primary_return_reason_desc'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj.label = \"Table\" OR tgt_obj.label = \"View\") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:has_column]->(tgt_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 92,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.reason.r_reason_desc', name: 'r_reason_desc'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'reason' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.reason.r_reason_desc', name: 'r_reason_desc'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'reason' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 93,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.reason.r_reason_desc'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_return_reason_desc'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'r.r_reason_desc AS primary_return_reason_desc',\n                              df.derivation_type = 'DIRECT_MAPPING',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'r.r_reason_desc AS primary_return_reason_desc',\n                             df.derivation_type = 'DIRECT_MAPPING',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.reason.r_reason_desc'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_return_reason_desc'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'r.r_reason_desc AS primary_return_reason_desc',\n                              df.derivation_type = 'DIRECT_MAPPING',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'r.r_reason_desc AS primary_return_reason_desc',\n                             df.derivation_type = 'DIRECT_MAPPING',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 94,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.reason.r_reason_desc'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_return_reason_desc'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.reason.r_reason_desc'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_return_reason_desc'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 95,
+    "original_statement": "MERGE (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity', name: 'primary_reason_returned_quantity'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj:Table OR tgt_obj:View) AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)",
+    "converted_statement": "MERGE (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity', name: 'primary_reason_returned_quantity'})\n        WITH tgt_col\n        MATCH (tgt_obj) WHERE (tgt_obj.label = \"Table\" OR tgt_obj.label = \"View\") AND tgt_obj.name = 'monthly_channel_returns_analysis_report' AND tgt_obj.schema_name = 'public' AND tgt_obj.database_name = 'tpcds'\n        MERGE (tgt_obj)-[:has_column]->(tgt_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 96,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.store_returns.sr_return_quantity', name: 'sr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'store_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.store_returns.sr_return_quantity', name: 'sr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'store_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 97,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.store_returns.sr_return_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                              df.derivation_type = 'LITERAL_ASSIGNMENT',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                             df.derivation_type = 'LITERAL_ASSIGNMENT',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.store_returns.sr_return_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                              df.derivation_type = 'LITERAL_ASSIGNMENT',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(sr_return_quantity, 0)',\n                             df.derivation_type = 'LITERAL_ASSIGNMENT',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 98,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.store_returns.sr_return_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.store_returns.sr_return_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 99,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.catalog_returns.cr_return_quantity', name: 'cr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'catalog_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.catalog_returns.cr_return_quantity', name: 'cr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'catalog_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 100,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                              df.derivation_type = 'LITERAL_ASSIGNMENT',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                             df.derivation_type = 'LITERAL_ASSIGNMENT',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                              df.derivation_type = 'LITERAL_ASSIGNMENT',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(cr_return_quantity, 0)',\n                             df.derivation_type = 'LITERAL_ASSIGNMENT',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 101,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.catalog_returns.cr_return_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 102,
+    "original_statement": "MERGE (src_col:Column {fqn: 'tpcds.public.web_returns.wr_return_quantity', name: 'wr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = 'web_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:HAS_COLUMN]->(src_col)",
+    "converted_statement": "MERGE (src_col {label: \"column\", fqn: 'tpcds.public.web_returns.wr_return_quantity', name: 'wr_return_quantity'})\n                WITH src_col\n                MATCH (src_obj) WHERE (src_obj.label = \"Table\" OR src_obj.label = \"View\") AND src_obj.name = 'web_returns' AND src_obj.schema_name = 'public' AND src_obj.database_name = 'tpcds'\n                MERGE (src_obj)-[:has_column]->(src_col)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 103,
+    "original_statement": "MATCH (src_col:Column {fqn: 'tpcds.public.web_returns.wr_return_quantity'})\n                MATCH (tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (src_col)-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                              df.derivation_type = 'LITERAL_ASSIGNMENT',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                             df.derivation_type = 'LITERAL_ASSIGNMENT',\n                             df.last_seen_at = datetime()",
+    "converted_statement": "MATCH (src_col {label: \"column\", fqn: 'tpcds.public.web_returns.wr_return_quantity'})\n                MATCH (tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (src_col)-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col)\n                ON CREATE SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                              df.derivation_type = 'LITERAL_ASSIGNMENT',\n                              df.created_at = datetime(),\n                              df.last_seen_at = datetime()\n                ON MATCH SET df.transformation_logic = 'COALESCE(wr_return_quantity, 0)',\n                             df.derivation_type = 'LITERAL_ASSIGNMENT',\n                             df.last_seen_at = datetime()",
+    "success": false,
+    "error": "syntax error at or near \"ON\"",
+    "error_type": "SYNTAX_ERROR",
+    "diagnosis": "语法错误，位于或靠近 'ON'",
+    "fix_suggestion": "AGE 1.5.0 不支持 ON CREATE SET/ON MATCH SET 语法，需要拆分为多个语句执行"
+  },
+  {
+    "index": 104,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col:Column {fqn: 'tpcds.public.web_returns.wr_return_quantity'})-[df:DATA_FLOW {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col:Column {fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (sp)-[:GENERATES_FLOW]->(df)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n                MATCH (src_col {label: \"column\", fqn: 'tpcds.public.web_returns.wr_return_quantity'})-[df:data_flow {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'}]->(tgt_col {label: \"column\", fqn: 'tpcds.public.monthly_channel_returns_analysis_report.primary_reason_returned_quantity'})\n                MERGE (sp)-[:generates_flow]->(df)",
+    "success": false,
+    "error": "variable 'df' is for an edge",
+    "error_type": "EDGE_VARIABLE_ERROR",
+    "diagnosis": "AGE 1.5.0 不允许在某些上下文中使用边变量",
+    "fix_suggestion": "将语句拆分为多个部分，避免在 MERGE 中引用边变量"
+  },
+  {
+    "index": 105,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = 'store_sales' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:READS_FROM]->(obj)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj.label = \"Table\" OR obj.label = \"View\") AND obj.name = 'store_sales' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:reads_from]->(obj)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 106,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = 'catalog_sales' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:READS_FROM]->(obj)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj.label = \"Table\" OR obj.label = \"View\") AND obj.name = 'catalog_sales' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:reads_from]->(obj)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 107,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = 'web_sales' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:READS_FROM]->(obj)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj.label = \"Table\" OR obj.label = \"View\") AND obj.name = 'web_sales' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:reads_from]->(obj)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 108,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = 'store_returns' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:READS_FROM]->(obj)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj.label = \"Table\" OR obj.label = \"View\") AND obj.name = 'store_returns' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:reads_from]->(obj)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 109,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = 'catalog_returns' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:READS_FROM]->(obj)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj.label = \"Table\" OR obj.label = \"View\") AND obj.name = 'catalog_returns' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:reads_from]->(obj)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 110,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = 'web_returns' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:READS_FROM]->(obj)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj.label = \"Table\" OR obj.label = \"View\") AND obj.name = 'web_returns' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:reads_from]->(obj)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 111,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = 'date_dim' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:READS_FROM]->(obj)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj.label = \"Table\" OR obj.label = \"View\") AND obj.name = 'date_dim' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:reads_from]->(obj)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 112,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = 'reason' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:READS_FROM]->(obj)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj.label = \"Table\" OR obj.label = \"View\") AND obj.name = 'reason' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:reads_from]->(obj)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  },
+  {
+    "index": 113,
+    "original_statement": "MATCH (sp:SqlPattern {sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = 'monthly_channel_returns_analysis_report' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:WRITES_TO]->(obj)",
+    "converted_statement": "MATCH (sp {label: \"sqlpattern\", sql_hash: '8ceac2546d35e6f8a2bccba875a63e42421836e92171e76de9ee33b24f238fb8'})\n            MATCH (obj) WHERE (obj.label = \"Table\" OR obj.label = \"View\") AND obj.name = 'monthly_channel_returns_analysis_report' AND obj.schema_name = 'public' AND obj.database_name = 'tpcds'\n            MERGE (sp)-[:writes_to]->(obj)",
+    "success": true,
+    "error": null,
+    "error_type": null,
+    "diagnosis": null,
+    "fix_suggestion": null
+  }
+]

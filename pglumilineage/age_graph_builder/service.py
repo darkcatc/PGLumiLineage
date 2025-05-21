@@ -12,8 +12,8 @@ AGE图谱构建服务
 import logging
 import json
 import re
-from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
+from typing import List, Dict, Any, Optional, Union
 
 from pglumilineage.common import models
 
@@ -25,47 +25,177 @@ def convert_cypher_for_age(cypher_stmt: str) -> str:
     """
     转换Cypher语句以适应AGE 1.5.0版本
     
+    此函数将标准Cypher语法转换为AGE 1.5.0兼容的语法。主要转换包括：
+    1. 将所有标签名转换为小写，避免PostgreSQL创建带双引号的对象名
+    2. 将节点标签语法 (n:Label) 转换为属性语法 (n {label: 'label'})
+    3. 将关系类型语法 -[:TYPE]-> 转换为 -[:type]->，并确保关系属性正确
+    4. 处理WHERE条件中的标签语法
+    5. 替换保留关键字变量名
+    
     Args:
         cypher_stmt: 原始Cypher语句
         
     Returns:
-        str: 转换后的Cypher语句
+        str: 转换后的Cypher语句，兼容AGE 1.5.0
     """
-    # 替换标签语法
-    # 例如：MERGE (db:Database {name: 'tpcds'})
-    # 转换为：MERGE (db {name: 'tpcds', label: 'Database'})
-    converted_stmt = re.sub(r'(\w+):(\w+)\s+({[^}]+})', r'\1 \3, label: "\2"', cypher_stmt)
+    # 检查并替换保留关键字变量名
+    reserved_keywords = ['table', 'group', 'order', 'limit', 'match', 'where', 'return']
+    for keyword in reserved_keywords:
+        # 替换形如 (table {properties}) 的模式
+        cypher_stmt = re.sub(r'\((' + keyword + r')\s+({[^}]+})\)', r'(t_\1 \2)', cypher_stmt, flags=re.IGNORECASE)
+        # 替换形如 MATCH (table) 的模式
+        cypher_stmt = re.sub(r'MATCH\s+\((' + keyword + r')\)', r'MATCH (t_\1)', cypher_stmt, flags=re.IGNORECASE)
+        # 替换形如 (table:Label) 的模式
+        cypher_stmt = re.sub(r'\((' + keyword + r'):(\w+)\)', r'(t_\1:\2)', cypher_stmt, flags=re.IGNORECASE)
     
-    # 替换WHERE条件中的标签语法
+    # 处理 MATCH (node {prop: 'value'}, label: "Label") 这种错误语法
+    # 将逗号改为在属性内部
+    def fix_node_props(match):
+        node_name = match.group(1)
+        props_str = match.group(2)  # 包括大括号 {}
+        label_value = match.group(3).lower()
+        
+        # 去掉首尾的大括号
+        props_content = props_str[1:-1].strip()
+        
+        # 重新构建属性字符串，添加标签
+        if props_content:
+            return f"({node_name} {{label: \"{label_value}\", {props_content}}})"
+        else:
+            return f"({node_name} {{label: \"{label_value}\"}})"  
+    
+    cypher_stmt = re.sub(r'\((\w+)\s+({[^}]+}),\s*label:\s*"([^"]+)"\)', 
+                        fix_node_props, 
+                        cypher_stmt)
+    
+    # 处理节点标签语法
+    # 例如：(db:Database {name: 'tpcds'})
+    # 转换为：(db {name: 'tpcds', label: 'database'})
+    def fix_labeled_node_props(match):
+        node_name = match.group(1)
+        label_value = match.group(2).lower()
+        props_str = match.group(3)  # 包括大括号 {}
+        
+        # 去掉首尾的大括号
+        props_content = props_str[1:-1].strip()
+        
+        # 重新构建属性字符串，添加标签
+        return f"({node_name} {{label: \"{label_value}\", {props_content}}})"
+    
+    cypher_stmt = re.sub(r'\((\w+):(\w+)\s+({[^}]+})\)', 
+                        fix_labeled_node_props, 
+                        cypher_stmt)
+    
+    # 处理没有属性的节点标签
+    # 例如：(db:Database)
+    # 转换为：(db {label: 'database'})
+    cypher_stmt = re.sub(r'\((\w+):(\w+)\)', 
+                        r'(\1 {label: "\2"})', 
+                        cypher_stmt)
+    
+    # 处理WHERE条件中的标签语法
     # 例如：WHERE (obj:Table OR obj:View)
-    # 转换为：WHERE (obj.label = 'Table' OR obj.label = 'View')
-    converted_stmt = re.sub(r'WHERE\s+\((\w+):(\w+)\s+OR\s+\w+:(\w+)\)', r'WHERE (\1.label = "\2" OR \1.label = "\3")', converted_stmt)
+    # 转换为：WHERE (obj.label = 'table' OR obj.label = 'view')
+    cypher_stmt = re.sub(r'WHERE\s+\((\w+):(\w+)\s+OR\s+\w+:(\w+)\)', 
+                        r'WHERE (\1.label = "\2" OR \1.label = "\3")', 
+                        cypher_stmt)
     
-    # 替换关系类型语法
-    # 例如：MERGE (a)-[:REL_TYPE]->(b)
-    # 转换为：MERGE (a)-[r {label: 'REL_TYPE'}]->(b)
-    converted_stmt = re.sub(r'-\[:(\w+)\]->', r'-[r {label: "\1"}]->', converted_stmt)
+    # 处理单个标签的WHERE条件
+    # 例如：WHERE n:Label
+    # 转换为：WHERE n.label = 'label'
+    cypher_stmt = re.sub(r'WHERE\s+(\w+):(\w+)', 
+                        r'WHERE \1.label = "\2"', 
+                        cypher_stmt)
     
-    # 替换ON CREATE SET和ON MATCH SET语法
-    # AGE 1.5.0可能不支持这些语法
-    if "ON CREATE SET" in converted_stmt:
-        # 提取ON CREATE SET部分的属性设置
-        create_set_match = re.search(r'ON\s+CREATE\s+SET\s+([^O]+?)(?:ON\s+MATCH\s+SET|$)', converted_stmt, re.DOTALL)
-        if create_set_match:
-            create_set = create_set_match.group(1).strip()
-            # 移除ON CREATE SET部分
-            converted_stmt = re.sub(r'ON\s+CREATE\s+SET\s+([^O]+?)(?:ON\s+MATCH\s+SET|$)', '', converted_stmt, flags=re.DOTALL)
-            # 添加普通的SET语句
-            if not converted_stmt.strip().endswith(';'):
-                converted_stmt = converted_stmt.strip() + " SET " + create_set
+    # 处理关系属性中的标签语法
+    # 例如：[r {prop: 'value'}, label: "TYPE"]
+    # 转换为：[r {prop: 'value', label: 'type'}]
+    def fix_rel_props(match):
+        rel_name = match.group(1)
+        props_str = match.group(2)  # 包括大括号 {}
+        label_value = match.group(3).lower()
+        
+        # 去掉首尾的大括号
+        props_content = props_str[1:-1].strip()
+        
+        # 重新构建属性字符串，添加标签
+        if props_content:
+            return f"[{rel_name} {{label: \"{label_value}\", {props_content}}}]"
+        else:
+            return f"[{rel_name} {{label: \"{label_value}\"}}]"
     
-    # 移除ON MATCH SET部分
-    converted_stmt = re.sub(r'ON\s+MATCH\s+SET\s+.+', '', converted_stmt, flags=re.DOTALL)
+    cypher_stmt = re.sub(r'\[(\w+)\s+({[^}]+}),\s*label:\s*"([^"]+)"\]', 
+                        fix_rel_props, 
+                        cypher_stmt)
+    
+    # 处理关系类型语法
+    # 例如：-[:REL_TYPE]->
+    # 转换为：-[:rel_type]->
+    cypher_stmt = re.sub(r'-\[:(\w+)\]->', 
+                        lambda m: '-[:' + m.group(1).lower() + ']->', 
+                        cypher_stmt)
+    
+    # 处理关系类型和变量名语法
+    # 例如：-[r:REL_TYPE]->
+    # 转换为：-[r:rel_type]->
+    cypher_stmt = re.sub(r'-\[(\w+):(\w+)\]->', 
+                        lambda m: '-[' + m.group(1) + ':' + m.group(2).lower() + ']->', 
+                        cypher_stmt)
+    
+    # 处理关系类型和属性语法
+    # 例如：-[r:REL_TYPE {prop: 'value'}]->
+    # 转换为：-[r:rel_type {prop: 'value'}]->
+    cypher_stmt = re.sub(r'-\[(\w+):(\w+)\s+({[^}]+})\]->', 
+                        lambda m: '-[' + m.group(1) + ':' + m.group(2).lower() + ' ' + m.group(3) + ']->', 
+                        cypher_stmt)
+    
+    # 将所有标签名转换为小写
+    cypher_stmt = re.sub(r'label:\s*"([^"]+)"', 
+                        lambda m: 'label: "' + m.group(1).lower() + '"', 
+                        cypher_stmt)
+    
+    return cypher_stmt
+    
+    # 处理带变量名的关系类型语法
+    # 例如：-[r:REL_TYPE]->
+    # 转换为：-[r:rel_type {label: 'rel_type'}]->
+    cypher_stmt = re.sub(r'-\[(\w+):(\w+)\]->', 
+                        lambda m: '-[' + m.group(1) + ':' + m.group(2).lower() + ' {label: "' + m.group(2).lower() + '"}]->', 
+                        cypher_stmt)
+    
+    # 处理没有指定标签的关系
+    # 例如：(a)-[r]->(b)
+    # 转换为：(a)-[r {label: 'related_to'}]->(b)
+    cypher_stmt = re.sub(r'(\([^)]+\))-\[([^:{\]]+)\]->', 
+                        r'\1-[\2 {label: "related_to"}]->', 
+                        cypher_stmt)
+    
+    # 修复MERGE语句中的节点语法
+    # 例如：MERGE (node {prop: 'value'}, label: "Label")
+    # 转换为：MERGE (node {prop: 'value', label: 'label'})
+    cypher_stmt = re.sub(r'MERGE\s+\((\w+)\s+({[^}]+}),\s*label:\s*"([^"]+)"\)', 
+                        lambda m: 'MERGE (' + m.group(1) + ' ' + m.group(2) + ', label: "' + m.group(3).lower() + '")', 
+                        cypher_stmt)
+    
+    # 修复MATCH语句中的节点语法
+    # 例如：MATCH (node {prop: 'value'}, label: "Label")
+    # 转换为：MATCH (node {prop: 'value', label: 'label'})
+    cypher_stmt = re.sub(r'MATCH\s+\((\w+)\s+({[^}]+}),\s*label:\s*"([^"]+)"\)', 
+                        lambda m: 'MATCH (' + m.group(1) + ' ' + m.group(2) + ', label: "' + m.group(3).lower() + '")', 
+                        cypher_stmt)
+    
+    # 修复WHERE条件中的标签比较
+    # 例如：WHERE (obj {label: "Table"} OR obj {label: "View"})
+    # 转换为：WHERE (obj.label = 'table' OR obj.label = 'view')
+    cypher_stmt = re.sub(r'WHERE\s+\((\w+)\s+{label:\s*"(\w+)"}\s+OR\s+\1\s+{label:\s*"(\w+)"}\)', 
+                        lambda m: 'WHERE (' + m.group(1) + '.label = "' + m.group(2).lower() + '" OR ' + 
+                                 m.group(1) + '.label = "' + m.group(3).lower() + '")', 
+                        cypher_stmt)
     
     # 替换datetime()函数
-    converted_stmt = converted_stmt.replace('datetime()', 'current_timestamp')
+    cypher_stmt = cypher_stmt.replace('datetime()', 'current_timestamp')
     
-    return converted_stmt
+    return cypher_stmt
 
 
 def transform_json_to_cypher(pattern_info: models.AnalyticalSQLPattern) -> List[str]:
@@ -175,24 +305,27 @@ def transform_json_to_cypher(pattern_info: models.AnalyticalSQLPattern) -> List[
         schema_name = obj.get("schema", "public")
         obj_name = obj.get("name")
         
-        # 根据对象类型选择标签
-        label = "Table" if obj_type == "TABLE" else "View"
+        # 根据对象类型选择标签（全部使用小写）
+        label = "table" if obj_type == "TABLE" else "view"
         
+        var_name = label
         table_view_cypher = f"""
-        MERGE ({label.lower()}:{label} {{name: '{obj_name}', schema_name: '{schema_name}', database_name: '{database_name}', object_type: '{obj_type}'}})
-        WITH {label.lower()}
-        MATCH (schema:Schema {{name: '{schema_name}', database_name: '{database_name}'}})
-        MERGE (schema)-[:HAS_OBJECT]->({label.lower()})
+        MERGE (t_{var_name} {{label: "{label.lower()}", name: '{obj_name}', schema_name: '{schema_name}', database_name: '{database_name}', object_type: '{obj_type}'}})
+        WITH t_{var_name} as {var_name}
+        MATCH (schema {{label: "schema", name: '{schema_name}', database_name: '{database_name}'}})
+        MERGE (schema)-[:has_object]->({var_name})
         """
         cypher_statements.append(table_view_cypher)
     
     # 4. 创建/合并SqlPattern节点
+    # 在 AGE 1.5.0 中不能使用 datetime() 函数，所以我们使用字符串表示时间
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     sql_pattern_cypher = f"""
-    MERGE (sp:SqlPattern {{sql_hash: '{pattern_info.sql_hash}'}})
+    MERGE (sp {{label: "sqlpattern", sql_hash: '{pattern_info.sql_hash}'}})
     SET sp.normalized_sql = $normalized_sql,
         sp.sample_sql = $sample_sql,
         sp.source_database_name = '{database_name}',
-        sp.updated_at = datetime()
+        sp.updated_at = '{current_time}'
     """
     # 使用参数避免SQL和样本SQL中的特殊字符问题
     cypher_statements.append({
@@ -219,7 +352,7 @@ def transform_json_to_cypher(pattern_info: models.AnalyticalSQLPattern) -> List[
         target_column_cypher = f"""
         MERGE (tgt_col:Column {{fqn: '{target_fqn}', name: '{target_column}'}})
         WITH tgt_col
-        MATCH (tgt_obj) WHERE (tgt_obj:Table OR tgt_obj:View) AND tgt_obj.name = '{target_object_name}' AND tgt_obj.schema_name = '{target_schema}' AND tgt_obj.database_name = '{database_name}'
+        MATCH (tgt_obj) WHERE (tgt_obj.label = "table" OR tgt_obj.label = "view") AND tgt_obj.name = '{target_object_name}' AND tgt_obj.schema_name = '{target_schema}' AND tgt_obj.database_name = '{database_name}'
         MERGE (tgt_obj)-[:HAS_COLUMN]->(tgt_col)
         """
         cypher_statements.append(target_column_cypher)
@@ -243,23 +376,33 @@ def transform_json_to_cypher(pattern_info: models.AnalyticalSQLPattern) -> List[
                 source_column_cypher = f"""
                 MERGE (src_col:Column {{fqn: '{source_fqn}', name: '{source_column}'}})
                 WITH src_col
-                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = '{source_name}' AND src_obj.schema_name = '{source_schema}' AND src_obj.database_name = '{database_name}'
+                MATCH (src_obj) WHERE (src_obj.label = "table" OR src_obj.label = "view") AND src_obj.name = '{source_name}' AND src_obj.schema_name = '{source_schema}' AND src_obj.database_name = '{database_name}'
                 MERGE (src_obj)-[:HAS_COLUMN]->(src_col)
                 """
                 cypher_statements.append(source_column_cypher)
                 
                 # 创建数据流关系
+                # 在 AGE 1.5.0 中不能使用 ON CREATE SET 和 ON MATCH SET 语法
+                # 我们使用更兼容的方式：先 MERGE 基本关系，然后设置属性
+                current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 data_flow_cypher = f"""
-                MATCH (src_col:Column {{fqn: '{source_fqn}'}})
-                MATCH (tgt_col:Column {{fqn: '{target_fqn}'}})
-                MERGE (src_col)-[df:DATA_FLOW {{sql_hash: '{pattern_info.sql_hash}'}}]->(tgt_col)
-                ON CREATE SET df.transformation_logic = $transformation_logic,
-                              df.derivation_type = '{derivation_type}',
-                              df.created_at = datetime(),
-                              df.last_seen_at = datetime()
-                ON MATCH SET df.transformation_logic = $transformation_logic,
-                             df.derivation_type = '{derivation_type}',
-                             df.last_seen_at = datetime()
+                // 步骤 1: 匹配源节点和目标节点
+                MATCH (src_col {{label: "column", fqn: '{source_fqn}'}})
+                MATCH (tgt_col {{label: "column", fqn: '{target_fqn}'}})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_col)-[df:data_flow {{sql_hash: '{pattern_info.sql_hash}'}}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = $transformation_logic,
+                    df.derivation_type = '{derivation_type}',
+                    df.last_seen_at = '{current_time}'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '{current_time}')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_col) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
                 """
                 cypher_statements.append({
                     "query": data_flow_cypher,
@@ -269,26 +412,39 @@ def transform_json_to_cypher(pattern_info: models.AnalyticalSQLPattern) -> List[
                 })
                 
                 # 创建SQL模式与数据流的关联
+                # 注意：不能将边变量用在节点位置上，所以我们直接创建从SqlPattern到目标列的关系
                 sql_flow_cypher = f"""
-                MATCH (sp:SqlPattern {{sql_hash: '{pattern_info.sql_hash}'}})
-                MATCH (src_col:Column {{fqn: '{source_fqn}'}})-[df:DATA_FLOW {{sql_hash: '{pattern_info.sql_hash}'}}]->(tgt_col:Column {{fqn: '{target_fqn}'}})
-                MERGE (sp)-[:GENERATES_FLOW]->(df)
+                MATCH (sp {{label: "sqlpattern", sql_hash: '{pattern_info.sql_hash}'}})
+                MATCH (src_col {{label: "column", fqn: '{source_fqn}'}})
+                MATCH (tgt_col {{label: "column", fqn: '{target_fqn}'}})
+                MERGE (sp)-[:generates]->(src_col)
+                MERGE (sp)-[:generates]->(tgt_col)
                 """
                 cypher_statements.append(sql_flow_cypher)
             else:
                 # 处理字面量或表达式（没有源列的情况）
                 # 在这种情况下，我们直接从源对象到目标列创建数据流
+                # 在 AGE 1.5.0 中不能使用 ON CREATE SET 和 ON MATCH SET 语法
+                # 我们使用更兼容的方式：先 MERGE 基本关系，然后设置属性
+                current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 data_flow_from_object_cypher = f"""
-                MATCH (src_obj) WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = '{source_name}' AND src_obj.schema_name = '{source_schema}' AND src_obj.database_name = '{database_name}'
-                MATCH (tgt_col:Column {{fqn: '{target_fqn}'}})
-                MERGE (src_obj)-[df:DATA_FLOW {{sql_hash: '{pattern_info.sql_hash}'}}]->(tgt_col)
-                ON CREATE SET df.transformation_logic = $transformation_logic,
-                              df.derivation_type = '{derivation_type}',
-                              df.created_at = datetime(),
-                              df.last_seen_at = datetime()
-                ON MATCH SET df.transformation_logic = $transformation_logic,
-                             df.derivation_type = '{derivation_type}',
-                             df.last_seen_at = datetime()
+                // 步骤 1: 匹配源对象和目标列
+                MATCH (src_obj) WHERE src_obj.label IN ["table", "view"] AND src_obj.name = '{source_name}' AND src_obj.schema_name = '{source_schema}' AND src_obj.database_name = '{database_name}'
+                MATCH (tgt_col {{label: "column", fqn: '{target_fqn}'}})
+
+                // 步骤 2: MERGE 关系，仅包含用于唯一标识和匹配的属性
+                MERGE (src_obj)-[df:data_flow {{sql_hash: '{pattern_info.sql_hash}'}}]->(tgt_col)
+
+                // 步骤 3: 设置/更新那些每次都应该更新的属性
+                SET df.transformation_logic = $transformation_logic,
+                    df.derivation_type = '{derivation_type}',
+                    df.last_seen_at = '{current_time}'
+
+                // 步骤 4: 条件性地设置 created_at
+                SET df.created_at = COALESCE(df.created_at, '{current_time}')
+
+                // 步骤 5: 返回一些信息以确认操作
+                RETURN id(src_obj) AS src_id, id(df) AS df_id, id(tgt_col) AS tgt_id
                 """
                 cypher_statements.append({
                     "query": data_flow_from_object_cypher,
@@ -298,11 +454,13 @@ def transform_json_to_cypher(pattern_info: models.AnalyticalSQLPattern) -> List[
                 })
                 
                 # 创建SQL模式与数据流的关联
+                # 注意：不能将边变量用在节点位置上，所以我们直接创建从SqlPattern到源对象和目标列的关系
                 sql_flow_obj_cypher = f"""
-                MATCH (sp:SqlPattern {{sql_hash: '{pattern_info.sql_hash}'}})
-                MATCH (src_obj)-[df:DATA_FLOW {{sql_hash: '{pattern_info.sql_hash}'}}]->(tgt_col:Column {{fqn: '{target_fqn}'}})
-                WHERE (src_obj:Table OR src_obj:View) AND src_obj.name = '{source_name}' AND src_obj.schema_name = '{source_schema}' AND src_obj.database_name = '{database_name}'
-                MERGE (sp)-[:GENERATES_FLOW]->(df)
+                MATCH (sp {{label: "sqlpattern", sql_hash: '{pattern_info.sql_hash}'}})
+                MATCH (src_obj) WHERE src_obj.label IN ["table", "view"] AND src_obj.name = '{source_name}' AND src_obj.schema_name = '{source_schema}' AND src_obj.database_name = '{database_name}'
+                MATCH (tgt_col {{label: "column", fqn: '{target_fqn}'}})
+                MERGE (sp)-[:generates]->(src_obj)
+                MERGE (sp)-[:generates]->(tgt_col)
                 """
                 cypher_statements.append(sql_flow_obj_cypher)
     
@@ -319,17 +477,17 @@ def transform_json_to_cypher(pattern_info: models.AnalyticalSQLPattern) -> List[
         # 根据访问模式创建不同的关系
         if access_mode == "READ" or access_mode == "READ_WRITE":
             read_cypher = f"""
-            MATCH (sp:SqlPattern {{sql_hash: '{pattern_info.sql_hash}'}})
-            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = '{obj_name}' AND obj.schema_name = '{schema_name}' AND obj.database_name = '{database_name}'
-            MERGE (sp)-[:READS_FROM]->(obj)
+            MATCH (sp {{label: "sqlpattern", sql_hash: '{pattern_info.sql_hash}'}})
+            MATCH (obj) WHERE (obj.label = "table" OR obj.label = "view") AND obj.name = '{obj_name}' AND obj.schema_name = '{schema_name}' AND obj.database_name = '{database_name}'
+            MERGE (sp)-[:reads_from]->(obj)
             """
             cypher_statements.append(read_cypher)
         
         if access_mode == "WRITE" or access_mode == "READ_WRITE":
             write_cypher = f"""
-            MATCH (sp:SqlPattern {{sql_hash: '{pattern_info.sql_hash}'}})
-            MATCH (obj) WHERE (obj:Table OR obj:View) AND obj.name = '{obj_name}' AND obj.schema_name = '{schema_name}' AND obj.database_name = '{database_name}'
-            MERGE (sp)-[:WRITES_TO]->(obj)
+            MATCH (sp {{label: "sqlpattern", sql_hash: '{pattern_info.sql_hash}'}})
+            MATCH (obj) WHERE (obj.label = "table" OR obj.label = "view") AND obj.name = '{obj_name}' AND obj.schema_name = '{schema_name}' AND obj.database_name = '{database_name}'
+            MERGE (sp)-[:writes_to]->(obj)
             """
             cypher_statements.append(write_cypher)
     

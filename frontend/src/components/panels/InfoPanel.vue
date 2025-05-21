@@ -282,8 +282,8 @@ const getTargetNodeLabel = () => {
 };
 
 // 格式化属性键
-const formatPropertyKey = (key: string) => {
-  return key
+const formatPropertyKey = (key: string | number) => {
+  return String(key)
     .replace(/_/g, ' ')
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, str => str.toUpperCase());

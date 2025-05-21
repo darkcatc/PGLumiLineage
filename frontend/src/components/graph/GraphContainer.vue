@@ -92,7 +92,7 @@ import G6, { Graph, GraphData, IG6GraphEvent } from '@antv/g6';
 import { ZoomIn, ZoomOut, FullScreen, ArrowDown } from '@element-plus/icons-vue';
 import { NODE_STYLE_MAP, EDGE_STYLE_MAP } from '@/types/graph';
 import { NodeType, EdgeType } from '@/types/api';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage } from 'element-plus';
 
 // 定义属性
 const props = defineProps<{
@@ -332,7 +332,7 @@ const initGraph = () => {
     },
     plugins: showMinimap.value ? [
       new G6.Minimap({
-        container: minimapContainer.value!,
+        container: minimapContainer.value as HTMLDivElement,
         size: [150, 100]
       })
     ] : []
@@ -528,7 +528,7 @@ watch(() => props.data, (newData) => {
 }, { deep: true });
 
 // 监听小地图显示状态变化
-watch(showMinimap, (newValue) => {
+watch(showMinimap, () => {
   if (graph) {
     // 销毁旧图实例
     graph.destroy();

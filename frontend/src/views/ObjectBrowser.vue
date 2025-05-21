@@ -175,7 +175,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { lineageApi } from '@/services/api';
 import { NodeType, ObjectsResponse, ObjectsQueryParams } from '@/types/api';

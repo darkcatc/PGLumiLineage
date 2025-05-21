@@ -33,7 +33,7 @@ PGLumiLineage 是一个基于 PostgreSQL 的自动化数据血缘分析与知识
 - [元数据收集器 (metadata_collector)](./metadata_collector_decisions.md)
 - [SQL范式化与聚合器 (sql_normalizer)](./sql_normalizer_decisions.md)
 - [LLM分析器 (llm_analyzer)](./llm_analyzer_decisions.md)
-- [AGE图谱构建器 (age_graph_builder)](./age_builder_decisions.md)
+- [AGE图谱构建器 (age_graph_builder)](./age_graph_decisions.md)
 - [血缘关系 API (api)](./api_decisions.md)
 - [血缘关系可视化 UI (frontend)](./ui_decisions.md)
 - [调度与编排服务 (scheduler)](./scheduler_decisions.md)

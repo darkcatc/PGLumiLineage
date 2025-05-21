@@ -196,7 +196,7 @@ import { useRoute, useRouter } from 'vue-router';
 import GraphContainer from '@/components/graph/GraphContainer.vue';
 import { lineageApi } from '@/services/api';
 import { NodeType, EdgeType, ObjectDetailsResponse } from '@/types/api';
-import { NODE_STYLE_MAP, EDGE_STYLE_MAP } from '@/types/graph';
+import { NODE_STYLE_MAP } from '@/types/graph';
 
 // 路由实例
 const route = useRoute();
@@ -385,8 +385,8 @@ const getNodeLabel = (nodeId: string) => {
 };
 
 // 格式化属性键
-const formatPropertyKey = (key: string) => {
-  return key
+const formatPropertyKey = (key: string | number) => {
+  return String(key)
     .replace(/_/g, ' ')
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, str => str.toUpperCase());
