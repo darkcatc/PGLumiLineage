@@ -102,6 +102,23 @@ const fetchLineageGraph = async () => {
   
   try {
     const response = await lineageApi.getLineageGraph(queryParams);
+    console.log('血缘图数据:', response);
+    console.log('节点数量:', response.nodes?.length || 0);
+    console.log('边数量:', response.edges?.length || 0);
+    
+    // 如果节点或边为空，记录详细信息
+    if (!response.nodes || response.nodes.length === 0) {
+      console.warn('未接收到节点数据');
+    } else {
+      console.log('节点示例:', response.nodes[0]);
+    }
+    
+    if (!response.edges || response.edges.length === 0) {
+      console.warn('未接收到边数据');
+    } else {
+      console.log('边示例:', response.edges[0]);
+    }
+    
     graphData.value = response;
     
     // 更新URL查询参数，但不触发路由变化

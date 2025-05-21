@@ -385,31 +385,59 @@ const bindEvents = () => {
 
 // 渲染图
 const renderGraph = (data: { nodes: any[]; edges: any[] }) => {
-  if (!graph) return;
+  console.log('开始渲染图形:', data);
+  if (!graph) {
+    console.error('图实例不存在，无法渲染');
+    return;
+  }
   
-  // 转换数据为G6格式
-  const graphData: GraphData = {
-    nodes: data.nodes.map(node => ({
-      id: node.id,
-      label: node.label,
-      type: getNodeType(node.type),
-      style: getNodeStyle(node.type),
-      originalData: node
-    })),
-    edges: data.edges.map(edge => ({
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      label: edge.label,
-      style: getEdgeStyle(edge.type),
-      originalData: edge
-    }))
-  };
+  if (!data || !data.nodes || !data.edges) {
+    console.error('数据不完整，无法渲染:', data);
+    return;
+  }
   
-  // 渲染图
-  graph.data(graphData);
-  graph.render();
-  graph.fitView(20);
+  console.log('原始数据:', data);
+  console.log('节点数量:', data.nodes.length);
+  console.log('边数量:', data.edges.length);
+  
+  try {
+    // 转换数据为G6格式
+    const graphData: GraphData = {
+      nodes: data.nodes.map(node => {
+        console.log('处理节点:', node);
+        const nodeType = getNodeType(node.type);
+        console.log('节点类型:', node.type, '->', nodeType);
+        return {
+          id: node.id,
+          label: node.label,
+          type: nodeType,
+          style: getNodeStyle(node.type),
+          originalData: node
+        };
+      }),
+      edges: data.edges.map(edge => {
+        console.log('处理边:', edge);
+        return {
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          label: edge.label,
+          style: getEdgeStyle(edge.type),
+          originalData: edge
+        };
+      })
+    };
+    
+    console.log('转换后的G6格式数据:', graphData);
+    
+    // 渲染图
+    graph.data(graphData);
+    graph.render();
+    graph.fitView(20);
+    console.log('图形渲染完成');
+  } catch (error) {
+    console.error('渲染图形时发生错误:', error);
+  }
 };
 
 // 获取节点类型
