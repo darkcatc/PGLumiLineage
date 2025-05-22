@@ -19,7 +19,7 @@ from typing import Dict, Any
 # 添加项目根目录到 Python 路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from pglumilineage.age_graph_builder.service import transform_json_to_cypher
+from pglumilineage.graph_builder.service import transform_json_to_cypher
 from pglumilineage.common.models import AnalyticalSQLPattern
 
 def load_json_file(file_path: str) -> Dict[str, Any]:

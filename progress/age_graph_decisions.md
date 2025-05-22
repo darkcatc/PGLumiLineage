@@ -12,7 +12,7 @@ AGE 图谱模块负责在 PostgreSQL 数据库中使用 Apache AGE 扩展构建�
 
 ### 6. `MERGE ... ON CREATE SET ...` 语法适配 (2025-05-21)
 
-**决策内容**：由于 Apache AGE 1.5.0 不支持 Cypher 的 `MERGE ... ON CREATE SET ...` 和 `MERGE ... ON MATCH SET ...` 复合语句，在 `pglumilineage/age_graph_builder/service.py` (尤其是 `_create_or_update_node` 和 `_create_or_update_edge` 方法) 中采用分步操作来模拟其行为。通常是先尝试 `MATCH`，如果节点/边不存在，则执行 `CREATE`，然后单独执行 `SET` 来更新属性。
+**决策内容**：由于 Apache AGE 1.5.0 不支持 Cypher 的 `MERGE ... ON CREATE SET ...` 和 `MERGE ... ON MATCH SET ...` 复合语句，在 `pglumilineage/graph_builder/service.py` (尤其是 `_create_or_update_node` 和 `_create_or_update_edge` 方法) 中采用分步操作来模拟其行为。通常是先尝试 `MATCH`，如果节点/边不存在，则执行 `CREATE`，然后单独执行 `SET` 来更新属性。
 
 **主要理由**：
 - AGE 1.5.0 对 Cypher 的支持尚不完整，缺乏对 `MERGE` 语句中 `ON CREATE` 和 `ON MATCH` 子句的直接支持。
@@ -57,7 +57,7 @@ AGE 图谱模块负责在 PostgreSQL 数据库中使用 Apache AGE 扩展构建�
 
 ### 3. `MERGE` 语句的 `ON CREATE SET` 和 `ON MATCH SET` 适配 (2025-05-21)
 
-**决策内容**：Apache AGE 1.5.0 不支持 Cypher `MERGE` 语句中的 `ON CREATE SET` 和 `ON MATCH SET` 子句。因此，在 `pglumilineage/age_graph_builder/service.py` 中，创建或更新节点/关系的逻辑需要重写，采用先尝试匹配，再根据匹配结果决定是创建新元素还是更新现有元素属性的策略。
+**决策内容**：Apache AGE 1.5.0 不支持 Cypher `MERGE` 语句中的 `ON CREATE SET` 和 `ON MATCH SET` 子句。因此，在 `pglumilineage/graph_builder/service.py` 中，创建或更新节点/关系的逻辑需要重写，采用先尝试匹配，再根据匹配结果决定是创建新元素还是更新现有元素属性的策略。
 
 **主要理由**：
 - 直接使用带有 `ON CREATE SET` 或 `ON MATCH SET` 的 `MERGE` 语句会在 AGE 1.5.0 中导致语法错误。
@@ -98,7 +98,7 @@ AGE 图谱模块负责在 PostgreSQL 数据库中使用 Apache AGE 扩展构建�
 
 ### 6. 移除冗余脚本与简化转换函数 (2025-05-20)
 
-**决策内容**：鉴于对 AGE 1.5.0 配置和语法的深入理解，移除不再需要的 `scripts/convert_cypher_for_age.py` 脚本，并简化或移除 `pglumilineage/age_graph_builder/service.py` 中残留的 `convert_cypher_for_age` 函数。
+**决策内容**：鉴于对 AGE 1.5.0 配置和语法的深入理解，移除不再需要的 `scripts/convert_cypher_for_age.py` 脚本，并简化或移除 `pglumilineage/graph_builder/service.py` 中残留的 `convert_cypher_for_age` 函数。
 
 **主要理由**：
 - 正确配置数据库 (`search_path`) 和直接使用 AGE 1.5.0 兼容的 Cypher 语法（如 `{label: 'Label'}`）后，复杂的客户端语法转换不再必要。

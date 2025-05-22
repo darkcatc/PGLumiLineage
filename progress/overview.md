@@ -14,7 +14,7 @@ PGLumiLineage 是一个基于 PostgreSQL 的自动化数据血缘分析与知识
 - LLM 驱动的关系提取
 - **知识图谱构建 (基于 Apache AGE 1.5.0)**：
     - 完成了对 Apache AGE 1.5.0 版本的核心适配，包括其特定的配置要求、Cypher 查询语法（如节点标签表示）以及数据返回格式。
-    - **针对 AGE 1.5.0 不支持 `MERGE ... ON CREATE SET ...` 语法的问题，在 `age_graph_builder` 模块中实现了替代逻辑，确保节点和关系的正确创建与更新。**
+    - **针对 AGE 1.5.0 不支持 `MERGE ... ON CREATE SET ...` 语法的问题，在 `graph_builder` 模块中实现了替代逻辑，确保节点和关系的正确创建与更新。**
 - 灵活配置与调度系统
 - **血缘关系可视化API接口 (FastAPI)**：
     - 后端API已适配Apache AGE 1.5.0的数据返回格式，能够正确解析和转换图数据。
@@ -41,7 +41,7 @@ PGLumiLineage 是一个基于 PostgreSQL 的自动化数据血缘分析与知识
 - [元数据收集器 (metadata_collector)](./metadata_collector_decisions.md)
 - [SQL范式化与聚合器 (sql_normalizer)](./sql_normalizer_decisions.md)
 - [LLM分析器 (llm_analyzer)](./llm_analyzer_decisions.md)
-- [AGE图谱构建器 (age_graph_builder)](./age_graph_decisions.md)
+- [AGE图谱构建器 (graph_builder)](./age_graph_decisions.md)
 - [血缘关系 API (api)](./api_decisions.md)
 - [血缘关系可视化 UI (frontend)](./ui_decisions.md)
 - [调度与编排服务 (scheduler)](./scheduler_decisions.md)

@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import asyncpg
 
-from pglumilineage.age_graph_builder.service import convert_cypher_for_age
+from pglumilineage.graph_builder.service import convert_cypher_for_age
 from .models import NodeType
 
 # 设置日志

@@ -32,6 +32,21 @@
     * 采用模块化的Python架构设计，为未来功能扩展（如Kafka集成、支持Cloudberry\Greenplum及其他数据库类型）奠定坚实基础。
 * **动态与实时性**: 基于数据库运行时日志进行分析，能够捕获动态生成SQL及实际执行的数据转换链路，有效补充静态分析的不足。
 
+## 📂 项目结构
+
+```
+pglumilineage/
+├── graph_builder/            # 图数据库构建模块
+│   ├── __init__.py
+│   ├── common_graph_utils.py  # 图数据库通用工具函数
+│   ├── metadata_graph_builder.py  # 元数据图谱构建器
+│   └── service.py            # 图数据库服务
+├── llm_analyzer/             # LLM分析模块
+├── log_processor/            # 日志处理模块
+├── metadata_collector/       # 元数据收集模块
+└── sql_normalizer/           # SQL规范化模块
+```
+
 ## 🏛️ 系统架构概览
 
 PGLumiLineage 采用模块化、面向服务的架构设计：
@@ -40,7 +55,7 @@ PGLumiLineage 采用模块化、面向服务的架构设计：
 2.  **中央存储 (`iwdb`)**: 一个专用的PostgreSQL数据库，用于存储系统配置、经过初步处理的日志、提取的元数据以及聚合后的SQL模式。Apache AGE扩展也安装在此数据库中。
 3.  **SQL范式化与聚合服务**: `sql_normalizer`（SQL范式化器）处理原始SQL（来自日志和元数据定义），创建唯一的、匿名的SQL模式，并聚合相关的统计信息。
 4.  **LLM关系提取服务**: `llm_relationship_extractor`（LLM关系提取器）将SQL模式和相关的元数据上下文发送给大语言模型（如通义千问Qwen），以识别数据血缘关系。
-5.  **AGE图谱构建服务**: `age_graph_builder`（AGE图谱构建器）将LLM的输出转换为Cypher查询，用以在Apache AGE中构建或更新数据血缘知识图谱。
+5.  **AGE图谱构建服务**: `graph_builder`（AGE图谱构建器）将LLM的输出转换为Cypher查询，用以在Apache AGE中构建或更新数据血缘知识图谱。
 6.  **调度服务**: 中央的 `scheduler`（调度器）根据在 `lumi_config.source_sync_schedules` 中定义的策略，编排和调度所有这些数据处理任务的执行。
 
 
@@ -158,7 +173,7 @@ PGLumiLineage 采用模块化、面向服务的架构设计：
 5. **启动 AGE 图谱构建器**
 
    ```bash
-   python -m pglumilineage.age_graph_builder.main
+   python -m pglumilineage.graph_builder.main
    ```
 
 ### 查询血缘关系

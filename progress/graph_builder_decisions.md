@@ -1,4 +1,4 @@
-# AGE图谱构建器 (age_graph_builder) 设计决策文档
+# AGE图谱构建器 (graph_builder) 设计决策文档
 
 **最后更新时间**：2025-05-16
 

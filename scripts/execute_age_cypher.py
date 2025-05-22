@@ -132,7 +132,7 @@ async def execute_cypher_statements(conn: asyncpg.Connection, graph_name: str, s
         
         # 导入转换函数
         sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-        from pglumilineage.age_graph_builder.service import convert_cypher_for_age
+        from pglumilineage.graph_builder.service import convert_cypher_for_age
         
         # 执行每条Cypher语句
         success_count = 0

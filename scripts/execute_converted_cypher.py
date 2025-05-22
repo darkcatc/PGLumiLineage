@@ -22,7 +22,7 @@ from typing import List, Dict, Any
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # 导入转换函数
-from pglumilineage.age_graph_builder.service import convert_cypher_for_age
+from pglumilineage.graph_builder.service import convert_cypher_for_age
 
 # 设置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
