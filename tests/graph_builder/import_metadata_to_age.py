@@ -22,6 +22,8 @@ if project_root not in sys.path:
 # 使用测试配置
 from tests.graph_builder.test_settings import get_settings_instance
 from pglumilineage.graph_builder.metadata_graph_builder import MetadataGraphBuilder
+from pglumilineage.graph_builder.common_graph_utils import ensure_age_graph_exists, execute_cypher as common_execute_cypher
+import asyncpg
 
 # 配置日志
 logging.basicConfig(
@@ -60,6 +62,17 @@ async def import_metadata_to_age():
         # 创建MetadataGraphBuilder实例
         logger.info("正在初始化MetadataGraphBuilder...")
         graph_name = "lumi_graph"
+        
+        # 确保AGE图存在
+        conn = await asyncpg.connect(**age_db_config)
+        try:
+            if not await ensure_age_graph_exists(conn, graph_name):
+                logger.error(f"无法创建或验证AGE图: {graph_name}")
+                return
+            logger.info(f"已确保AGE图存在: {graph_name}")
+        finally:
+            await conn.close()
+            
         builder = MetadataGraphBuilder(metadata_db_config, age_db_config, graph_name)
         
         # 获取所有激活的数据源
@@ -73,6 +86,11 @@ async def import_metadata_to_age():
             source_name = source['source_name']
             logger.info(f"正在处理数据源: {source_name} (ID: {source_id})")
             
+            # 1. 创建数据源节点
+            cypher, params = builder.generate_datasource_node_cypher(source)
+            await builder.execute_cypher(cypher, params)
+            logger.info(f"已创建数据源节点: {source_name} (ID: {source_id})")
+            
             # 获取对象元数据
             objects = await builder.get_objects_metadata(source_id)
             logger.info(f"找到 {len(objects)} 个数据库对象")
@@ -83,10 +101,28 @@ async def import_metadata_to_age():
                 # 获取列元数据
                 columns = await builder.get_columns_metadata(object_ids)
                 logger.info(f"找到 {len(columns)} 个列定义")
+                
+                # 2. 创建数据库节点
+                for db_name in set([obj['db_name'] for obj in objects]):
+                    db_cypher, db_params = builder.generate_database_node_cypher(
+                        source_name, db_name, source_id
+                    )
+                    await builder.execute_cypher(db_cypher, db_params)
+                    logger.info(f"已创建数据库节点: {db_name}")
             
             # 获取函数元数据
             functions = await builder.get_functions_metadata(source_id)
             logger.info(f"找到 {len(functions)} 个函数定义")
+        
+        # 创建图空间（如果不存在）
+        create_graph_cypher = f"""
+        SELECT * FROM ag_catalog.create_graph('{graph_name}');
+        """
+        try:
+            await builder.execute_cypher(create_graph_cypher)
+            logger.info(f"成功创建图空间: {graph_name}")
+        except Exception as e:
+            logger.warning(f"创建图空间时出错（可能已存在）: {str(e)}")
         
         logger.info("元数据处理完成！")
         

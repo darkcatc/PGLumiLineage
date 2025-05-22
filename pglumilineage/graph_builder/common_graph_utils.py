@@ -12,9 +12,10 @@
 
 import logging
 import hashlib
-from typing import Any, Dict, List, Optional, Tuple, Union
+import re
 import json
 import asyncpg
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # 设置日志
 logger = logging.getLogger(__name__)
@@ -241,10 +242,12 @@ def convert_cypher_for_age(cypher_stmt: str) -> str:
 
 
 async def execute_cypher(conn: asyncpg.Connection, cypher_stmt: str, 
-                        params: Dict[str, Any] = None, 
-                        graph_name: str = DEFAULT_GRAPH_NAME) -> List[Dict[str, Any]]:
+                     params: Dict[str, Any] = None, 
+                     graph_name: str = DEFAULT_GRAPH_NAME) -> List[Dict[str, Any]]:
     """
     执行Cypher语句
+    
+    在AGE 1.5.0中，我们需要将参数直接嵌入到Cypher查询中，而不是使用参数化查询。
     
     Args:
         conn: 数据库连接
@@ -255,17 +258,128 @@ async def execute_cypher(conn: asyncpg.Connection, cypher_stmt: str,
     Returns:
         List[Dict[str, Any]]: 查询结果
     """
-    # 转换为AGE 1.5.0兼容的Cypher语句
-    age_cypher = convert_cypher_for_age(cypher_stmt)
-    
-    # 构造AGE查询
-    age_query = f"SELECT * FROM cypher('{graph_name}', $$ {age_cypher} $$) AS (result agtype);"
-    
     try:
-        rows = await conn.fetch(age_query, *(params or {}).values())
+        # 设置搜索路径
+        await conn.execute("SET search_path = ag_catalog, \"$user\", public;")
+        
+        # 如果有参数，将参数直接嵌入到Cypher语句中
+        if params:
+            # 创建一个参数字典的副本，避免修改原始参数字典
+            params_copy = params.copy()
+            
+            # 处理参数值，确保它们被正确转义和格式化
+            for key, value in params_copy.items():
+                if value is None:
+                    params_copy[key] = 'null'
+                elif isinstance(value, bool):
+                    params_copy[key] = 'true' if value else 'false'
+                elif isinstance(value, (int, float)):
+                    params_copy[key] = str(value)
+                elif isinstance(value, str):
+                    # 转义字符串中的引号
+                    escaped_value = value.replace('"', '\\"')
+                    params_copy[key] = f'"{escaped_value}"'
+                else:
+                    # 对于其他类型，转换为字符串并转义
+                    escaped_value = str(value).replace('"', '\\"')
+                    params_copy[key] = f'"{escaped_value}"'
+            
+            # 替换Cypher语句中的参数占位符，但保留 COALESCE 函数内部的参数
+            # 使用正则表达式匹配 COALESCE 函数的内容，并临时替换为占位符
+            coalesce_pattern = r'(COALESCE\s*\([^)]*\))'
+            
+            # 查找所有 COALESCE 函数调用
+            coalesce_matches = list(re.finditer(coalesce_pattern, cypher_stmt, re.IGNORECASE))
+            
+            # 如果没有 COALESCE 函数，直接替换所有参数
+            if not coalesce_matches:
+                for key, value in params_copy.items():
+                    # 替换 $param 和 ${param} 格式的参数
+                    cypher_stmt = re.sub(rf'\${key}\b', value, cypher_stmt)
+                    cypher_stmt = re.sub(rf'\${{{key}}}', value, cypher_stmt)
+            else:
+                # 将 COALESCE 函数替换为临时占位符
+                temp_cypher = cypher_stmt
+                temp_parts = []
+                last_end = 0
+                
+                for match in coalesce_matches:
+                    start, end = match.span()
+                    # 添加 COALESCE 之前的部分
+                    temp_parts.append(temp_cypher[last_end:start])
+                    # 添加占位符
+                    temp_parts.append(f'__COALESCE_{len(temp_parts)}__')
+                    last_end = end
+                
+                # 添加最后一部分
+                temp_parts.append(temp_cypher[last_end:])
+                temp_cypher = ''.join(temp_parts)
+                
+                # 替换非 COALESCE 部分的参数
+                for key, value in params_copy.items():
+                    # 替换 $param 和 ${param} 格式的参数
+                    temp_cypher = re.sub(rf'\${key}\b', value, temp_cypher)
+                    temp_cypher = re.sub(rf'\${{{key}}}', value, temp_cypher)
+                
+                # 恢复 COALESCE 函数
+                for i, match in enumerate(coalesce_matches):
+                    placeholder = f'__COALESCE_{i}__'
+                    # 获取原始的 COALESCE 函数调用
+                    original_coalesce = match.group(0)
+                    # 恢复参数占位符
+                    for key, value in params_copy.items():
+                        # 只替换 $param 格式的参数，不替换 ${param} 格式的参数
+                        original_coalesce = re.sub(rf'\${key}\b', value, original_coalesce)
+                    temp_cypher = temp_cypher.replace(placeholder, original_coalesce)
+                
+                cypher_stmt = temp_cypher
+        
+        # 转换Cypher语句为AGE 1.5.0兼容格式
+        converted_cypher = convert_cypher_for_age(cypher_stmt)
+        
+        # 分析RETURN子句，确定正确的列名
+        return_match = re.search(r'RETURN\s+(.+?)(?:;|$)', converted_cypher, re.IGNORECASE | re.DOTALL)
+        
+        if return_match:
+            return_clause = return_match.group(1).strip()
+            # 检查是否有多列返回（逗号分隔）
+            if ',' in return_clause:
+                columns = []
+                for col in return_clause.split(','):
+                    col = col.strip()
+                    as_match = re.search(r'\s+AS\s+(\w+)', col, re.IGNORECASE)
+                    if as_match:
+                        columns.append(f"{as_match.group(1)} agtype")
+                    else:
+                        columns.append(f"col{len(columns)+1} agtype")
+                as_clause = ', '.join(columns)
+            else:
+                as_match = re.search(r'\s+AS\s+(\w+)', return_clause, re.IGNORECASE)
+                if as_match:
+                    as_clause = f"{as_match.group(1)} agtype"
+                else:
+                    as_clause = "result agtype"
+        else:
+            as_clause = "result agtype"
+        
+        # 构建Cypher查询
+        query = f"""
+            SELECT * FROM cypher(
+                $1,
+                $$
+                    {converted_cypher}
+                $$
+            ) AS ({as_clause});
+        """
+        
+        # 执行查询
+        rows = await conn.fetch(query, graph_name)
+        
+        # 转换结果为字典列表
         return [dict(row) for row in rows]
+        
     except Exception as e:
-        logger.error(f"执行Cypher语句出错: {str(e)}\nCypher: {age_cypher}")
+        logger.error(f"执行Cypher语句出错: {str(e)}\nCypher: {converted_cypher}\nParams: {params}")
         raise
 
 
@@ -281,14 +395,17 @@ async def ensure_age_graph_exists(conn: asyncpg.Connection, graph_name: str = DE
         bool: 图是否存在或创建成功
     """
     try:
+        # 设置搜索路径
+        await conn.execute("SET search_path = ag_catalog, \"$user\", public;")
+        
         # 检查图是否存在
-        check_query = f"SELECT * FROM ag_catalog.ag_graph WHERE name = '{graph_name}';"
-        result = await conn.fetch(check_query)
+        check_query = "SELECT * FROM ag_graph WHERE name = $1;"
+        result = await conn.fetch(check_query, graph_name)
         
         if not result:
             # 创建图
-            create_query = f"SELECT * FROM ag_catalog.create_graph('{graph_name}');"
-            await conn.execute(create_query)
+            create_query = "SELECT * FROM create_graph($1);"
+            await conn.execute(create_query, graph_name)
             logger.info(f"创建了新的AGE图: {graph_name}")
         
         return True

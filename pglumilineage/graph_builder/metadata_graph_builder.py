@@ -24,15 +24,28 @@ from typing import List, Dict, Any, Optional, Tuple, Set
 import asyncpg
 
 from pglumilineage.common import models
-from .common_graph_utils import (
+from pglumilineage.graph_builder.common_graph_utils import (
     generate_datasource_fqn,
     generate_database_fqn,
     generate_schema_fqn,
     generate_object_fqn,
     generate_column_fqn,
     generate_function_fqn,
-    convert_cypher_for_age,
-    execute_cypher as common_execute_cypher
+    execute_cypher as common_execute_cypher,
+    NODE_LABEL_DATASOURCE,
+    NODE_LABEL_DATABASE,
+    NODE_LABEL_SCHEMA,
+    NODE_LABEL_TABLE,
+    NODE_LABEL_VIEW,
+    NODE_LABEL_MATERIALIZED_VIEW,
+    NODE_LABEL_COLUMN,
+    NODE_LABEL_FUNCTION,
+    REL_TYPE_CONFIGURES,
+    REL_TYPE_HAS_SCHEMA,
+    REL_TYPE_HAS_OBJECT,
+    REL_TYPE_HAS_COLUMN,
+    REL_TYPE_REFERENCES,
+    REL_TYPE_HAS_FUNCTION
 )
 
 # 设置日志
@@ -76,17 +89,50 @@ class MetadataGraphBuilder:
         
         Returns:
             List[Dict[str, Any]]: 数据源配置列表
+            
+        Raises:
+            Exception: 如果无法获取数据源配置或表结构不匹配
         """
         conn = await self._get_metadata_db_conn()
         try:
+            # 首先检查表结构
+            table_info = await conn.fetch("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'lumi_config' 
+                AND table_name = 'data_sources'
+            """)
+            
+            if not table_info:
+                raise Exception("表 lumi_config.data_sources 不存在")
+                
+            # 获取所有列名
+            columns = [row['column_name'] for row in table_info]
+            logger.debug(f"lumi_config.data_sources 表结构: {columns}")
+            
+            # 构建基础查询
             query = """
-            SELECT source_id, source_name, host, port, database_name, username, 
-                   description, is_active, properties
+            SELECT *
             FROM lumi_config.data_sources
             WHERE is_active = TRUE
             """
+            
             rows = await conn.fetch(query)
-            return [dict(row) for row in rows]
+            
+            # 将结果转换为字典列表
+            result = []
+            for row in rows:
+                row_dict = {}
+                for i, col in enumerate(row.keys()):
+                    row_dict[col] = row[i]
+                result.append(row_dict)
+                
+            logger.info(f"成功获取 {len(result)} 个激活的数据源")
+            return result
+            
+        except Exception as e:
+            logger.error(f"获取数据源配置时出错: {str(e)}")
+            raise
         finally:
             await conn.close()
     
@@ -123,22 +169,54 @@ class MetadataGraphBuilder:
             
         Returns:
             List[Dict[str, Any]]: 列元数据列表
+            
+        Raises:
+            Exception: 如果无法获取列元数据或表结构不匹配
         """
         if not object_ids:
             return []
             
         conn = await self._get_metadata_db_conn()
         try:
+            # 首先检查表结构
+            table_info = await conn.fetch("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'lumi_metadata_store' 
+                AND table_name = 'columns_metadata'
+            """)
+            
+            if not table_info:
+                raise Exception("表 lumi_metadata_store.columns_metadata 不存在")
+                
+            # 获取所有列名
+            columns = [row['column_name'] for row in table_info]
+            logger.debug(f"lumi_metadata_store.columns_metadata 表结构: {columns}")
+            
+            # 构建基础查询
             query = """
-            SELECT column_id, object_id, column_name, ordinal_position, data_type,
-                   is_nullable, column_default, is_primary_key, is_unique, 
-                   description, properties
+            SELECT *
             FROM lumi_metadata_store.columns_metadata
             WHERE object_id = ANY($1::bigint[])
             ORDER BY object_id, ordinal_position
             """
+            
             rows = await conn.fetch(query, object_ids)
-            return [dict(row) for row in rows]
+            
+            # 将结果转换为字典列表
+            result = []
+            for row in rows:
+                row_dict = {}
+                for i, col in enumerate(row.keys()):
+                    row_dict[col] = row[i]
+                result.append(row_dict)
+                
+            logger.info(f"成功获取 {len(result)} 个列定义")
+            return result
+            
+        except Exception as e:
+            logger.error(f"获取列元数据时出错: {str(e)}")
+            raise
         finally:
             await conn.close()
     
@@ -208,18 +286,26 @@ class MetadataGraphBuilder:
         """
         source_id = source['source_id']
         source_name = source['source_name']
-        fqn = self.generate_datasource_fqn(source_id, source_name)
+        fqn = generate_datasource_fqn(source_id, source_name)
         
         cypher = """
-        MERGE (ds {label: "datasource", fqn: $fqn}) 
-        SET ds.name = $name,
+        MERGE (ds:DataSource {fqn: $fqn})
+        ON CREATE SET 
+            ds.name = $name,
             ds.source_id = $source_id,
             ds.host = $host,
             ds.port = $port,
             ds.description = $description,
             ds.is_active = $is_active,
-            ds.updated_at = $updated_at,
-            ds.created_at = COALESCE(ds.created_at, $created_at)
+            ds.created_at = datetime(),
+            ds.updated_at = datetime()
+        ON MATCH SET
+            ds.name = $name,
+            ds.host = $host,
+            ds.port = $port,
+            ds.description = $description,
+            ds.is_active = $is_active,
+            ds.updated_at = datetime()
         RETURN ds
         """
         
@@ -249,21 +335,30 @@ class MetadataGraphBuilder:
         Returns:
             Tuple[str, Dict[str, Any]]: Cypher语句和参数字典
         """
-        db_fqn = self.generate_database_fqn(source_name, database_name)
-        datasource_fqn = self.generate_datasource_fqn(source_id, source_name)
+        db_fqn = generate_database_fqn(source_name, database_name)
+        datasource_fqn = generate_datasource_fqn(source_id, source_name)
         
         cypher = """
-        MERGE (db {label: "database", fqn: $fqn}) 
-        SET db.name = $name,
+        MERGE (db:Database {fqn: $fqn})
+        ON CREATE SET 
+            db.name = $name,
             db.datasource_name = $datasource_name,
             db.source_id = $source_id,
-            db.updated_at = $updated_at,
-            db.created_at = COALESCE(db.created_at, $created_at)
+            db.created_at = datetime(),
+            db.updated_at = datetime()
+        ON MATCH SET
+            db.name = $name,
+            db.datasource_name = $datasource_name,
+            db.source_id = $source_id,
+            db.updated_at = datetime()
         WITH db
-        MATCH (ds {label: "datasource", fqn: $datasource_fqn})
-        MERGE (ds)-[r {label: "configures_database"}]->(db)
-        SET r.updated_at = $updated_at,
-            r.created_at = COALESCE(r.created_at, $created_at)
+        MATCH (ds:DataSource {fqn: $datasource_fqn})
+        MERGE (ds)-[r:CONFIGURES_DATABASE]->(db)
+        ON CREATE SET
+            r.created_at = datetime(),
+            r.updated_at = datetime()
+        ON MATCH SET
+            r.updated_at = datetime()
         RETURN db
         """
         
@@ -272,9 +367,7 @@ class MetadataGraphBuilder:
             "name": database_name,
             "datasource_name": source_name,
             "source_id": source_id,
-            "datasource_fqn": datasource_fqn,
-            "updated_at": datetime.now().isoformat(),
-            "created_at": datetime.now().isoformat()
+            "datasource_fqn": datasource_fqn
         }
         
         return cypher, params
@@ -291,20 +384,28 @@ class MetadataGraphBuilder:
         Returns:
             Tuple[str, Dict[str, Any]]: Cypher语句和参数字典
         """
-        schema_fqn = self.generate_schema_fqn(database_fqn, schema_name)
+        schema_fqn = generate_schema_fqn(database_fqn, schema_name)
         
         cypher = """
-        MERGE (schema {label: "schema", fqn: $fqn}) 
-        SET schema.name = $name,
+        MERGE (schema:Schema {fqn: $fqn})
+        ON CREATE SET
+            schema.name = $name,
             schema.database_fqn = $database_fqn,
             schema.owner = $owner,
-            schema.updated_at = $updated_at,
-            schema.created_at = COALESCE(schema.created_at, $created_at)
+            schema.created_at = datetime(),
+            schema.updated_at = datetime()
+        ON MATCH SET
+            schema.name = $name,
+            schema.owner = $owner,
+            schema.updated_at = datetime()
         WITH schema
-        MATCH (db {label: "database", fqn: $database_fqn})
-        MERGE (db)-[r {label: "has_schema"}]->(schema)
-        SET r.updated_at = $updated_at,
-            r.created_at = COALESCE(r.created_at, $created_at)
+        MATCH (db:Database {fqn: $database_fqn})
+        MERGE (db)-[r:HAS_SCHEMA]->(schema)
+        ON CREATE SET
+            r.created_at = datetime(),
+            r.updated_at = datetime()
+        ON MATCH SET
+            r.updated_at = datetime()
         RETURN schema
         """
         
@@ -312,9 +413,7 @@ class MetadataGraphBuilder:
             "fqn": schema_fqn,
             "name": schema_name,
             "database_fqn": database_fqn,
-            "owner": owner,
-            "updated_at": datetime.now().isoformat(),
-            "created_at": datetime.now().isoformat()
+            "owner": owner
         }
         
         return cypher, params
@@ -331,40 +430,60 @@ class MetadataGraphBuilder:
             Tuple[str, Dict[str, Any]]: Cypher语句和参数字典
         """
         object_name = object_info['object_name']
-        object_type = object_info['object_type'].lower()
-        object_fqn = self.generate_object_fqn(schema_fqn, object_name)
+        object_type = object_info['object_type'].upper()  # TABLE, VIEW, MATERIALIZED_VIEW
+        object_fqn = generate_object_fqn(schema_fqn, object_name)
         
-        cypher = """
-        MERGE (obj {label: $object_type, fqn: $fqn}) 
-        SET obj.name = $name,
+        # 将对象类型转换为有效的节点标签
+        node_label = object_type.replace(' ', '_')
+        
+        cypher = f"""
+        MERGE (obj:{node_label} {{fqn: $fqn}})
+        ON CREATE SET
+            obj.name = $name,
             obj.schema_fqn = $schema_fqn,
+            obj.object_type = $object_type,
             obj.owner = $owner,
             obj.description = $description,
-            obj.definition = $definition,
+            obj.definition_sql = $definition_sql,
+            obj.properties = $properties,
             obj.row_count = $row_count,
+            obj.size_bytes = $size_bytes,
             obj.last_analyzed = $last_analyzed,
-            obj.updated_at = $updated_at,
-            obj.created_at = COALESCE(obj.created_at, $created_at)
+            obj.created_at = datetime(),
+            obj.updated_at = datetime()
+        ON MATCH SET
+            obj.name = $name,
+            obj.owner = $owner,
+            obj.description = $description,
+            obj.definition_sql = $definition_sql,
+            obj.properties = $properties,
+            obj.row_count = $row_count,
+            obj.size_bytes = $size_bytes,
+            obj.last_analyzed = $last_analyzed,
+            obj.updated_at = datetime()
         WITH obj
-        MATCH (schema {label: "schema", fqn: $schema_fqn})
-        MERGE (schema)-[r {label: "has_object"}]->(obj)
-        SET r.updated_at = $updated_at,
-            r.created_at = COALESCE(r.created_at, $created_at)
+        MATCH (schema:Schema {{fqn: $schema_fqn}})
+        MERGE (schema)-[r:HAS_OBJECT]->(obj)
+        ON CREATE SET
+            r.created_at = datetime(),
+            r.updated_at = datetime()
+        ON MATCH SET
+            r.updated_at = datetime()
         RETURN obj
         """
         
         params = {
             "fqn": object_fqn,
             "name": object_name,
-            "object_type": object_type,
             "schema_fqn": schema_fqn,
+            "object_type": object_type,
             "owner": object_info.get('owner'),
             "description": object_info.get('description'),
-            "definition": object_info.get('definition'),
+            "definition_sql": object_info.get('definition_sql'),
+            "properties": object_info.get('properties', {}),
             "row_count": object_info.get('row_count'),
-            "last_analyzed": object_info.get('last_analyzed').isoformat() if object_info.get('last_analyzed') else None,
-            "updated_at": datetime.now().isoformat(),
-            "created_at": datetime.now().isoformat()
+            "size_bytes": object_info.get('size_bytes'),
+            "last_analyzed": object_info.get('last_analyzed')
         }
         
         return cypher, params
@@ -381,7 +500,7 @@ class MetadataGraphBuilder:
             Tuple[str, Dict[str, Any]]: Cypher语句和参数字典
         """
         column_name = column_info['column_name']
-        column_fqn = self.generate_column_fqn(object_fqn, column_name)
+        column_fqn = f"{object_fqn}.{column_name}"
         
         # 处理外键关系
         fk_cypher = ""
@@ -397,24 +516,29 @@ class MetadataGraphBuilder:
             
             fk_cypher = """
             WITH col
-            MATCH (target_col {label: 'column', fqn: $target_column_fqn})
+            MATCH (target_col:Column {fqn: $target_column_fqn})
             MERGE (col)-[r:REFERENCES_COLUMN {constraint_name: $constraint_name}]->(target_col)
-            SET r.updated_at = $updated_at,
-                r.created_at = COALESCE(r.created_at, $created_at)
+            ON CREATE SET
+                r.created_at = datetime(),
+                r.updated_at = datetime()
+            ON MATCH SET
+                r.updated_at = datetime()
             """
             
             fk_params = {
                 'target_column_fqn': target_column_fqn,
-                'constraint_name': column_info.get('constraint_name', '') or f"fk_{column_name}",
+                'constraint_name': column_info.get('constraint_name', '') or f"fk_{column_name}"
             }
         
+        # 构建列节点的Cypher语句
         cypher = f"""
-        MERGE (col {{label: 'column', fqn: $fqn}}) 
-        SET col.name = $name,
-            col.parent_object_fqn = $parent_object_fqn,
-            col.ordinal_position = $ordinal_position,
+        MERGE (col:Column {{fqn: $fqn}})
+        ON CREATE SET
+            col.name = $name,
+            col.object_fqn = $object_fqn,
             col.data_type = $data_type,
-            col.max_length = $max_length,
+            col.ordinal_position = $ordinal_position,
+            col.character_maximum_length = $character_maximum_length,
             col.numeric_precision = $numeric_precision,
             col.numeric_scale = $numeric_scale,
             col.is_nullable = $is_nullable,
@@ -422,24 +546,41 @@ class MetadataGraphBuilder:
             col.is_primary_key = $is_primary_key,
             col.is_unique = $is_unique,
             col.description = $description,
-            col.updated_at = $updated_at,
-            col.created_at = COALESCE(col.created_at, $created_at)
+            col.created_at = datetime(),
+            col.updated_at = datetime()
+        ON MATCH SET
+            col.name = $name,
+            col.data_type = $data_type,
+            col.ordinal_position = $ordinal_position,
+            col.character_maximum_length = $character_maximum_length,
+            col.numeric_precision = $numeric_precision,
+            col.numeric_scale = $numeric_scale,
+            col.is_nullable = $is_nullable,
+            col.default_value = $default_value,
+            col.is_primary_key = $is_primary_key,
+            col.is_unique = $is_unique,
+            col.description = $description,
+            col.updated_at = datetime()
         WITH col
-        MATCH (obj {{fqn: $parent_object_fqn}})
+        MATCH (obj {{fqn: $object_fqn}})
         MERGE (obj)-[r:HAS_COLUMN]->(col)
-        SET r.updated_at = $updated_at,
-            r.created_at = COALESCE(r.created_at, $created_at)
+        ON CREATE SET
+            r.created_at = datetime(),
+            r.updated_at = datetime()
+        ON MATCH SET
+            r.updated_at = datetime()
         {fk_cypher}
         RETURN col
-        """
+        """.format(fk_cypher=fk_cypher)
         
+        # 准备参数
         params = {
             'fqn': column_fqn,
             'name': column_name,
-            'parent_object_fqn': object_fqn,
-            'ordinal_position': column_info.get('ordinal_position'),
+            'object_fqn': object_fqn,
             'data_type': column_info.get('data_type'),
-            'max_length': column_info.get('max_length'),
+            'ordinal_position': column_info.get('ordinal_position'),
+            'character_maximum_length': column_info.get('character_maximum_length'),
             'numeric_precision': column_info.get('numeric_precision'),
             'numeric_scale': column_info.get('numeric_scale'),
             'is_nullable': column_info.get('is_nullable', True),
@@ -447,8 +588,6 @@ class MetadataGraphBuilder:
             'is_primary_key': column_info.get('is_primary_key', False),
             'is_unique': column_info.get('is_unique', False),
             'description': column_info.get('description'),
-            'updated_at': datetime.now().isoformat(),
-            'created_at': datetime.now().isoformat(),
             **fk_params
         }
         
