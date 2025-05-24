@@ -95,35 +95,78 @@ async def import_metadata_to_age():
             objects = await builder.get_objects_metadata(source_id)
             logger.info(f"找到 {len(objects)} 个数据库对象")
             
-            # 获取对象ID列表以获取列元数据
-            object_ids = [obj['object_id'] for obj in objects]
-            if object_ids:
-                # 获取列元数据
-                columns = await builder.get_columns_metadata(object_ids)
-                logger.info(f"找到 {len(columns)} 个列定义")
+            if not objects:
+                logger.warning(f"数据源 {source_name} 没有对象元数据，跳过")
+                continue
                 
-                # 2. 创建数据库节点
-                for db_name in set([obj['db_name'] for obj in objects]):
+            # 2. 创建数据库和schema节点
+            db_schemas = {}
+            for obj in objects:
+                db_name = obj['database_name']
+                schema_name = obj['schema_name']
+                
+                # 创建数据库节点（如果还没创建）
+                if db_name not in db_schemas:
                     db_cypher, db_params = builder.generate_database_node_cypher(
                         source_name, db_name, source_id
                     )
                     await builder.execute_cypher(db_cypher, db_params)
                     logger.info(f"已创建数据库节点: {db_name}")
+                    db_schemas[db_name] = set()
+                
+                # 创建schema节点（如果还没创建）
+                if schema_name not in db_schemas[db_name]:
+                    db_fqn = f"{source_name}.{db_name}"
+                    schema_cypher, schema_params = builder.generate_schema_node_cypher(
+                        db_fqn, schema_name, obj.get('owner')
+                    )
+                    await builder.execute_cypher(schema_cypher, schema_params)
+                    logger.info(f"已创建schema节点: {db_name}.{schema_name}")
+                    db_schemas[db_name].add(schema_name)
+            
+            # 3. 创建对象节点
+            for obj in objects:
+                db_name = obj['database_name']
+                schema_name = obj['schema_name']
+                schema_fqn = f"{source_name}.{db_name}.{schema_name}"
+                
+                obj_cypher, obj_params = builder.generate_object_node_cypher(
+                    schema_fqn, obj
+                )
+                await builder.execute_cypher(obj_cypher, obj_params)
+                logger.info(f"已创建对象节点: {schema_fqn}.{obj['object_name']}")
+            
+            # 4. 创建列节点
+            object_ids = [obj['object_id'] for obj in objects]
+            if object_ids:
+                columns = await builder.get_columns_metadata(object_ids)
+                logger.info(f"找到 {len(columns)} 个列定义")
+                
+                # 创建对象ID到FQN的映射
+                object_fqn_map = {}
+                for obj in objects:
+                    db_name = obj['database_name']
+                    schema_name = obj['schema_name']
+                    object_name = obj['object_name']
+                    object_fqn = f"{source_name}.{db_name}.{schema_name}.{object_name}"
+                    object_fqn_map[obj['object_id']] = object_fqn
+                
+                # 创建列节点
+                for col in columns:
+                    object_id = col['object_id']
+                    if object_id in object_fqn_map:
+                        object_fqn = object_fqn_map[object_id]
+                        col_cypher, col_params = builder.generate_column_node_cypher(
+                            object_fqn, col
+                        )
+                        await builder.execute_cypher(col_cypher, col_params)
+                        logger.info(f"已创建列节点: {object_fqn}.{col['column_name']}")
             
             # 获取函数元数据
             functions = await builder.get_functions_metadata(source_id)
             logger.info(f"找到 {len(functions)} 个函数定义")
         
-        # 创建图空间（如果不存在）
-        create_graph_cypher = f"""
-        SELECT * FROM ag_catalog.create_graph('{graph_name}');
-        """
-        try:
-            await builder.execute_cypher(create_graph_cypher)
-            logger.info(f"成功创建图空间: {graph_name}")
-        except Exception as e:
-            logger.warning(f"创建图空间时出错（可能已存在）: {str(e)}")
-        
+        # 图空间已在脚本开始时通过ensure_age_graph_exists()创建
         logger.info("元数据处理完成！")
         
     except Exception as e:

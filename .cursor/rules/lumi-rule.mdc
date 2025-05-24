@@ -1,0 +1,10 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+为每个实现的函数或核心类提供相应的单元测试。请将测试代码放在专门的 `tests` 目录下，并遵循常见的测试文件命名约定（例如 `test_*.py`）。
+请为所有函数和类编写符合 Python 规范的 Docstring，清晰说明其功能、参数（类型和含义）、返回值（类型和含义）以及可能抛出的异常。关键或复杂的代码逻辑处请添加行内注释。
+测试代码要完整，包括单元测试和集成测试，测试脚本不要乱放，保存在项目的 `tests` 相关的类目下，按模块组织，遵从pytest的标准。
+在我们完成对任一核心模块（如log_processor, sql_normalizer等）的关键功能开发、重大重构或重要设计决策后，请提醒我更新对应的progress/[module_name]_decisions.md文件。并可以草拟一条记录，包含：[决策/变更内容]、[主要理由]、[讨论的关键点]、[日期]。
+shell环境第一次执行python脚本的时候需要source lumiEnv/bin/activate来切换到虚拟环境，之后的python脚本就不需要了。

@@ -316,9 +316,7 @@ class MetadataGraphBuilder:
             "host": source.get('host'),
             "port": source.get('port'),
             "description": source.get('description'),
-            "is_active": source.get('is_active', True),
-            "updated_at": datetime.now().isoformat(),
-            "created_at": datetime.now().isoformat()
+            "is_active": source.get('is_active', True)
         }
         
         return cypher, params
@@ -517,12 +515,12 @@ class MetadataGraphBuilder:
             fk_cypher = """
             WITH col
             MATCH (target_col:Column {fqn: $target_column_fqn})
-            MERGE (col)-[r:REFERENCES_COLUMN {constraint_name: $constraint_name}]->(target_col)
+            MERGE (col)-[fk_rel:REFERENCES_COLUMN {constraint_name: $constraint_name}]->(target_col)
             ON CREATE SET
-                r.created_at = datetime(),
-                r.updated_at = datetime()
+                fk_rel.created_at = datetime(),
+                fk_rel.updated_at = datetime()
             ON MATCH SET
-                r.updated_at = datetime()
+                fk_rel.updated_at = datetime()
             """
             
             fk_params = {
@@ -531,8 +529,8 @@ class MetadataGraphBuilder:
             }
         
         # 构建列节点的Cypher语句
-        cypher = f"""
-        MERGE (col:Column {{fqn: $fqn}})
+        cypher = """
+        MERGE (col:Column {fqn: $fqn})
         ON CREATE SET
             col.name = $name,
             col.object_fqn = $object_fqn,
@@ -562,16 +560,16 @@ class MetadataGraphBuilder:
             col.description = $description,
             col.updated_at = datetime()
         WITH col
-        MATCH (obj {{fqn: $object_fqn}})
+        MATCH (obj {fqn: $object_fqn})
         MERGE (obj)-[r:HAS_COLUMN]->(col)
         ON CREATE SET
             r.created_at = datetime(),
             r.updated_at = datetime()
         ON MATCH SET
             r.updated_at = datetime()
-        {fk_cypher}
+        """ + fk_cypher + """
         RETURN col
-        """.format(fk_cypher=fk_cypher)
+        """
         
         # 准备参数
         params = {

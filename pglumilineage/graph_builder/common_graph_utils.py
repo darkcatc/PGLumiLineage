@@ -136,12 +136,11 @@ def convert_cypher_for_age(cypher_stmt: str) -> str:
     转换Cypher语句以适应AGE 1.5.0版本
     
     此函数将标准Cypher语法转换为AGE 1.5.0兼容的语法。主要转换包括：
-    1. 将所有标签名转换为小写，避免PostgreSQL创建带双引号的对象名
-    2. 将节点标签语法 (n:Label) 转换为属性语法 (n {label: 'label'})
-    3. 将关系类型语法 -[:TYPE]-> 转换为 -[:type]->，并确保关系属性正确
-    4. 处理WHERE条件中的标签语法
-    5. 替换保留关键字变量名
-    6. 转换 MERGE 语句中的 ON CREATE SET ... ON MATCH SET ... 语法
+    1. 将节点标签语法 (n:Label) 转换为属性语法 (n {label: 'label'})
+    2. 将关系类型语法 -[:TYPE]-> 转换为 -[r {label: 'type'}]->
+    3. 转换 MERGE 语句中的 ON CREATE SET ... ON MATCH SET ... 语法
+    4. 将所有标签名转换为小写
+    5. 替换datetime()函数为字符串
     
     Args:
         cypher_stmt: 原始Cypher语句
@@ -149,94 +148,135 @@ def convert_cypher_for_age(cypher_stmt: str) -> str:
     Returns:
         str: 转换后的Cypher语句，兼容AGE 1.5.0
     """
-    # 检查并替换保留关键字变量名
-    reserved_keywords = ['table', 'group', 'order', 'limit', 'match', 'where', 'return']
-    for keyword in reserved_keywords:
-        # 替换形如 (table {properties}) 的模式
-        cypher_stmt = re.sub(r'\((' + keyword + r')\s+({[^}]+})\)', r'(t_\1 \2)', cypher_stmt, flags=re.IGNORECASE)
-        # 替换形如 MATCH (table) 的模式
-        cypher_stmt = re.sub(r'MATCH\s+\((' + keyword + r')\)', r'MATCH (t_\1)', cypher_stmt, flags=re.IGNORECASE)
-        # 替换形如 (table:Label) 的模式
-        cypher_stmt = re.sub(r'\((' + keyword + r'):([\w]+)\)', r'(t_\1:\2)', cypher_stmt, flags=re.IGNORECASE)
     
-    # 将节点标签语法 (n:Label) 转换为属性语法 (n {label: 'label'})
-    cypher_stmt = re.sub(r'\((\w+):([\w]+)\)', r'(\1 {label: "\2"})', cypher_stmt)
+    # 1. 将节点标签语法 (n:Label) 转换为属性语法 (n {label: 'label'})
+    # 先处理带属性的情况: (n:Label {prop: value}) -> (n {label: "label", prop: value})
+    def replace_node_with_props(match):
+        var_name = match.group(1)
+        label_name = match.group(2).lower()
+        props = match.group(3)
+        # 移除外层大括号，添加label属性
+        inner_props = props[1:-1].strip()
+        if inner_props:
+            return f'({var_name} {{label: "{label_name}", {inner_props}}})'
+        else:
+            return f'({var_name} {{label: "{label_name}"}})'
     
-    # 将关系类型语法 -[:TYPE]-> 转换为 -[r {label: 'type'}]->
-    cypher_stmt = re.sub(r'-\[:(\w+)\]->', r'-[r {label: "\1"}]->', cypher_stmt)
+    cypher_stmt = re.sub(r'\((\w+):([\w_]+)\s*({[^}]*})\)', replace_node_with_props, cypher_stmt)
+    # 再处理不带属性的情况: (n:Label) -> (n {label: "label"})
+    cypher_stmt = re.sub(r'\((\w+):([\w_]+)\)', lambda m: f'({m.group(1)} {{label: "{m.group(2).lower()}"}})', cypher_stmt)
     
-    # 处理带变量的关系 -[r:TYPE]-> 转换为 -[r {label: 'type'}]->
-    cypher_stmt = re.sub(r'-\[(\w+):(\w+)\]->', r'-[\1 {label: "\2"}]->', cypher_stmt)
+    # 2. 关系类型处理 - 为AGE 1.5.0优化
+    # 统一使用标签语法，确保MERGE和MATCH一致
+    def normalize_rel_type(match):
+        rel_type = match.group(1).lower()  # 关系类型转小写
+        return f'-[:{rel_type}]->'
     
-    # 处理带属性的关系 -[r:TYPE {prop: val}]-> 转换为 -[r {label: 'type', prop: val}]->
-    cypher_stmt = re.sub(r'-\[(\w+):(\w+)\s+({[^}]+})\]->', r'-[\1 {label: "\2", \3}]->', cypher_stmt)
+    # 处理所有关系类型，统一转换为小写标签语法
+    cypher_stmt = re.sub(r'-\[:(\w+)\]->', normalize_rel_type, cypher_stmt)
     
-    # 处理 MERGE 语句中的 ON CREATE SET ... ON MATCH SET ... 语法
-    if 'MERGE' in cypher_stmt and ('ON CREATE SET' in cypher_stmt or 'ON MATCH SET' in cypher_stmt):
-        # 提取 MERGE 部分
-        merge_match = re.search(r'(MERGE\s+\([^)]+\)(?:-\[.*?\]->\([^)]+\))*)', cypher_stmt, re.DOTALL | re.IGNORECASE)
-        if merge_match:
-            merge_part = merge_match.group(1)
+    # 处理带变量的关系 -[r:TYPE]->，也统一使用标签语法
+    def normalize_rel_type_var(match):
+        var_name = match.group(1)
+        rel_type = match.group(2).lower()
+        return f'-[{var_name}:{rel_type}]->'
+    
+    cypher_stmt = re.sub(r'-\[(\w+):(\w+)\]->', normalize_rel_type_var, cypher_stmt)
+    
+    # 3. 处理 MERGE 语句中的 ON CREATE SET ... ON MATCH SET ... 语法
+    if 'ON CREATE SET' in cypher_stmt or 'ON MATCH SET' in cypher_stmt:
+        # AGE 1.5.0 不支持 ON CREATE SET 和 ON MATCH SET 语法
+        # 使用分步处理方法，逐个处理每个MERGE块
+        
+        lines = cypher_stmt.split('\n')
+        result_lines = []
+        i = 0
+        
+        while i < len(lines):
+            line = lines[i].strip()
             
-            # 提取 WITH 子句（如果有）
-            with_part = ''
-            with_match = re.search(r'(WITH\s+[^\n]+(?:,\s*[^\n]+)*)\s*(?:ON\s+CREATE\s+SET|ON\s+MATCH\s+SET|$)', 
-                                 cypher_stmt[merge_match.end():], re.DOTALL | re.IGNORECASE)
-            if with_match:
-                with_part = with_match.group(1)
-            
-            # 提取 ON CREATE SET 和 ON MATCH SET 部分
-            on_create_set = ''
-            on_match_set = ''
-            
-            # 提取 ON CREATE SET 部分
-            create_match = re.search(r'ON\s+CREATE\s+SET\s+([^;]+?)(?:\s*ON\s+MATCH\s+SET|$)', 
-                                   cypher_stmt, re.DOTALL | re.IGNORECASE)
-            if create_match:
-                on_create_set = create_match.group(1).strip()
-            
-            # 提取 ON MATCH SET 部分
-            match_match = re.search(r'ON\s+MATCH\s+SET\s+([^;]+?)(?:\s*RETURN|$)', 
-                                  cypher_stmt, re.DOTALL | re.IGNORECASE)
-            if match_match:
-                on_match_set = match_match.group(1).strip()
-            
-            # 构建新的 Cypher 语句
-            new_cypher = merge_part
-            
-            # 添加 WITH 子句（如果有）
-            if with_part:
-                new_cypher += '\n' + with_part
-            
-            # 添加 SET 语句
-            if on_create_set or on_match_set:
-                set_clauses = []
+            # 如果是MERGE语句开始
+            if line.startswith('MERGE'):
+                merge_line = line
+                i += 1
                 
-                # 处理 ON CREATE SET
-                if on_create_set:
-                    set_clauses.append(f"SET {on_create_set}")
+                # 收集CREATE SET字段
+                create_sets = []
+                match_sets = []
                 
-                # 处理 ON MATCH SET - 使用 COALESCE 来模拟
-                if on_match_set:
-                    # 对于 ON MATCH SET，我们需要检查属性是否已存在
-                    # 这里简化处理，直接添加 SET 语句
-                    set_clauses.append(f"SET {on_match_set}")
+                # 寻找ON CREATE SET
+                while i < len(lines) and not lines[i].strip().startswith('ON CREATE SET'):
+                    if lines[i].strip().startswith(('WITH', 'MATCH', 'RETURN')):
+                        break
+                    merge_line += ' ' + lines[i].strip()
+                    i += 1
                 
-                new_cypher += '\n' + '\n'.join(set_clauses)
-            
-            # 保留 RETURN 子句
-            return_match = re.search(r'RETURN\s+.*$', cypher_stmt, re.DOTALL | re.IGNORECASE)
-            if return_match:
-                new_cypher += '\n' + return_match.group(0)
-            
-            return new_cypher
+                # 处理ON CREATE SET
+                if i < len(lines) and lines[i].strip().startswith('ON CREATE SET'):
+                    i += 1  # 跳过 "ON CREATE SET" 行
+                    while i < len(lines):
+                        line_content = lines[i].strip()
+                        if line_content.startswith('ON MATCH SET'):
+                            break
+                        if line_content.startswith(('WITH', 'MATCH', 'RETURN')):
+                            break
+                        if line_content:
+                            # 移除末尾逗号
+                            if line_content.endswith(','):
+                                line_content = line_content[:-1]
+                            create_sets.append(line_content)
+                        i += 1
+                
+                # 处理ON MATCH SET
+                if i < len(lines) and lines[i].strip().startswith('ON MATCH SET'):
+                    i += 1  # 跳过 "ON MATCH SET" 行
+                    while i < len(lines):
+                        line_content = lines[i].strip()
+                        if line_content.startswith(('WITH', 'MATCH', 'RETURN')):
+                            break
+                        if line_content:
+                            # 移除末尾逗号
+                            if line_content.endswith(','):
+                                line_content = line_content[:-1]
+                            match_sets.append(line_content)
+                        i += 1
+                
+                # 构建新的MERGE语句
+                result_lines.append(merge_line)
+                
+                # 合并所有SET操作
+                all_sets = []
+                
+                # 添加CREATE SET字段，但对created_at使用COALESCE
+                for field in create_sets:
+                    if 'created_at' in field:
+                        var_name = field.split('.')[0].strip()
+                        all_sets.append(f"{var_name}.created_at = COALESCE({var_name}.created_at, datetime())")
+                    else:
+                        all_sets.append(field)
+                
+                # 添加MATCH SET字段，但跳过created_at
+                for field in match_sets:
+                    if 'created_at' not in field:
+                        all_sets.append(field)
+                
+                # 添加SET子句
+                if all_sets:
+                    result_lines.append('SET ' + ', '.join(all_sets))
+                
+            else:
+                # 非MERGE行，直接添加
+                result_lines.append(line)
+                i += 1
+        
+        cypher_stmt = '\n'.join(result_lines)
     
-    # 将所有标签名转换为小写
-    def lower_label(match):
-        label_part = match.group(2).lower()
-        return f'{match.group(1)}{label_part}{match.group(3)}'
+    # 4. 标签名已经在上面转换为小写了，这里不需要额外处理
     
-    cypher_stmt = re.sub(r'(label:\s*["\'])([\w]+)(["\'])', lower_label, cypher_stmt)
+    # 5. 替换datetime()函数为字符串（AGE 1.5.0可能不支持）
+    from datetime import datetime
+    current_time = datetime.now().isoformat()
+    cypher_stmt = re.sub(r'datetime\(\)', f"'{current_time}'", cypher_stmt)
     
     return cypher_stmt
 
@@ -262,124 +302,109 @@ async def execute_cypher(conn: asyncpg.Connection, cypher_stmt: str,
         # 设置搜索路径
         await conn.execute("SET search_path = ag_catalog, \"$user\", public;")
         
+        # 记录原始Cypher语句
+        logger.debug(f"原始Cypher语句: {cypher_stmt}")
+        
         # 如果有参数，将参数直接嵌入到Cypher语句中
         if params:
-            # 创建一个参数字典的副本，避免修改原始参数字典
-            params_copy = params.copy()
-            
-            # 处理参数值，确保它们被正确转义和格式化
-            for key, value in params_copy.items():
+            for key, value in params.items():
+                placeholder = f"${key}"
                 if value is None:
-                    params_copy[key] = 'null'
+                    replacement = 'null'
                 elif isinstance(value, bool):
-                    params_copy[key] = 'true' if value else 'false'
+                    replacement = 'true' if value else 'false'
                 elif isinstance(value, (int, float)):
-                    params_copy[key] = str(value)
+                    replacement = str(value)
                 elif isinstance(value, str):
-                    # 转义字符串中的引号
-                    escaped_value = value.replace('"', '\\"')
-                    params_copy[key] = f'"{escaped_value}"'
+                    # 转义字符串中的引号和反斜杠
+                    escaped_value = value.replace('\\', '\\\\').replace("'", "\\'")
+                    replacement = f"'{escaped_value}'"
                 else:
                     # 对于其他类型，转换为字符串并转义
-                    escaped_value = str(value).replace('"', '\\"')
-                    params_copy[key] = f'"{escaped_value}"'
-            
-            # 替换Cypher语句中的参数占位符，但保留 COALESCE 函数内部的参数
-            # 使用正则表达式匹配 COALESCE 函数的内容，并临时替换为占位符
-            coalesce_pattern = r'(COALESCE\s*\([^)]*\))'
-            
-            # 查找所有 COALESCE 函数调用
-            coalesce_matches = list(re.finditer(coalesce_pattern, cypher_stmt, re.IGNORECASE))
-            
-            # 如果没有 COALESCE 函数，直接替换所有参数
-            if not coalesce_matches:
-                for key, value in params_copy.items():
-                    # 替换 $param 和 ${param} 格式的参数
-                    cypher_stmt = re.sub(rf'\${key}\b', value, cypher_stmt)
-                    cypher_stmt = re.sub(rf'\${{{key}}}', value, cypher_stmt)
-            else:
-                # 将 COALESCE 函数替换为临时占位符
-                temp_cypher = cypher_stmt
-                temp_parts = []
-                last_end = 0
+                    escaped_value = str(value).replace('\\', '\\\\').replace("'", "\\'")
+                    replacement = f"'{escaped_value}'"
                 
-                for match in coalesce_matches:
-                    start, end = match.span()
-                    # 添加 COALESCE 之前的部分
-                    temp_parts.append(temp_cypher[last_end:start])
-                    # 添加占位符
-                    temp_parts.append(f'__COALESCE_{len(temp_parts)}__')
-                    last_end = end
-                
-                # 添加最后一部分
-                temp_parts.append(temp_cypher[last_end:])
-                temp_cypher = ''.join(temp_parts)
-                
-                # 替换非 COALESCE 部分的参数
-                for key, value in params_copy.items():
-                    # 替换 $param 和 ${param} 格式的参数
-                    temp_cypher = re.sub(rf'\${key}\b', value, temp_cypher)
-                    temp_cypher = re.sub(rf'\${{{key}}}', value, temp_cypher)
-                
-                # 恢复 COALESCE 函数
-                for i, match in enumerate(coalesce_matches):
-                    placeholder = f'__COALESCE_{i}__'
-                    # 获取原始的 COALESCE 函数调用
-                    original_coalesce = match.group(0)
-                    # 恢复参数占位符
-                    for key, value in params_copy.items():
-                        # 只替换 $param 格式的参数，不替换 ${param} 格式的参数
-                        original_coalesce = re.sub(rf'\${key}\b', value, original_coalesce)
-                    temp_cypher = temp_cypher.replace(placeholder, original_coalesce)
-                
-                cypher_stmt = temp_cypher
+                cypher_stmt = cypher_stmt.replace(placeholder, replacement)
+        
+        # 记录参数替换后的Cypher语句
+        logger.debug(f"参数替换后的Cypher语句: {cypher_stmt}")
         
         # 转换Cypher语句为AGE 1.5.0兼容格式
         converted_cypher = convert_cypher_for_age(cypher_stmt)
         
-        # 分析RETURN子句，确定正确的列名
-        return_match = re.search(r'RETURN\s+(.+?)(?:;|$)', converted_cypher, re.IGNORECASE | re.DOTALL)
+        # 记录转换后的Cypher语句
+        logger.debug(f"AGE转换后的Cypher语句: {converted_cypher}")
         
+        # 清理Cypher语句，移除多余的空白和注释，但保持语句结构
+        lines = converted_cypher.split('\n')
+        clean_lines = []
+        for line in lines:
+            line = line.strip()
+            if line and not line.startswith('//'):
+                clean_lines.append(line)
+        
+        # 不要将所有行合并为一行，保持语句结构
+        clean_cypher = '\n'.join(clean_lines)
+        
+        logger.debug(f"执行Cypher语句: {clean_cypher}")
+        
+        # 分析RETURN子句来确定列定义
+        return_match = re.search(r'RETURN\s+(.+?)(?:\s+(?:ORDER|LIMIT)|$)', clean_cypher, re.IGNORECASE)
         if return_match:
             return_clause = return_match.group(1).strip()
-            # 检查是否有多列返回（逗号分隔）
-            if ',' in return_clause:
-                columns = []
-                for col in return_clause.split(','):
-                    col = col.strip()
-                    as_match = re.search(r'\s+AS\s+(\w+)', col, re.IGNORECASE)
-                    if as_match:
-                        columns.append(f"{as_match.group(1)} agtype")
-                    else:
-                        columns.append(f"col{len(columns)+1} agtype")
-                as_clause = ', '.join(columns)
-            else:
-                as_match = re.search(r'\s+AS\s+(\w+)', return_clause, re.IGNORECASE)
-                if as_match:
-                    as_clause = f"{as_match.group(1)} agtype"
+            logger.debug(f"RETURN子句: {return_clause}")
+            
+            # 解析返回的变量
+            return_vars = [var.strip() for var in return_clause.split(',')]
+            logger.debug(f"返回变量: {return_vars}")
+            
+            # 为每个返回变量创建列定义
+            column_defs = []
+            used_names = set()
+            for i, var in enumerate(return_vars):
+                # 处理别名 (如 count(c) as column_count)
+                if ' as ' in var.lower():
+                    alias = var.lower().split(' as ')[-1].strip()
+                    column_name = alias
                 else:
-                    as_clause = "result agtype"
+                    # 对于属性访问 (如 ds.name)，使用完整的变量名作为列名
+                    if '.' in var:
+                        # 使用完整的变量名，替换点为下划线
+                        column_name = var.replace('.', '_').strip()
+                    else:
+                        # 变量名 (如 ds)
+                        column_name = var.strip()
+                
+                # 确保列名唯一
+                original_name = column_name
+                counter = 1
+                while column_name in used_names:
+                    column_name = f"{original_name}_{counter}"
+                    counter += 1
+                
+                used_names.add(column_name)
+                column_defs.append(f"{column_name} agtype")
+            
+            column_def_str = ', '.join(column_defs)
+            logger.debug(f"列定义: {column_def_str}")
         else:
-            as_clause = "result agtype"
+            # 如果没有RETURN子句，使用默认的单列定义
+            column_def_str = "result agtype"
+            logger.debug(f"使用默认列定义: {column_def_str}")
         
-        # 构建Cypher查询
-        query = f"""
-            SELECT * FROM cypher(
-                $1,
-                $$
-                    {converted_cypher}
-                $$
-            ) AS ({as_clause});
-        """
+        # 构建SQL查询来执行Cypher
+        sql_query = f"SELECT * FROM cypher('{graph_name}', $$ {clean_cypher} $$) AS ({column_def_str});"
+        
+        logger.debug(f"SQL查询: {sql_query}")
         
         # 执行查询
-        rows = await conn.fetch(query, graph_name)
+        rows = await conn.fetch(sql_query)
         
         # 转换结果为字典列表
         return [dict(row) for row in rows]
         
     except Exception as e:
-        logger.error(f"执行Cypher语句出错: {str(e)}\nCypher: {converted_cypher}\nParams: {params}")
+        logger.error(f"执行Cypher语句出错: {str(e)}\nCypher: {clean_cypher}")
         raise
 
 
