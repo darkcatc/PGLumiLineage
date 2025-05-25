@@ -241,6 +241,16 @@ onMounted(() => {
         .el-form-item {
           margin-bottom: 0;
           margin-right: 20px;
+          
+          // 修复下拉框宽度问题
+          .el-select {
+            min-width: 140px;
+          }
+          
+          // 修复输入框宽度
+          .el-input {
+            min-width: 300px;
+          }
         }
       }
     }
