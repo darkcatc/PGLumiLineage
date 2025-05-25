@@ -36,7 +36,7 @@ class LineageRepository:
             "port": int(os.environ.get("DB_PORT", 5432)),
             "database": os.environ.get("DB_NAME", "iwdb")
         }
-        self.graph_name = os.environ.get("GRAPH_NAME", "pglumilineage_graph")
+        self.graph_name = os.environ.get("GRAPH_NAME", "lumi_graph")
 
     def _parse_age_vertex(self, vertex_str: str) -> Dict[str, Any]:
         """

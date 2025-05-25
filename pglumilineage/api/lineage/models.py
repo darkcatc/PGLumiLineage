@@ -21,7 +21,7 @@ class NodeType(str, Enum):
     TABLE = "table"
     VIEW = "view"
     COLUMN = "column"
-    SQL_PATTERN = "sql_pattern"
+    SQL_PATTERN = "sqlpattern"
     FUNCTION = "function"
 
 

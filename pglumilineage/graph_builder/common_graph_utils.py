@@ -141,11 +141,9 @@ def convert_cypher_for_age(cypher_stmt: str) -> str:
     转换Cypher语句以适应AGE 1.5.0版本
     
     此函数将标准Cypher语法转换为AGE 1.5.0兼容的语法。主要转换包括：
-    1. 将节点标签语法 (n:Label) 转换为属性语法 (n {label: 'label'})
-    2. 将关系类型语法 -[:TYPE]-> 转换为 -[r {label: 'type'}]->
-    3. 转换 MERGE 语句中的 ON CREATE SET ... ON MATCH SET ... 语法
-    4. 将所有标签名转换为小写
-    5. 替换datetime()函数为字符串
+    1. 转换 MERGE 语句中的 ON CREATE SET ... ON MATCH SET ... 语法
+    2. 将所有标签名和关系类型转换为小写
+    3. 替换datetime()函数为字符串
     
     Args:
         cypher_stmt: 原始Cypher语句
@@ -154,45 +152,22 @@ def convert_cypher_for_age(cypher_stmt: str) -> str:
         str: 转换后的Cypher语句，兼容AGE 1.5.0
     """
     
-    # 1. 将节点标签语法 (n:Label) 转换为属性语法 (n {label: 'label'})
-    # 先处理带属性的情况: (n:Label {prop: value}) -> (n {label: "label", prop: value})
-    def replace_node_with_props(match):
-        var_name = match.group(1)
-        label_name = match.group(2).lower()
-        props = match.group(3)
-        # 移除外层大括号，添加label属性
-        inner_props = props[1:-1].strip()
-        if inner_props:
-            return f'({var_name} {{label: "{label_name}", {inner_props}}})'
-        else:
-            return f'({var_name} {{label: "{label_name}"}})'
+    # 1. 标签名转换为小写（AGE要求小写避免自动加引号）
+    # 处理节点标签: (n:Label) -> (n:label)
+    cypher_stmt = re.sub(r'\((\w+):([\w_]+)\)', lambda m: f'({m.group(1)}:{m.group(2).lower()})', cypher_stmt)
+    # 处理带属性的节点标签: (n:Label {prop: value}) -> (n:label {prop: value})
+    cypher_stmt = re.sub(r'\((\w+):([\w_]+)(\s*{[^}]*})\)', lambda m: f'({m.group(1)}:{m.group(2).lower()}{m.group(3)})', cypher_stmt)
     
-    cypher_stmt = re.sub(r'\((\w+):([\w_]+)\s*({[^}]*})\)', replace_node_with_props, cypher_stmt)
-    # 再处理不带属性的情况: (n:Label) -> (n {label: "label"})
-    cypher_stmt = re.sub(r'\((\w+):([\w_]+)\)', lambda m: f'({m.group(1)} {{label: "{m.group(2).lower()}"}})', cypher_stmt)
-    
-    # 2. 关系类型处理 - 为AGE 1.5.0优化
-    # 统一使用标签语法，确保MERGE和MATCH一致
-    def normalize_rel_type(match):
-        rel_type = match.group(1).lower()  # 关系类型转小写
-        return f'-[:{rel_type}]->'
-    
-    # 处理所有关系类型，统一转换为小写标签语法
-    cypher_stmt = re.sub(r'-\[:(\w+)\]->', normalize_rel_type, cypher_stmt)
-    
-    # 处理带变量的关系 -[r:TYPE]->，也统一使用标签语法
-    def normalize_rel_type_var(match):
-        var_name = match.group(1)
-        rel_type = match.group(2).lower()
-        return f'-[{var_name}:{rel_type}]->'
-    
-    cypher_stmt = re.sub(r'-\[(\w+):(\w+)\]->', normalize_rel_type_var, cypher_stmt)
+    # 2. 关系类型转换为小写
+    # 处理关系类型: -[:TYPE]-> -> -[:type]->
+    cypher_stmt = re.sub(r'-\[:(\w+)\]->', lambda m: f'-[:{m.group(1).lower()}]->', cypher_stmt)
+    # 处理带变量的关系: -[r:TYPE]-> -> -[r:type]->
+    cypher_stmt = re.sub(r'-\[(\w+):(\w+)\]->', lambda m: f'-[{m.group(1)}:{m.group(2).lower()}]->', cypher_stmt)
     
     # 3. 处理 MERGE 语句中的 ON CREATE SET ... ON MATCH SET ... 语法
+    # AGE 1.5.0 不支持这些语法，需要转换为等效的SET语句
     if 'ON CREATE SET' in cypher_stmt or 'ON MATCH SET' in cypher_stmt:
-        # AGE 1.5.0 不支持 ON CREATE SET 和 ON MATCH SET 语法
-        # 使用分步处理方法，逐个处理每个MERGE块
-        
+        # 使用逐行处理的方法，能够处理多个MERGE块
         lines = cypher_stmt.split('\n')
         result_lines = []
         i = 0
@@ -200,88 +175,103 @@ def convert_cypher_for_age(cypher_stmt: str) -> str:
         while i < len(lines):
             line = lines[i].strip()
             
-            # 如果是MERGE语句开始
+            # 如果遇到MERGE语句
             if line.startswith('MERGE'):
-                merge_line = line
+                # 收集MERGE语句（可能跨多行）
+                merge_lines = [line]
                 i += 1
                 
-                # 收集CREATE SET字段
-                create_sets = []
-                match_sets = []
-                
-                # 寻找ON CREATE SET
-                while i < len(lines) and not lines[i].strip().startswith('ON CREATE SET'):
-                    if lines[i].strip().startswith(('WITH', 'MATCH', 'RETURN')):
+                # 继续收集MERGE语句的剩余部分，直到遇到ON CREATE SET或其他关键字
+                while i < len(lines):
+                    current_line = lines[i].strip()
+                    if (current_line.startswith('ON CREATE SET') or 
+                        current_line.startswith('ON MATCH SET') or
+                        current_line.startswith(('WITH', 'MATCH', 'MERGE', 'RETURN', 'CREATE', 'DELETE'))):
                         break
-                    merge_line += ' ' + lines[i].strip()
+                    if current_line:
+                        merge_lines.append(current_line)
                     i += 1
                 
-                # 处理ON CREATE SET
+                # 收集ON CREATE SET部分
+                create_sets = []
                 if i < len(lines) and lines[i].strip().startswith('ON CREATE SET'):
-                    i += 1  # 跳过 "ON CREATE SET" 行
+                    i += 1  # 跳过"ON CREATE SET"行
                     while i < len(lines):
-                        line_content = lines[i].strip()
-                        if line_content.startswith('ON MATCH SET'):
+                        current_line = lines[i].strip()
+                        if (current_line.startswith('ON MATCH SET') or
+                            current_line.startswith(('WITH', 'MATCH', 'MERGE', 'RETURN', 'CREATE', 'DELETE'))):
                             break
-                        if line_content.startswith(('WITH', 'MATCH', 'RETURN')):
-                            break
-                        if line_content:
+                        if current_line and not current_line.startswith('//'):
                             # 移除末尾逗号
-                            if line_content.endswith(','):
-                                line_content = line_content[:-1]
-                            create_sets.append(line_content)
+                            stmt = current_line.rstrip(',').strip()
+                            if stmt:
+                                create_sets.append(stmt)
                         i += 1
                 
-                # 处理ON MATCH SET
+                # 收集ON MATCH SET部分
+                match_sets = []
                 if i < len(lines) and lines[i].strip().startswith('ON MATCH SET'):
-                    i += 1  # 跳过 "ON MATCH SET" 行
+                    i += 1  # 跳过"ON MATCH SET"行
                     while i < len(lines):
-                        line_content = lines[i].strip()
-                        if line_content.startswith(('WITH', 'MATCH', 'RETURN')):
+                        current_line = lines[i].strip()
+                        if current_line.startswith(('WITH', 'MATCH', 'MERGE', 'RETURN', 'CREATE', 'DELETE')):
                             break
-                        if line_content:
+                        if current_line and not current_line.startswith('//'):
                             # 移除末尾逗号
-                            if line_content.endswith(','):
-                                line_content = line_content[:-1]
-                            match_sets.append(line_content)
+                            stmt = current_line.rstrip(',').strip()
+                            if stmt:
+                                match_sets.append(stmt)
                         i += 1
                 
-                # 构建新的MERGE语句
-                result_lines.append(merge_line)
+                # 生成转换后的语句
+                # 1. 添加MERGE语句
+                result_lines.extend(merge_lines)
                 
-                # 合并所有SET操作
+                # 2. 生成SET语句
                 all_sets = []
                 
-                # 添加CREATE SET字段，但对created_at使用COALESCE
-                for field in create_sets:
-                    if 'created_at' in field:
-                        var_name = field.split('.')[0].strip()
-                        all_sets.append(f"{var_name}.created_at = COALESCE({var_name}.created_at, datetime())")
+                # 处理CREATE SET - 对created_at使用COALESCE确保幂等性
+                for stmt in create_sets:
+                    if 'created_at' in stmt:
+                        # 提取变量名 (如 r.created_at = datetime() -> r)
+                        var_name = stmt.split('.')[0].strip()
+                        # AGE中使用时间戳字符串而不是函数
+                        from datetime import datetime
+                        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        all_sets.append(f"{var_name}.created_at = COALESCE({var_name}.created_at, '{current_time}')")
                     else:
-                        all_sets.append(field)
+                        all_sets.append(stmt)
                 
-                # 添加MATCH SET字段，但跳过created_at
-                for field in match_sets:
-                    if 'created_at' not in field:
-                        all_sets.append(field)
+                # 处理MATCH SET - 跳过created_at因为已经处理过了，同时去重
+                for stmt in match_sets:
+                    if 'created_at' not in stmt and stmt not in all_sets:
+                        all_sets.append(stmt)
                 
                 # 添加SET子句
                 if all_sets:
                     result_lines.append('SET ' + ', '.join(all_sets))
                 
             else:
-                # 非MERGE行，直接添加
-                result_lines.append(line)
+                # 非MERGE行，直接添加（但不要添加空行）
+                if line:
+                    result_lines.append(line)
                 i += 1
         
         cypher_stmt = '\n'.join(result_lines)
     
-    # 4. 标签名已经在上面转换为小写了，这里不需要额外处理
-    
-    # 5. 替换datetime()函数为字符串（AGE 1.5.0可能不支持）
+    # 4. 替换datetime()函数为AGE兼容函数
+    # AGE中使用NOW()函数代替datetime()函数
     from datetime import datetime
-    current_time = datetime.now().isoformat()
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # 简单替换：将所有datetime()替换为NOW()或时间戳字符串
+    # 对于COALESCE中的datetime()，保留为NOW()；对于其他的，替换为时间戳字符串
+    placeholder = "___NOW_PLACEHOLDER___"
+    cypher_stmt = re.sub(r'COALESCE\([^,]+,\s*datetime\(\)', 
+                        lambda m: m.group(0).replace('datetime()', placeholder), 
+                        cypher_stmt)
     cypher_stmt = re.sub(r'datetime\(\)', f"'{current_time}'", cypher_stmt)
+    cypher_stmt = cypher_stmt.replace(placeholder, 'NOW()')
     
     return cypher_stmt
 
@@ -449,10 +439,10 @@ def generate_timestamp() -> str:
     生成当前时间戳字符串
     
     Returns:
-        str: ISO格式的当前时间戳
+        str: 标准格式的当前时间戳
     """
     from datetime import datetime
-    return datetime.now().isoformat()
+    return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
 def generate_hash(*args) -> str:

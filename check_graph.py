@@ -17,7 +17,7 @@ async def check_graph_nodes():
     # 设置搜索路径
     await conn.execute("SET search_path = ag_catalog, \"$user\", public;")
     
-    graph_name = 'pglumilineage_graph'
+    graph_name = 'lumi_graph'
     
     # 查询表节点
     query = f"""
