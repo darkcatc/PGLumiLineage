@@ -13,7 +13,17 @@
             <el-input v-model="queryParams.root_node_fqn" placeholder="输入对象全限定名" clearable />
           </el-form-item>
           <el-form-item label="查询深度">
-            <el-slider v-model="queryParams.depth" :min="1" :max="5" :step="1" show-stops />
+            <div class="depth-control">
+              <el-input-number 
+                v-model="queryParams.depth" 
+                :min="1" 
+                :max="5" 
+                :step="1" 
+                size="small"
+                style="width: 100px;"
+                controls-position="right"
+              />
+            </div>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="fetchLineageGraph">查询</el-button>
@@ -24,7 +34,7 @@
     </div>
     
     <div class="graph-container">
-      <div class="main-graph">
+      <div class="main-graph" :style="{ width: `${graphWidth}px` }">
         <graph-container
           :data="graphData"
           :loading="loading"
@@ -35,12 +45,15 @@
         />
       </div>
       
+      <div class="resize-handle" @mousedown="startResize"></div>
+      
       <info-panel
         :selected-item="selectedItem"
         :item-type="selectedItemType"
         :loading="detailsLoading"
         :error="detailsError"
         :graph-data="graphData"
+        :style="{ width: `${panelWidth}px` }"
         @expand-neighbors="handleExpandNeighbors"
       />
     </div>
@@ -88,6 +101,11 @@ const selectedItem = ref<any | undefined>(undefined);
 const selectedItemType = ref<'node' | 'edge' | undefined>(undefined);
 const detailsLoading = ref(false);
 const detailsError = ref<string | undefined>(undefined);
+
+// 面板宽度控制
+const panelWidth = ref(350);
+const graphWidth = ref(window.innerWidth - 350);
+const isResizing = ref(false);
 
 // 获取血缘图数据
 const fetchLineageGraph = async () => {
@@ -146,13 +164,21 @@ const resetQuery = () => {
 
 // 处理节点点击
 const handleNodeClick = (node: any) => {
-  selectedItem.value = node;
+  console.log('节点点击事件:', node);
+  // 使用originalData或者从node中提取原始数据
+  const originalData = node.originalData || node;
+  console.log('原始节点数据:', originalData);
+  selectedItem.value = originalData;
   selectedItemType.value = 'node';
 };
 
 // 处理边点击
 const handleEdgeClick = (edge: any) => {
-  selectedItem.value = edge;
+  console.log('边点击事件:', edge);
+  // 使用originalData或者从edge中提取原始数据
+  const originalData = edge.originalData || edge;
+  console.log('原始边数据:', originalData);
+  selectedItem.value = originalData;
   selectedItemType.value = 'edge';
 };
 
@@ -170,6 +196,33 @@ const handleExpandNeighbors = async (nodeId: string) => {
   
   // 获取血缘图
   await fetchLineageGraph();
+};
+
+// 拖拽调整面板宽度
+const startResize = (e: MouseEvent) => {
+  isResizing.value = true;
+  document.addEventListener('mousemove', handleResize);
+  document.addEventListener('mouseup', stopResize);
+  e.preventDefault();
+};
+
+const handleResize = (e: MouseEvent) => {
+  if (!isResizing.value) return;
+  
+  const containerWidth = window.innerWidth;
+  const newPanelWidth = containerWidth - e.clientX;
+  
+  // 限制面板宽度在合理范围内
+  if (newPanelWidth >= 300 && newPanelWidth <= containerWidth * 0.6) {
+    panelWidth.value = newPanelWidth;
+    graphWidth.value = containerWidth - newPanelWidth;
+  }
+};
+
+const stopResize = () => {
+  isResizing.value = false;
+  document.removeEventListener('mousemove', handleResize);
+  document.removeEventListener('mouseup', stopResize);
 };
 
 // 从URL查询参数初始化
@@ -202,6 +255,17 @@ watch(
   () => route.query,
   () => {
     initFromQuery();
+  }
+);
+
+// 监听深度变化，自动重新查询
+watch(
+  () => queryParams.depth,
+  (newDepth, oldDepth) => {
+    if (oldDepth !== undefined && queryParams.root_node_fqn) {
+      console.log(`查询深度从 ${oldDepth} 变更为 ${newDepth}，自动重新查询`);
+      fetchLineageGraph();
+    }
   }
 );
 
@@ -251,6 +315,12 @@ onMounted(() => {
           .el-input {
             min-width: 300px;
           }
+          
+          // 深度控制样式
+          .depth-control {
+            display: flex;
+            align-items: center;
+          }
         }
       }
     }
@@ -264,6 +334,17 @@ onMounted(() => {
     .main-graph {
       flex: 1;
       overflow: hidden;
+    }
+    
+    .resize-handle {
+      width: 4px;
+      background-color: #e4e7ed;
+      cursor: col-resize;
+      transition: background-color 0.2s;
+      
+      &:hover {
+        background-color: #409eff;
+      }
     }
   }
 }

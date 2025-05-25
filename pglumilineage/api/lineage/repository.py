@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import asyncio
 import json
 import logging
 import os
@@ -252,45 +253,44 @@ class LineageRepository:
         logger.info(f"查询子图: root_node_type={root_node_type}, root_node_fqn={root_node_fqn}, depth={depth}")
         
         try:
-            # 解析完全限定名
-            parts = root_node_fqn.split('.')
-            if len(parts) >= 3:
-                database_name = parts[0]
-                schema_name = parts[1]
-                object_name = parts[2]
-            else:
-                object_name = root_node_fqn.split(".")[-1]
-                database_name = ""
-                schema_name = ""
-            
-            logger.debug(f"解析FQN: database_name={database_name}, schema_name={schema_name}, object_name={object_name}")
-            
             # 使用直接SQL查询获取节点
             conn = await asyncpg.connect(**self.db_config)
             
             # 设置搜索路径
             await conn.execute("SET search_path = ag_catalog, \"$user\", public;")
             
-            # 使用正确的 AGE 1.5.0 Cypher 查询语法
-            # 在 AGE 中，第一层定义的 properties 是不用写的，直接使用 n.name 而不是 n.properties.name
-            check_node_query = f"""
-            SELECT * FROM cypher('{self.graph_name}', $$ 
-                MATCH (n)
-                WHERE n.label = '{root_node_type.value}' AND 
-                      n.name = '{object_name}'
-                {f"AND n.schema_name = '{schema_name}'" if len(parts) >= 3 else ""}
-                {f"AND n.database_name = '{database_name}'" if len(parts) >= 3 else ""}
-                RETURN n
-                LIMIT 1
-            $$) as (n agtype);
-            """
+            # 智能查询节点：支持完整FQN或仅表名
+            parts = root_node_fqn.split('.')
+            if len(parts) >= 3:
+                # 如果输入是完整FQN，直接使用FQN查询
+                logger.debug(f"使用完整FQN查询: {root_node_fqn}")
+                check_node_query = f"""
+                SELECT * FROM cypher('{self.graph_name}', $$ 
+                    MATCH (n:{root_node_type.value})
+                    WHERE n.fqn = '{root_node_fqn}'
+                    RETURN n
+                    LIMIT 1
+                $$) as (n agtype);
+                """
+            else:
+                # 如果输入只是表名，使用name属性查询或FQN尾部匹配
+                object_name = root_node_fqn.strip()
+                logger.debug(f"使用表名查询: {object_name}")
+                check_node_query = f"""
+                SELECT * FROM cypher('{self.graph_name}', $$ 
+                    MATCH (n:{root_node_type.value})
+                    WHERE n.name = '{object_name}' OR n.fqn ENDS WITH '.{object_name}'
+                    RETURN n
+                    LIMIT 1
+                $$) as (n agtype);
+                """
             
             logger.debug(f"检查节点存在性查询: {check_node_query}")
             
             check_result = await conn.fetch(check_node_query)
             
             if not check_result or len(check_result) == 0:
-                logger.warning(f"未找到节点: type={root_node_type.value}, name={object_name}, schema={schema_name if len(parts) >= 3 else 'N/A'}, db={database_name if len(parts) >= 3 else 'N/A'}")
+                logger.warning(f"未找到节点: type={root_node_type.value}, input='{root_node_fqn}' (解析为: {'完整FQN' if len(parts) >= 3 else '表名'})")
                 await conn.close()
                 return {"nodes": [], "relationships": []}
             
@@ -303,42 +303,176 @@ class LineageRepository:
             
             logger.debug(f"根节点ID: {root_node_id}")
             
-            # 查询与根节点直接相连的关系，使用正确的 AGE 1.5.0 Cypher 查询语法
-            rel_query = f"""
+            # 层级血缘关系查询：表的上下文 + 基于深度的列级血缘
+            all_relationships = []
+            related_node_ids = set()
+            
+            # 第一步：始终显示表的完整上下文（数据库、模式、表）
+            context_query = f"""
             SELECT * FROM cypher('{self.graph_name}', $$ 
-                MATCH (n)-[r]->(m) 
-                WHERE id(n) = {root_node_id} OR id(m) = {root_node_id}
+                MATCH (db:database)-[:has_schema]->(schema:schema)-[:has_object]->(table:table)
+                WHERE id(table) = {root_node_id}
+                RETURN db as source, 'has_schema' as rel_type, schema as target
+                UNION
+                MATCH (schema:schema)-[:has_object]->(table:table)
+                WHERE id(table) = {root_node_id}
+                RETURN schema as source, 'has_object' as rel_type, table as target
+            $$) as (source agtype, rel_type agtype, target agtype);
+            """
+            
+            logger.debug(f"上下文查询: {context_query}")
+            context_result = await conn.fetch(context_query)
+            
+            # 处理上下文关系
+            for row in context_result:
+                source_data = self._parse_age_vertex(row['source'])
+                target_data = self._parse_age_vertex(row['target'])
+                if source_data and target_data:
+                    related_node_ids.add(source_data['id'])
+                    related_node_ids.add(target_data['id'])
+                    
+                    # 构建关系对象
+                    rel_obj = {
+                        'id': f"{source_data['id']}-{target_data['id']}",
+                        'start_id': source_data['id'],
+                        'end_id': target_data['id'],
+                        'label': row['rel_type'].replace('"', ''),
+                        'properties': {}
+                    }
+                    all_relationships.append(rel_obj)
+            
+            # 第二步：显示表的所有列（has_column关系）
+            columns_query = f"""
+            SELECT * FROM cypher('{self.graph_name}', $$ 
+                MATCH (table)-[r:has_column]->(col)
+                WHERE id(table) = {root_node_id}
                 RETURN r
             $$) as (r agtype);
             """
             
-            logger.debug(f"关系查询SQL: {rel_query}")
-            rel_result = await conn.fetch(rel_query)
-            logger.debug(f"关系查询结果行数: {len(rel_result)}")
+            logger.debug(f"列查询: {columns_query}")
+            columns_result = await conn.fetch(columns_query)
             
-            # 解析关系并收集相关节点ID
-            related_node_ids = set()
-            relationships = []
+            # 收集所有列的ID
+            column_ids = []
+            for row in columns_result:
+                rel_data = self._parse_age_edge(row['r'])
+                if rel_data:
+                    all_relationships.append(rel_data)
+                    related_node_ids.add(rel_data['start_id'])
+                    related_node_ids.add(rel_data['end_id'])
+                    column_ids.append(rel_data['end_id'])
             
-            for row in rel_result:
-                rel_str = row['r']
-                logger.debug(f"原始关系数据: {rel_str}")
-                if rel_str:
-                    rel = self._parse_age_edge(rel_str)
-                    if rel and 'id' in rel:
-                        logger.debug(f"解析后的关系数据: {rel}")
+            # 第三步：根据深度查询列级血缘关系 - 修复查询逻辑
+            if depth >= 2 and column_ids:
+                current_target_columns = column_ids.copy()  # 当前层的目标列
+                
+                for current_depth in range(2, depth + 1):
+                    if not current_target_columns:
+                        logger.info(f"深度 {current_depth}: 没有更多目标列，终止查询")
+                        break
+                    
+                    # 查询当前层目标列的数据流来源
+                    column_ids_str = ", ".join([str(cid) for cid in current_target_columns])
+                    lineage_query = f"""
+                    SELECT * FROM cypher('{self.graph_name}', $$ 
+                        MATCH (source)-[r:data_flow]->(target)
+                        WHERE id(target) IN [{column_ids_str}]
+                        RETURN r, source, target
+                    $$) as (r agtype, source agtype, target agtype);
+                    """
+                    
+                    logger.debug(f"深度 {current_depth} 血缘查询: {lineage_query}")
+                    lineage_result = await conn.fetch(lineage_query)
+                    
+                    # 收集下一层的源节点ID
+                    next_source_ids = []
+                    found_relationships = 0
+                    
+                    for row in lineage_result:
+                        rel_data = self._parse_age_edge(row['r'])
+                        source_data = self._parse_age_vertex(row['source'])
+                        target_data = self._parse_age_vertex(row['target'])
                         
-                        # 收集关系中的节点ID
-                        start_id = rel.get('start_id')
-                        end_id = rel.get('end_id')
-                        
-                        if start_id and start_id != root_node_id:
-                            related_node_ids.add(start_id)
-                        if end_id and end_id != root_node_id:
-                            related_node_ids.add(end_id)
-                        
-                        # 将关系添加到结果中
-                        relationships.append(rel)
+                        if rel_data and source_data and target_data:
+                            all_relationships.append(rel_data)
+                            related_node_ids.add(rel_data['start_id'])
+                            related_node_ids.add(rel_data['end_id'])
+                            
+                            # 只有源节点是列时，才加入下一层查询
+                            source_label = source_data.get('label', '').lower()
+                            if source_label == 'column':
+                                next_source_ids.append(rel_data['start_id'])
+                            
+                            found_relationships += 1
+                            logger.debug(f"发现数据流: {source_data.get('properties', {}).get('name')} -> {target_data.get('properties', {}).get('name')}")
+                    
+                    logger.info(f"深度 {current_depth}: 找到 {found_relationships} 个数据流关系")
+                    
+                    # 更新下一层的目标列（即当前层的源列）
+                    current_target_columns = list(set(next_source_ids))  # 去重
+                    
+                    if not current_target_columns:
+                        logger.info(f"深度 {current_depth}: 没有更多源列，查询结束")
+                        break
+            
+            # 第四步：仅在深度为1时显示源列所属的表关系，深度2+时不显示
+            # 这样可以避免图形过于复杂，专注于列级数据流
+            if depth == 1 and related_node_ids:
+                # 只在深度1时查询源列所属的表
+                source_columns = [nid for nid in related_node_ids if nid != root_node_id]
+                if source_columns:
+                    source_table_query = f"""
+                    SELECT * FROM cypher('{self.graph_name}', $$ 
+                        MATCH (source_table)-[r:has_column]->(col)
+                        WHERE id(col) IN [{", ".join([str(nid) for nid in source_columns])}]
+                        RETURN r
+                    $$) as (r agtype);
+                    """
+                    
+                    logger.debug(f"源表查询: {source_table_query}")
+                    try:
+                        source_table_result = await conn.fetch(source_table_query)
+                        for row in source_table_result:
+                            rel_data = self._parse_age_edge(row['r'])
+                            if rel_data:
+                                all_relationships.append(rel_data)
+                                related_node_ids.add(rel_data['start_id'])
+                                related_node_ids.add(rel_data['end_id'])
+                    except Exception as e:
+                        logger.warning(f"查询源表关系失败: {e}")
+            elif depth >= 2:
+                logger.info(f"深度{depth}: 跳过源表关系查询，专注于列级数据流")
+            
+            # 第五步：查询SQL模式关系
+            sql_pattern_query = f"""
+            SELECT * FROM cypher('{self.graph_name}', $$ 
+                MATCH (sql:sqlpattern)-[r:writes_to]->(table)
+                WHERE id(table) = {root_node_id}
+                RETURN r
+            $$) as (r agtype);
+            """
+            
+            logger.debug(f"SQL模式查询: {sql_pattern_query}")
+            try:
+                sql_result = await conn.fetch(sql_pattern_query)
+                for row in sql_result:
+                    rel_data = self._parse_age_edge(row['r'])
+                    if rel_data:
+                        all_relationships.append(rel_data)
+                        related_node_ids.add(rel_data['start_id'])
+                        related_node_ids.add(rel_data['end_id'])
+            except Exception as e:
+                logger.warning(f"查询SQL模式关系失败: {e}")
+            
+            # 使用all_relationships作为最终的关系列表
+            relationships = all_relationships
+            
+            logger.debug(f"总共收集到 {len(relationships)} 个关系")
+            logger.debug(f"相关节点ID数量: {len(related_node_ids)}")
+            
+            # 移除根节点ID，避免重复
+            related_node_ids.discard(root_node_id)
             
             # 查询相关节点
             if related_node_ids:
@@ -382,24 +516,78 @@ class LineageRepository:
                 "relationships": []
             }
 
-    def query_node_details(self, node_fqn: str) -> Dict[str, Any]:
+    async def query_node_details(self, node_type: NodeType, node_fqn: str) -> Dict[str, Any]:
         """
         查询节点详细信息。
 
         Args:
+            node_type: 节点类型
             node_fqn: 节点的完全限定名
 
         Returns:
             Dict[str, Any]: 节点详细信息
         """
-        return None
+        logger.info(f"查询节点详情: type={node_type.value}, fqn={node_fqn}")
+        
+        try:
+            conn = await asyncpg.connect(**self.db_config)
+            
+            # 设置搜索路径
+            await conn.execute("SET search_path = ag_catalog, \"$user\", public;")
+            
+            # 智能查询节点：支持完整FQN或仅表名
+            parts = node_fqn.split('.')
+            if len(parts) >= 3:
+                # 如果输入是完整FQN，直接使用FQN查询
+                logger.debug(f"使用完整FQN查询: {node_fqn}")
+                node_query = f"""
+                SELECT * FROM cypher('{self.graph_name}', $$ 
+                    MATCH (n:{node_type.value})
+                    WHERE n.fqn = '{node_fqn}'
+                    RETURN n
+                    LIMIT 1
+                $$) as (n agtype);
+                """
+            else:
+                # 如果输入只是表名，使用name属性查询或FQN尾部匹配
+                object_name = node_fqn.strip()
+                logger.debug(f"使用表名查询: {object_name}")
+                node_query = f"""
+                SELECT * FROM cypher('{self.graph_name}', $$ 
+                    MATCH (n:{node_type.value})
+                    WHERE n.name = '{object_name}' OR n.fqn ENDS WITH '.{object_name}'
+                    RETURN n
+                    LIMIT 1
+                $$) as (n agtype);
+                """
+            
+            logger.debug(f"节点详情查询: {node_query}")
+            
+            result = await conn.fetch(node_query)
+            
+            if not result or len(result) == 0:
+                await conn.close()
+                raise ValueError(f"未找到节点: type={node_type.value}, fqn='{node_fqn}'")
+            
+            # 解析节点数据
+            node_data = self._parse_age_vertex(result[0]['n'])
+            
+            await conn.close()
+            
+            logger.info(f"查询节点详情成功: {node_data}")
+            return node_data
+            
+        except Exception as e:
+            logger.error(f"查询节点详情时发生错误: {e}")
+            raise
 
-    def query_direct_neighbors(self, node_fqn: str, direction: str = "both",
+    async def query_direct_neighbors(self, node_type: NodeType, node_fqn: str, direction: str = "both",
                           relationship_types: List[str] = None) -> Dict[str, Any]:
         """
         查询节点的直接邻居。
 
         Args:
+            node_type: 节点类型
             node_fqn: 节点的完全限定名
             direction: 方向，可选值为 "in", "out", "both"
             relationship_types: 关系类型过滤
@@ -407,7 +595,102 @@ class LineageRepository:
         Returns:
             Dict[str, Any]: 邻居节点和关系
         """
-        return {
-            "neighbors": [],
-            "relationships": []
-        }
+        logger.info(f"查询直接邻居: type={node_type.value}, fqn={node_fqn}, direction={direction}")
+        
+        try:
+            # 先获取根节点
+            root_node = await self.query_node_details(node_type, node_fqn)
+            root_node_id = root_node['id']
+            
+            conn = await asyncpg.connect(**self.db_config)
+            
+            # 设置搜索路径
+            await conn.execute("SET search_path = ag_catalog, \"$user\", public;")
+            
+            # 根据方向构建查询
+            if direction == "in":
+                # 只查询入边
+                rel_query = f"""
+                SELECT * FROM cypher('{self.graph_name}', $$ 
+                    MATCH (n)-[r]->(m) 
+                    WHERE id(m) = {root_node_id}
+                    RETURN r
+                $$) as (r agtype);
+                """
+            elif direction == "out":
+                # 只查询出边
+                rel_query = f"""
+                SELECT * FROM cypher('{self.graph_name}', $$ 
+                    MATCH (n)-[r]->(m) 
+                    WHERE id(n) = {root_node_id}
+                    RETURN r
+                $$) as (r agtype);
+                """
+            else:
+                # 查询双向边
+                rel_query = f"""
+                SELECT * FROM cypher('{self.graph_name}', $$ 
+                    MATCH (n)-[r]->(m) 
+                    WHERE id(n) = {root_node_id} OR id(m) = {root_node_id}
+                    RETURN r
+                $$) as (r agtype);
+                """
+            
+            logger.debug(f"邻居关系查询: {rel_query}")
+            rel_result = await conn.fetch(rel_query)
+            
+            # 解析关系并收集相关节点ID
+            related_node_ids = set()
+            relationships = []
+            
+            for row in rel_result:
+                rel_str = row['r']
+                if rel_str:
+                    rel = self._parse_age_edge(rel_str)
+                    if rel and 'id' in rel:
+                        # 收集关系中的节点ID
+                        start_id = rel.get('start_id')
+                        end_id = rel.get('end_id')
+                        
+                        if start_id and start_id != root_node_id:
+                            related_node_ids.add(start_id)
+                        if end_id and end_id != root_node_id:
+                            related_node_ids.add(end_id)
+                        
+                        # 将关系添加到结果中
+                        relationships.append(rel)
+            
+            # 查询相关节点
+            nodes = [root_node]  # 包含根节点
+            if related_node_ids:
+                related_ids_str = ", ".join([str(id) for id in related_node_ids])
+                node_query = f"""
+                SELECT * FROM cypher('{self.graph_name}', $$ 
+                    MATCH (n) 
+                    WHERE id(n) IN [{related_ids_str}]
+                    RETURN n
+                $$) as (n agtype);
+                """
+                
+                logger.debug(f"邻居节点查询: {node_query}")
+                node_result = await conn.fetch(node_query)
+                
+                # 解析相关节点
+                for row in node_result:
+                    node_str = row['n']
+                    if node_str:
+                        node = self._parse_age_vertex(node_str)
+                        if node and 'id' in node:
+                            nodes.append(node)
+            
+            await conn.close()
+            
+            logger.info(f"查询直接邻居完成: 找到 {len(nodes)} 个节点和 {len(relationships)} 个关系")
+            return {
+                "nodes": nodes,
+                "relationships": relationships
+            }
+            
+        except Exception as e:
+            logger.error(f"查询直接邻居时发生错误: {e}")
+            raise

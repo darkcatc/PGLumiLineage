@@ -88,7 +88,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import G6, { Graph, GraphData, IG6GraphEvent } from '@antv/g6';
+import G6 from '@antv/g6';
 import { ZoomIn, ZoomOut, FullScreen, ArrowDown } from '@element-plus/icons-vue';
 import { NODE_STYLE_MAP, EDGE_STYLE_MAP } from '@/types/graph';
 import { NodeType, EdgeType } from '@/types/api';
@@ -117,17 +117,16 @@ const graphWrapper = ref<HTMLElement | null>(null);
 const minimapContainer = ref<HTMLElement | null>(null);
 
 // 图实例
-let graph: Graph | null = null;
+let graph: any = null;
 
 // 小地图显示状态
 const showMinimap = ref(true);
 
-// 布局配置
+// 布局配置 - 专注于层次布局变体
 const layouts = [
-  { value: 'dagre', label: '层次布局' },
+  { value: 'dagre', label: '层次布局（推荐）' },
   { value: 'force', label: '力导向布局' },
   { value: 'concentric', label: '环形布局' },
-  { value: 'radial', label: '辐射布局' },
   { value: 'grid', label: '网格布局' }
 ];
 
@@ -263,15 +262,18 @@ const initGraph = () => {
     width: graphWrapper.value.clientWidth,
     height: graphWrapper.value.clientHeight,
     modes: {
-      default: ['drag-canvas', 'zoom-canvas', 'drag-node', 'click-select']
+      default: ['drag-canvas', 'zoom-canvas', 'drag-node']
     },
     layout: {
       type: 'dagre',
-      rankdir: 'LR',
-      align: 'UL',
-      nodesep: 80,
-      ranksep: 100
+      rankdir: 'LR',        // 从左到右的数据流
+      align: 'UL',          // 上对齐
+      nodesep: 40,          // 同层节点间距
+      ranksep: 120,         // 层间距离（缩短距离）
+      controlPoints: true,  // 启用控制点
     },
+    fitView: true,  // 启用自动适应
+    fitViewPadding: [50, 50, 50, 50],
     defaultNode: {
       type: 'circle',
       size: 30,
@@ -290,20 +292,29 @@ const initGraph = () => {
       }
     },
     defaultEdge: {
-      type: 'cubic',
+      type: 'polyline',      // 使用折线，更适合层次布局
       style: {
-        stroke: '#aaa',
-        lineWidth: 1,
+        stroke: '#999',
+        lineWidth: 1.5,
+        cursor: 'pointer',
+        radius: 8,           // 转弯半径
         endArrow: {
           path: 'M 0,0 L 8,4 L 0,8 Z',
-          fill: '#aaa'
+          fill: '#999'
         }
       },
       labelCfg: {
-        autoRotate: true,
+        autoRotate: false,   // 不自动旋转标签
         style: {
-          fill: '#666',
-          fontSize: 10
+          fill: '#333',
+          fontSize: 11,
+          fontWeight: 500,
+          background: {
+            fill: 'rgba(255,255,255,0.9)',
+            stroke: '#ddd',
+            padding: [1, 3, 1, 3],
+            radius: 2
+          }
         }
       }
     },
@@ -322,17 +333,23 @@ const initGraph = () => {
     },
     edgeStateStyles: {
       hover: {
-        lineWidth: 2,
-        stroke: '#1890ff'
+        lineWidth: 3,
+        stroke: '#1890ff',
+        shadowColor: '#1890ff',
+        shadowBlur: 8,
+        cursor: 'pointer'
       },
       selected: {
-        lineWidth: 3,
-        stroke: '#1abc9c'
+        lineWidth: 4,
+        stroke: '#1abc9c',
+        shadowColor: '#1abc9c',
+        shadowBlur: 12,
+        cursor: 'pointer'
       }
     },
     plugins: showMinimap.value ? [
       new G6.Minimap({
-        container: minimapContainer.value as HTMLDivElement,
+        container: minimapContainer.value,
         size: [150, 100]
       })
     ] : []
@@ -352,18 +369,57 @@ const bindEvents = () => {
   if (!graph) return;
   
   // 节点点击事件
-  graph.on('node:click', (e: IG6GraphEvent) => {
+  graph.on('node:click', (e: any) => {
     const node = e.item?.getModel();
     if (node) {
+      // 清除所有选中状态
+      graph.getNodes().forEach((nodeItem: any) => {
+        graph.clearItemStates(nodeItem, ['selected']);
+      });
+      graph.getEdges().forEach((edgeItem: any) => {
+        graph.clearItemStates(edgeItem, ['selected']);
+      });
+      
+      // 设置当前节点为选中状态
+      if (e.item) {
+        graph.setItemState(e.item, 'selected', true);
+      }
+      
       emit('nodeClick', node);
     }
   });
   
   // 边点击事件
-  graph.on('edge:click', (e: IG6GraphEvent) => {
+  graph.on('edge:click', (e: any) => {
     const edge = e.item?.getModel();
     if (edge) {
+      // 清除所有选中状态
+      graph.getNodes().forEach((nodeItem: any) => {
+        graph.clearItemStates(nodeItem, ['selected']);
+      });
+      graph.getEdges().forEach((edgeItem: any) => {
+        graph.clearItemStates(edgeItem, ['selected']);
+      });
+      
+      // 设置当前边为选中状态
+      if (e.item) {
+        graph.setItemState(e.item, 'selected', true);
+      }
+      
       emit('edgeClick', edge);
+    }
+  });
+  
+  // 边悬停事件
+  graph.on('edge:mouseenter', (e: any) => {
+    if (e.item) {
+      graph.setItemState(e.item, 'hover', true);
+    }
+  });
+  
+  graph.on('edge:mouseleave', (e: any) => {
+    if (e.item) {
+      graph.setItemState(e.item, 'hover', false);
     }
   });
   
@@ -383,7 +439,7 @@ const bindEvents = () => {
   });
 };
 
-// 渲染图
+  // 渲染图
 const renderGraph = (data: { nodes: any[]; edges: any[] }) => {
   console.log('开始渲染图形:', data);
   if (!graph) {
@@ -401,67 +457,287 @@ const renderGraph = (data: { nodes: any[]; edges: any[] }) => {
   console.log('边数量:', data.edges.length);
   
   try {
-    // 转换数据为G6格式
-    const graphData: GraphData = {
-      nodes: data.nodes.map(node => {
-        console.log('处理节点:', node);
-        const nodeType = getNodeType(node.type);
-        console.log('节点类型:', node.type, '->', nodeType);
-        return {
-          id: node.id,
-          label: node.label,
-          type: nodeType,
-          style: getNodeStyle(node.type),
-          originalData: node
-        };
-      }),
-      edges: data.edges.map(edge => {
-        console.log('处理边:', edge);
-        return {
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          label: edge.label,
-          style: getEdgeStyle(edge.type),
-          originalData: edge
-        };
-      })
+      // 转换数据为G6格式，让dagre布局自动计算位置
+  const { processedNodes, processedEdges } = processGraphData(data);
+    
+    const graphData = {
+      nodes: processedNodes,
+      edges: processedEdges
     };
     
     console.log('转换后的G6格式数据:', graphData);
     
-    // 渲染图
+        // 渲染图
     graph.data(graphData);
     graph.render();
-    graph.fitView(20);
-    console.log('图形渲染完成');
+    
+    // 延迟执行适应视图
+    setTimeout(() => {
+      if (graph) {
+        // 适应视图，确保所有节点都可见
+        graph.fitView(20);
+        console.log('图形渲染完成，使用dagre层级布局');
+      }
+    }, 100);
   } catch (error) {
     console.error('渲染图形时发生错误:', error);
   }
 };
 
 // 获取节点类型
-const getNodeType = (type: NodeType): string => {
-  switch (type) {
-    case NodeType.DATABASE:
+const getNodeType = (type: string): string => {
+  // 处理后端返回的节点类型字符串
+  switch (type.toLowerCase()) {
+    case 'database':
       return 'database-node';
-    case NodeType.TABLE:
+    case 'table':
       return 'table-node';
-    // 其他类型...
+    case 'view':
+      return 'table-node'; // 视图使用表节点样式
+    case 'column':
+      return 'circle';
+    case 'schema':
+      return 'circle';
+    case 'sqlpattern':
+    case 'sql_pattern':
+      return 'circle';
+    case 'function':
+      return 'circle';
     default:
+      console.warn('未知节点类型:', type, '使用默认circle');
       return 'circle';
   }
 };
 
 // 获取节点样式
-const getNodeStyle = (type: NodeType) => {
-  return NODE_STYLE_MAP[type]?.style || {};
+const getNodeStyle = (type: string) => {
+  // 转换后端类型到前端NodeType枚举
+  let nodeType: NodeType;
+  switch (type.toLowerCase()) {
+    case 'database':
+      nodeType = NodeType.DATABASE;
+      break;
+    case 'table':
+      nodeType = NodeType.TABLE;
+      break;
+    case 'view':
+      nodeType = NodeType.VIEW;
+      break;
+    case 'column':
+      nodeType = NodeType.COLUMN;
+      break;
+    case 'schema':
+      nodeType = NodeType.SCHEMA;
+      break;
+    case 'sqlpattern':
+    case 'sql_pattern':
+      nodeType = NodeType.SQL_PATTERN;
+      break;
+    case 'function':
+      nodeType = NodeType.FUNCTION;
+      break;
+    default:
+      nodeType = NodeType.TABLE; // 默认为表
+  }
+  return NODE_STYLE_MAP[nodeType]?.style || {};
 };
 
 // 获取边样式
-const getEdgeStyle = (type: EdgeType) => {
-  return EDGE_STYLE_MAP[type]?.style || {};
+const getEdgeStyle = (type: string) => {
+  // 转换后端类型到前端EdgeType枚举
+  let edgeType: EdgeType;
+  let customStyle: any = {};
+  
+  switch (type.toLowerCase()) {
+    case 'has_schema':
+    case 'has_object':
+    case 'has_column':
+    case 'contains':
+      edgeType = EdgeType.CONTAINS;
+      // 结构关系使用灰色细线
+      customStyle = {
+        stroke: '#bbb',
+        lineWidth: 1,
+        lineDash: [2, 2]  // 虚线
+      };
+      break;
+    case 'reads_from':
+    case 'reads':
+      edgeType = EdgeType.READS;
+      break;
+    case 'writes_to':
+    case 'writes':
+      edgeType = EdgeType.WRITES;
+      // SQL写入关系使用绿色
+      customStyle = {
+        stroke: '#52c41a',
+        lineWidth: 2
+      };
+      break;
+    case 'data_flow':
+      edgeType = EdgeType.DATA_FLOW;
+      // 数据流关系使用红色粗线，最突出
+      customStyle = {
+        stroke: '#ff4d4f',
+        lineWidth: 3,
+        endArrow: {
+          path: 'M 0,0 L 10,5 L 0,10 Z',
+          fill: '#ff4d4f'
+        }
+      };
+      break;
+    case 'generates':
+    case 'generates_flow':
+      edgeType = EdgeType.GENERATES_FLOW;
+      break;
+    case 'references':
+      edgeType = EdgeType.REFERENCES;
+      break;
+    default:
+      edgeType = EdgeType.DEPENDS_ON; // 默认为依赖关系
+  }
+  
+  // 合并默认样式和自定义样式
+  const defaultStyle = EDGE_STYLE_MAP[edgeType]?.style || {};
+  return { ...defaultStyle, ...customStyle };
 };
+
+// 处理图数据 - 使用dagre布局，按数据血缘层级组织
+const processGraphData = (data: { nodes: any[]; edges: any[] }) => {
+  console.log('开始处理图数据 - 使用dagre布局，按数据血缘层级');
+  
+  // 转换节点数据，添加层级信息
+  const processedNodes = data.nodes.map((node) => {
+    const nodeType = getNodeType(node.type);
+    const layerInfo = calculateNodeLayer(node);
+    
+    return {
+      id: node.id,
+      label: node.label,
+      type: nodeType,
+      style: getNodeStyle(node.type),
+      originalData: node,
+      // 添加层级信息，帮助dagre布局
+      layer: layerInfo.layer,
+      rank: layerInfo.rank,
+      // 添加权重，影响同层内的排序
+      weight: layerInfo.weight
+    };
+  });
+  
+  // 转换边数据，修正data_flow边的方向
+  const processedEdges = data.edges.map(edge => {
+    let source = edge.source;
+    let target = edge.target;
+    
+    // 对于data_flow边，确保从源数据指向目标数据（从左到右）
+    if (edge.type?.toLowerCase() === 'data_flow') {
+      // 检查源节点和目标节点，确保方向正确
+      const sourceNode = data.nodes.find(n => n.id === edge.source);
+      const targetNode = data.nodes.find(n => n.id === edge.target);
+      
+      if (sourceNode && targetNode) {
+        const sourceFqn = sourceNode.fqn || sourceNode.label || '';
+        const targetFqn = targetNode.fqn || targetNode.label || '';
+        const isSourceTarget = sourceFqn.includes('monthly_channel_returns_analysis_report');
+        const isTargetTarget = targetFqn.includes('monthly_channel_returns_analysis_report');
+        
+        // 如果source是目标节点，target是源节点，则需要反转边的方向
+        if (isSourceTarget && !isTargetTarget) {
+          source = edge.target;
+          target = edge.source;
+          console.log(`反转data_flow边方向: ${sourceNode.label} -> ${targetNode.label}`);
+        }
+      }
+    }
+    
+    return {
+      id: edge.id,
+      source: source,
+      target: target,
+      label: edge.label,
+      style: getEdgeStyle(edge.type),
+      originalData: edge
+    };
+  });
+  
+  console.log('图数据处理完成 - 使用预设坐标', { 
+    nodes: processedNodes.length, 
+    edges: processedEdges.length 
+  });
+  
+  // 显示节点坐标信息
+  processedNodes.forEach(node => {
+    console.log(`节点 ${node.label}: x=${node.x}, y=${node.y}`);
+  });
+  
+  return { processedNodes, processedEdges };
+};
+
+// 计算节点层级 - 修正为从左到右的自然数据流
+const calculateNodeLayer = (node: any): { layer: number, rank: number, weight: number } => {
+  const nodeType = node.type?.toLowerCase() || '';
+  const fqn = node.fqn || node.label || '';
+  const isTargetNode = fqn.includes('monthly_channel_returns_analysis_report');
+  
+  console.log(`计算层级: ${node.label} (${nodeType}) - 是否目标节点: ${isTargetNode}`);
+  
+  let layer = 0;  // 层级：0=最左侧，数字越大越靠右
+  let rank = 0;   // 同层内的排序
+  let weight = 0; // 权重，影响同层内的位置
+  
+  // 修正为自然的从左到右数据流：源数据在左侧，目标数据在右侧
+  // data_flow边：从左侧源数据指向右侧目标数据（符合阅读习惯）
+  if (nodeType === 'database') {
+    layer = 0;  // 最左侧：数据库（基础设施）
+    rank = 0;
+    weight = 10;
+  } 
+  else if (nodeType === 'schema') {
+    layer = 1;  // 第二层：模式（基础设施）
+    rank = 0;
+    weight = 20;
+  }
+  else if (nodeType === 'sqlpattern') {
+    layer = 2;  // 第三层：SQL模式（基础设施）
+    rank = 0;
+    weight = 30;
+  }
+  else if (nodeType === 'table') {
+    if (isTargetNode) {
+      layer = 5;  // 目标表在右侧中心位置
+      rank = 0;
+      weight = 100;  // 高权重，确保在层级中心
+    } else {
+      layer = 3;  // 源表在左侧（源数据）
+      rank = 0;
+      weight = 50;
+    }
+  }
+  else if (nodeType === 'column') {
+    if (isTargetNode) {
+      layer = 6;  // 目标列在最右侧
+      rank = 0;
+      weight = 110;
+    } else {
+      // 源列在源表右侧，但仍在左半部分
+      layer = 4;  // 源列在源表右侧
+      rank = 0;
+      weight = 60;
+    }
+  }
+  else {
+    // 其他类型节点
+    layer = 2;
+    rank = 1;
+    weight = 40;
+  }
+  
+  console.log(`节点 ${node.label} 层级信息: layer=${layer}, rank=${rank}, weight=${weight}`);
+  return { layer, rank, weight };
+};
+
+// 移除手动坐标计算，使用dagre自动布局
 
 // 放大
 const zoomIn = () => {
@@ -489,6 +765,7 @@ const zoomOut = () => {
 const fitView = () => {
   if (graph) {
     graph.fitView(20);
+    graph.fitCenter();
   }
 };
 
@@ -496,13 +773,63 @@ const fitView = () => {
 const changeLayout = (layoutType: string) => {
   if (!graph) return;
   
-  const layoutConfig = {
-    type: layoutType,
-    rankdir: 'LR',
-    align: 'UL',
-    nodesep: 80,
-    ranksep: 100
-  };
+  let layoutConfig: any = {};
+  
+  switch (layoutType) {
+    case 'dagre':
+      layoutConfig = {
+        type: 'dagre',
+        rankdir: 'LR',        // 从左到右
+        align: 'UL',          // 上对齐
+        nodesep: 60,          // 同层节点间距
+        ranksep: 200,         // 增大层间距离
+        controlPoints: true,
+        // 使用自定义排序函数
+        sortMethod: (nodeA: any, nodeB: any) => {
+          const weightA = nodeA.layoutWeight || 0;
+          const weightB = nodeB.layoutWeight || 0;
+          console.log(`排序比较: ${nodeA.label}(${weightA}) vs ${nodeB.label}(${weightB})`);
+          return weightA - weightB;
+        },
+        // 强制分层
+        ranker: 'tight-tree'
+      };
+      break;
+    case 'force':
+      layoutConfig = {
+        type: 'force',
+        center: [400, 300],
+        linkDistance: 100,
+        nodeStrength: -200,
+        preventOverlap: true,
+        nodeSize: 30
+      };
+      break;
+    case 'concentric':
+      layoutConfig = {
+        type: 'concentric',
+        minNodeSpacing: 50,
+        preventOverlap: true,
+        nodeSize: 30
+      };
+      break;
+    case 'grid':
+      layoutConfig = {
+        type: 'grid',
+        cols: 5,
+        rows: 5,
+        sortBy: 'degree'
+      };
+      break;
+    default:
+      layoutConfig = {
+        type: 'dagre',
+        rankdir: 'LR',
+        align: 'UL',
+        nodesep: 40,
+        ranksep: 120
+      };
+  }
   
   // 更新当前布局
   currentLayout.value = layouts.find(layout => layout.value === layoutType) || layouts[0];
@@ -511,7 +838,10 @@ const changeLayout = (layoutType: string) => {
   graph.updateLayout(layoutConfig);
   
   // 重新渲染
-  graph.fitView(20);
+  setTimeout(() => {
+    graph.fitView(20);
+    graph.fitCenter();
+  }, 100);
 };
 
 // 导出图

@@ -64,13 +64,41 @@ class LineageService:
         try:
             node_data = await self.repository.query_node_details(node_type, node_fqn)
             
+            # 从properties中获取节点信息
+            properties = node_data.get("properties", {})
+            node_label = properties.get("label", "")
+            
+            # 根据label确定节点类型
+            if node_label == "table":
+                actual_node_type = NodeType.TABLE
+            elif node_label == "view":
+                actual_node_type = NodeType.VIEW
+            elif node_label == "column":
+                actual_node_type = NodeType.COLUMN
+            elif node_label == "schema":
+                actual_node_type = NodeType.SCHEMA
+            elif node_label == "database":
+                actual_node_type = NodeType.DATABASE
+            elif node_label == "sqlpattern":
+                actual_node_type = NodeType.SQL_PATTERN
+            else:
+                # 使用传入的节点类型作为默认值
+                actual_node_type = node_type
+            
+            # 构建FQN
+            fqn = None
+            if "fqn" in properties:
+                fqn = properties["fqn"]
+            elif all(k in properties for k in ["name", "schema_name", "database_name"]):
+                fqn = f"{properties['database_name']}.{properties['schema_name']}.{properties['name']}"
+            
             response = ObjectDetailsResponse(
                 node=Node(
-                    id=node_data["id"],
-                    type=NodeType(node_data["type"]),
-                    label=node_data["label"],
-                    fqn=node_data.get("fqn"),
-                    properties=node_data.get("properties", {})
+                    id=str(node_data["id"]),
+                    type=actual_node_type,
+                    label=properties.get("name", node_label),
+                    fqn=fqn,
+                    properties=properties
                 )
             )
             
@@ -140,9 +168,10 @@ class LineageService:
                 # 从AGE节点中提取数据
                 node_id = str(node_data.get("id", ""))
                 
-                # 从properties中获取节点类型和标签
+                # 从AGE节点数据中获取节点类型
                 properties = node_data.get("properties", {})
-                node_label = properties.get("label", "")
+                # AGE中的label字段在节点的根级别，不在properties中
+                node_label = node_data.get("label", "")
                 
                 # 根据label确定节点类型
                 if node_label == "table":

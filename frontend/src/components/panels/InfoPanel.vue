@@ -159,6 +159,56 @@ const router = useRouter();
 // 面板折叠状态
 const isCollapsed = ref(false);
 
+// 类型转换函数
+const convertToNodeType = (type: string): NodeType => {
+  switch (type.toLowerCase()) {
+    case 'database':
+      return NodeType.DATABASE;
+    case 'schema':
+      return NodeType.SCHEMA;
+    case 'table':
+      return NodeType.TABLE;
+    case 'view':
+      return NodeType.VIEW;
+    case 'column':
+      return NodeType.COLUMN;
+    case 'sqlpattern':
+    case 'sql_pattern':
+      return NodeType.SQL_PATTERN;
+    case 'function':
+      return NodeType.FUNCTION;
+    default:
+      return NodeType.TABLE;
+  }
+};
+
+const convertToEdgeType = (type: string): EdgeType => {
+  switch (type.toLowerCase()) {
+    case 'has_schema':
+    case 'has_object':
+    case 'has_column':
+    case 'contains':
+      return EdgeType.CONTAINS;
+    case 'references':
+      return EdgeType.REFERENCES;
+    case 'depends_on':
+      return EdgeType.DEPENDS_ON;
+    case 'data_flow':
+      return EdgeType.DATA_FLOW;
+    case 'generates':
+    case 'generates_flow':
+      return EdgeType.GENERATES_FLOW;
+    case 'writes_to':
+    case 'writes':
+      return EdgeType.WRITES;
+    case 'reads_from':
+    case 'reads':
+      return EdgeType.READS;
+    default:
+      return EdgeType.DEPENDS_ON;
+  }
+};
+
 // 面板标题
 const title = computed(() => {
   if (props.loading) {
@@ -190,26 +240,29 @@ const toggleCollapse = () => {
 };
 
 // 获取节点颜色
-const getNodeColor = (type: NodeType) => {
-  return NODE_STYLE_MAP[type]?.color || '#5B8FF9';
+const getNodeColor = (type: string) => {
+  // 转换字符串类型到NodeType枚举
+  const nodeType = convertToNodeType(type);
+  return NODE_STYLE_MAP[nodeType]?.color || '#5B8FF9';
 };
 
 // 获取节点图标
-const getNodeIcon = (type: NodeType) => {
-  switch (type) {
-    case NodeType.DATABASE:
+const getNodeIcon = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'database':
       return '🗄️';
-    case NodeType.SCHEMA:
+    case 'schema':
       return '📁';
-    case NodeType.TABLE:
+    case 'table':
       return '📋';
-    case NodeType.VIEW:
+    case 'view':
       return '👁️';
-    case NodeType.COLUMN:
+    case 'column':
       return '📊';
-    case NodeType.SQL_PATTERN:
+    case 'sqlpattern':
+    case 'sql_pattern':
       return '⚙️';
-    case NodeType.FUNCTION:
+    case 'function':
       return '🔧';
     default:
       return '📄';
@@ -217,21 +270,22 @@ const getNodeIcon = (type: NodeType) => {
 };
 
 // 获取节点类型标签
-const getNodeTypeLabel = (type: NodeType) => {
-  switch (type) {
-    case NodeType.DATABASE:
+const getNodeTypeLabel = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'database':
       return '数据库';
-    case NodeType.SCHEMA:
+    case 'schema':
       return '模式';
-    case NodeType.TABLE:
+    case 'table':
       return '表';
-    case NodeType.VIEW:
+    case 'view':
       return '视图';
-    case NodeType.COLUMN:
+    case 'column':
       return '列';
-    case NodeType.SQL_PATTERN:
+    case 'sqlpattern':
+    case 'sql_pattern':
       return 'SQL模式';
-    case NodeType.FUNCTION:
+    case 'function':
       return '函数';
     default:
       return '未知类型';
@@ -239,26 +293,34 @@ const getNodeTypeLabel = (type: NodeType) => {
 };
 
 // 获取边颜色
-const getEdgeColor = (type: EdgeType) => {
-  return EDGE_STYLE_MAP[type]?.color || '#aaa';
+const getEdgeColor = (type: string) => {
+  // 转换字符串类型到EdgeType枚举
+  const edgeType = convertToEdgeType(type);
+  return EDGE_STYLE_MAP[edgeType]?.color || '#aaa';
 };
 
 // 获取边类型标签
-const getEdgeTypeLabel = (type: EdgeType) => {
-  switch (type) {
-    case EdgeType.CONTAINS:
+const getEdgeTypeLabel = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'has_schema':
+    case 'has_object':
+    case 'has_column':
+    case 'contains':
       return '包含';
-    case EdgeType.REFERENCES:
+    case 'references':
       return '引用';
-    case EdgeType.DEPENDS_ON:
+    case 'depends_on':
       return '依赖';
-    case EdgeType.DATA_FLOW:
+    case 'data_flow':
       return '数据流';
-    case EdgeType.GENERATES_FLOW:
+    case 'generates':
+    case 'generates_flow':
       return '生成流';
-    case EdgeType.WRITES:
+    case 'writes_to':
+    case 'writes':
       return '写入';
-    case EdgeType.READS:
+    case 'reads_from':
+    case 'reads':
       return '读取';
     default:
       return '未知关系';
@@ -306,10 +368,41 @@ const formatPropertyValue = (value: any) => {
 const viewDetails = () => {
   if (!props.selectedItem || props.itemType !== 'node') return;
   
+  // 转换后端类型字符串到前端NodeType枚举
+  let nodeType = props.selectedItem.type;
+  if (typeof nodeType === 'string') {
+    switch (nodeType.toLowerCase()) {
+      case 'database':
+        nodeType = 'database';
+        break;
+      case 'table':
+        nodeType = 'table';
+        break;
+      case 'view':
+        nodeType = 'view';
+        break;
+      case 'column':
+        nodeType = 'column';
+        break;
+      case 'schema':
+        nodeType = 'schema';
+        break;
+      case 'sqlpattern':
+      case 'sql_pattern':
+        nodeType = 'sql_pattern';
+        break;
+      case 'function':
+        nodeType = 'function';
+        break;
+      default:
+        nodeType = 'table'; // 默认为表
+    }
+  }
+  
   router.push({
     name: 'object-details',
     params: {
-      type: props.selectedItem.type,
+      type: nodeType,
       fqn: encodeURIComponent(props.selectedItem.fqn || props.selectedItem.id)
     }
   });
