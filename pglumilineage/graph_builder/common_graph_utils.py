@@ -32,6 +32,8 @@ NODE_LABEL_VIEW = "view"
 NODE_LABEL_MATERIALIZED_VIEW = "materialized_view"
 NODE_LABEL_COLUMN = "column"
 NODE_LABEL_FUNCTION = "function"
+NODE_LABEL_SQL_PATTERN = "sqlpattern"
+NODE_LABEL_TEMP_TABLE = "temptable"
 
 # 关系类型常量
 REL_TYPE_CONFIGURES = "configures_database"
@@ -40,6 +42,9 @@ REL_TYPE_HAS_OBJECT = "has_object"
 REL_TYPE_HAS_COLUMN = "has_column"
 REL_TYPE_REFERENCES = "references_column"
 REL_TYPE_HAS_FUNCTION = "has_function"
+REL_TYPE_DATA_FLOW = "data_flow"
+REL_TYPE_READS_FROM = "reads_from"
+REL_TYPE_WRITES_TO = "writes_to"
 
 
 def generate_datasource_fqn(source_id: int, source_name: str) -> str:

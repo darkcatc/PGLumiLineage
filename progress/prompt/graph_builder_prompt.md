@@ -93,3 +93,53 @@ MATCH 相关的 Column 节点（或其他相关的元数据节点）。
 生成节点唯一标识符 (FQN - Fully Qualified Name) 的辅助函数。
 Cypher字符串转义函数。
 一些通用的 MERGE 节点或边的模板函数（如果可以抽象出来）。
+
+# 2025-05-24 Task03
+## 1. 创建lineage_graph_builder模块
+### 1 类职责和结构 (LineageGraphBuilder):
+LineageGraphBuilder 的职责明确：它不负责创建基础的 Database, Schema, Table, View, Column (属于持久化表/视图的) 节点及其层级关系（HAS_SCHEMA, HAS_OBJECT, HAS_COLUMN）。这些是 metadata_graph_builder.py 的工作。
+将相关逻辑封装在类中，便于管理数据库配置和图名称。
+使用异步方法 (async/await) 进行数据库操作。
+连接池管理: 在 __init__ 中不立即创建连接池，而是在首次需要连接时（_get_iwdb_conn）创建，并提供 close_iwdb_pool 方法在服务结束时关闭。这使得构建器实例可以先创建，连接池在实际工作时才建立。
+
+### 2 获取待处理数据 (Workspace_pending_sql_patterns_for_lineage):
+从 lumi_analytics.sql_patterns 读取 llm_analysis_status = 'COMPLETED_SUCCESS' 且 is_loaded_to_age = FALSE 的记录。
+通过Pydantic模型 models.AnalyticalSQLPattern 实例化数据。
+（未来增强）可以增加一个中间状态来标记正在被加载到AGE的记录，以支持并发处理（MVP阶段可以先不考虑）。
+
+### 3 核心转换逻辑 (transform_llm_json_to_cypher_batch 及辅助函数):
+1. _generate_cypher_for_object_node :
+当LLM JSON中提到一个对象（表或视图）时，这个函数的主要目标是确保该对象节点在图中存在，以便后续的边可以连接到它。
+策略：
+如果LLM提供的对象 type 是 TABLE 或 VIEW: 它应该生成 MERGE (obj:Table/View {fqn: $fqn}) ON CREATE SET obj.name = $name, ... obj.is_metadata_sourced = true (或类似标记)。这里的 ON CREATE SET 是一个后备，以防 metadata_graph_builder 由于某种原因（比如时序问题，或者该对象确实是新出现的且 metadata_collector 还没扫到）尚未创建它。理想情况下，metadata_graph_builder 已经创建了这个节点并填充了丰富的元数据属性。lineage_graph_builder 的 MERGE 应该主要依赖FQN匹配，并且 ON MATCH 时不应该覆盖由 metadata_graph_builder 设置的权威元数据属性。
+如果LLM提供的对象 type 是 TEMP_TABLE (或者基于我们的MVP策略：在lumi_metadata_store中找不到的表): 它应该生成 MERGE (obj:TempTable {fqn: $fqn}) ON CREATE SET obj.name = $name, obj.schema_name = $schema, obj.database_name = $db_name, obj.is_temporary = true, ...。fqn 可以包含一个特殊的schema名如 'session_temp' 或者如果LLM能提供一个临时的schema名。
+2. _generate_cypher_for_column_node:
+与对象节点类似，当LLM JSON提到一个列时，此函数确保该列节点存在。
+策略:
+MATCH 其父对象节点 (Table, View, 或 TempTable)。
+MERGE (col:Column/TempColumn {fqn: $col_fqn}) ON CREATE SET col.name = $name, ...。
+MERGE (parent_obj)-[:HAS_COLUMN]->(col)。
+如果父对象是 TempTable，则创建的列节点可以是 :TempColumn 标签，或者 :Column {is_temporary: true}。
+3. transform_llm_json_to_cypher_batch 的编排:
+在真正生成 DATA_FLOW 边之前，它应该先遍历LLM JSON中所有涉及的对象和列（来自 target_object, column_level_lineage[].sources[].source_object, column_level_lineage[].target_column, referenced_objects），调用 _generate_cypher_for_object_node 和 _generate_cypher_for_column_node 来确保所有需要被血缘关系连接的端点节点都已在图中MERGE完毕。
+这样做的好处是，即使LLM提到的某些对象是临时的或尚未被 metadata_graph_builder 处理，我们也能为它们创建占位符节点，使得 DATA_FLOW 边能够成功创建。
+4. _generate_cypher_for_sql_pattern_node: 为当前处理的SQL模式 MERGE 一个 :SqlPattern 节点。属性包括 sql_hash（唯一标识）、normalized_sql、sample_sql、source_database_name、以及从 sql_patterns 表获取的统计信息如 first_seen_at, last_seen_at, execution_count等。使用 ON CREATE SET 和 ON MATCH SET 来处理属性的初始化和更新。
+5. _generate_cypher_for_data_flow:
+遍历LLM JSON中的 column_level_lineage。
+在真正生成 DATA_FLOW 边之前，它应该先遍历LLM JSON中所有涉及的对象和列（来自 target_object, column_level_lineage[].sources[].source_object, column_level_lineage[].target_column, referenced_objects），调用 _generate_cypher_for_object_node 和 _generate_cypher_for_column_node 来确保所有需要被血缘关系连接的端点节点都已在图中MERGE完毕。
+这样做的好处是，即使LLM提到的某些对象是临时的或尚未被 metadata_graph_builder 处理，我们也能为它们创建占位符节点，使得 DATA_FLOW 边能够成功创建。
+6. _generate_cypher_for_sql_object_references:
+遍历LLM JSON中的 referenced_objects。
+MATCH :SqlPattern 节点和被引用的 :Table 或 :View 节点。
+根据 access_mode (READ/WRITE) MERGE 对应的关系，如 (sp)-[:READS_FROM]->(obj) 或 (sp)-[:WRITES_TO]->(obj)。边的属性可以包含 last_seen_at (用 pattern_info.last_seen_at 更新)。
+7. FQN使用: 所有对 Column, Table, View 等元数据节点的引用都应通过其FQN（完全限定名）来 MATCH，确保准确性。FQN的生成逻辑应与 metadata_graph_builder 保持一致。
+返回: transform_llm_json_to_cypher_batch 返回一个 List[Tuple[str, Dict[str, Any]]]，每个元组包含一条Cypher语句和其对应的参数字典。
+### 4 执行Cypher (common_graph_utils.execute_cypher):
+这个共享函数负责实际执行Cypher。它需要处理AGE的上下文设置（LOAD 'age'; SET search_path ...; SELECT ag_catalog.set_graph_path(...);）。
+强烈推荐使用参数化查询 来执行Cypher，以防止注入并提高效率。AGE的 cypher() 函数支持将一个JSONB对象作为参数，Cypher语句中可以用 $key 的形式引用JSONB中的键。
+### 5 状态更新 (mark_pattern_as_loaded_to_age):
+在成功（或失败）将一个SQL模式的血缘关系写入AGE后，更新 lumi_analytics.sql_patterns 表中对应记录的 is_loaded_to_age 和 age_load_error_message 字段。
+### 6 主流程 (build_lineage_graphs):
+编排整个过程：获取待处理SQL模式 -> 转换JSON为Cypher批次 -> 在事务中执行Cypher批次 -> 更新状态。
+事务性: 对一个SQL模式生成的所有Cypher语句，应该在一个AGE（即PostgreSQL）事务中执行，以保证原子性。
+### 7 main() 函数示例: 提供了一个如何初始化和运行 LineageGraphBuilder 的示例。
