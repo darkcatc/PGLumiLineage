@@ -249,6 +249,32 @@ const registerCustomNodes = () => {
   // 其他节点类型...
 };
 
+// 注册自定义血缘关系边，仅用于data_flow
+G6.registerEdge('custom-data-flow', {
+  draw(cfg, group) {
+    const { startPoint, endPoint } = cfg;
+    // 控制点横向偏移，纵向与起点一致，形成优雅的弯曲
+    const controlX = startPoint.x - Math.abs(endPoint.x - startPoint.x) * 0.4;
+    const path = [
+      ['M', startPoint.x, startPoint.y],
+      ['Q', controlX, startPoint.y, endPoint.x, endPoint.y]
+    ];
+    const shape = group.addShape('path', {
+      attrs: {
+        path,
+        stroke: '#ff4d4f',
+        lineWidth: 3,
+        endArrow: {
+          path: 'M 0,0 L 10,5 L 0,10 Z',
+          fill: '#ff4d4f'
+        }
+      },
+      name: 'custom-data-flow-path'
+    });
+    return shape;
+  }
+}, 'quadratic');
+
 // 初始化图
 const initGraph = () => {
   if (!graphWrapper.value) return;
@@ -266,10 +292,10 @@ const initGraph = () => {
     },
     layout: {
       type: 'dagre',
-      rankdir: 'LR',        // 从左到右的数据流
+      rankdir: 'LR',        // 从左到右布局
       align: 'UL',          // 上对齐
-      nodesep: 40,          // 同层节点间距
-      ranksep: 120,         // 层间距离（缩短距离）
+      nodesep: 60,          // 同层节点间距
+      ranksep: 150,         // 层间距离
       controlPoints: true,  // 启用控制点
     },
     fitView: true,  // 启用自动适应
@@ -292,17 +318,19 @@ const initGraph = () => {
       }
     },
     defaultEdge: {
-      type: 'polyline',      // 使用折线，更适合层次布局
+      type: 'quadratic',     // 使用二次贝塞尔曲线，血缘关系更美观
       style: {
         stroke: '#999',
         lineWidth: 1.5,
         cursor: 'pointer',
-        radius: 8,           // 转弯半径
         endArrow: {
           path: 'M 0,0 L 8,4 L 0,8 Z',
           fill: '#999'
         }
       },
+      // 设置连接点位置：从源节点右侧连接到目标节点右侧
+      sourceAnchor: 1,       // 源节点右侧连接点
+      targetAnchor: 0,       // 目标节点左侧连接点
       labelCfg: {
         autoRotate: false,   // 不自动旋转标签
         style: {
@@ -349,7 +377,7 @@ const initGraph = () => {
     },
     plugins: showMinimap.value ? [
       new G6.Minimap({
-        container: minimapContainer.value,
+        container: minimapContainer.value as HTMLDivElement,
         size: [150, 100]
       })
     ] : []
@@ -554,11 +582,12 @@ const getEdgeStyle = (type: string) => {
     case 'has_column':
     case 'contains':
       edgeType = EdgeType.CONTAINS;
-      // 结构关系使用灰色细线
+      // 结构关系使用灰色细线，直线连接
       customStyle = {
         stroke: '#bbb',
         lineWidth: 1,
-        lineDash: [2, 2]  // 虚线
+        lineDash: [2, 2],  // 虚线
+
       };
       break;
     case 'reads_from':
@@ -576,14 +605,15 @@ const getEdgeStyle = (type: string) => {
       break;
     case 'data_flow':
       edgeType = EdgeType.DATA_FLOW;
-      // 数据流关系使用红色粗线，最突出
+      // 数据流关系使用红色粗线，最突出，使用曲线连接
       customStyle = {
         stroke: '#ff4d4f',
         lineWidth: 3,
         endArrow: {
           path: 'M 0,0 L 10,5 L 0,10 Z',
           fill: '#ff4d4f'
-        }
+        },
+
       };
       break;
     case 'generates':
@@ -602,9 +632,9 @@ const getEdgeStyle = (type: string) => {
   return { ...defaultStyle, ...customStyle };
 };
 
-// 处理图数据 - 使用dagre布局，按数据血缘层级组织
+// 处理图数据 - 使用dagre布局，血缘关系：目标在左，源在右
 const processGraphData = (data: { nodes: any[]; edges: any[] }) => {
-  console.log('开始处理图数据 - 使用dagre布局，按数据血缘层级');
+  console.log('开始处理图数据 - 血缘关系布局：目标在左，源在右');
   
   // 转换节点数据，添加层级信息
   const processedNodes = data.nodes.map((node) => {
@@ -625,104 +655,85 @@ const processGraphData = (data: { nodes: any[]; edges: any[] }) => {
     };
   });
   
-  // 转换边数据，修正data_flow边的方向
+  // 转换边数据，根据类型设置不同的连接方式
   const processedEdges = data.edges.map(edge => {
-    let source = edge.source;
-    let target = edge.target;
-    
-    // 对于data_flow边，确保从源数据指向目标数据（从左到右）
-    if (edge.type?.toLowerCase() === 'data_flow') {
-      // 检查源节点和目标节点，确保方向正确
-      const sourceNode = data.nodes.find(n => n.id === edge.source);
-      const targetNode = data.nodes.find(n => n.id === edge.target);
-      
-      if (sourceNode && targetNode) {
-        const sourceFqn = sourceNode.fqn || sourceNode.label || '';
-        const targetFqn = targetNode.fqn || targetNode.label || '';
-        const isSourceTarget = sourceFqn.includes('monthly_channel_returns_analysis_report');
-        const isTargetTarget = targetFqn.includes('monthly_channel_returns_analysis_report');
-        
-        // 如果source是目标节点，target是源节点，则需要反转边的方向
-        if (isSourceTarget && !isTargetTarget) {
-          source = edge.target;
-          target = edge.source;
-          console.log(`反转data_flow边方向: ${sourceNode.label} -> ${targetNode.label}`);
-        }
-      }
-    }
-    
-    return {
+    const edgeStyle = getEdgeStyle(edge.type);
+    const edgeType = edge.type?.toLowerCase() || '';
+    let edgeConfig: any = {
       id: edge.id,
-      source: source,
-      target: target,
       label: edge.label,
-      style: getEdgeStyle(edge.type),
+      style: edgeStyle,
       originalData: edge
     };
+    // 血缘关系反转source/target，箭头从目标指向源
+    if (edgeType === 'data_flow') {
+      edgeConfig.type = 'custom-data-flow';
+      edgeConfig.source = edge.target; // 目标节点作为source
+      edgeConfig.target = edge.source; // 源节点作为target
+      edgeConfig.sourceAnchor = 1;  // 目标节点右侧
+      edgeConfig.targetAnchor = 3;  // 源节点左侧
+    }
+    // 元数据关系使用折线
+    else if (["has_schema", "has_object", "has_column"].includes(edgeType)) {
+      edgeConfig.type = 'polyline';
+      edgeConfig.source = edge.source;
+      edgeConfig.target = edge.target;
+      edgeConfig.sourceAnchor = 1;
+      edgeConfig.targetAnchor = 3;
+    }
+    else {
+      edgeConfig.type = 'quadratic';
+      edgeConfig.source = edge.source;
+      edgeConfig.target = edge.target;
+    }
+    return edgeConfig;
   });
   
-  console.log('图数据处理完成 - 使用预设坐标', { 
+  console.log('图数据处理完成 - 使用dagre自动布局', { 
     nodes: processedNodes.length, 
     edges: processedEdges.length 
-  });
-  
-  // 显示节点坐标信息
-  processedNodes.forEach(node => {
-    console.log(`节点 ${node.label}: x=${node.x}, y=${node.y}`);
   });
   
   return { processedNodes, processedEdges };
 };
 
-// 计算节点层级 - 修正为从左到右的自然数据流
+// 计算节点层级 - 源表和源字段同级
 const calculateNodeLayer = (node: any): { layer: number, rank: number, weight: number } => {
   const nodeType = node.type?.toLowerCase() || '';
   const fqn = node.fqn || node.label || '';
   const isTargetNode = fqn.includes('monthly_channel_returns_analysis_report');
-  
-  console.log(`计算层级: ${node.label} (${nodeType}) - 是否目标节点: ${isTargetNode}`);
-  
+
   let layer = 0;  // 层级：0=最左侧，数字越大越靠右
   let rank = 0;   // 同层内的排序
   let weight = 0; // 权重，影响同层内的位置
-  
-  // 修正为自然的从左到右数据流：源数据在左侧，目标数据在右侧
-  // data_flow边：从左侧源数据指向右侧目标数据（符合阅读习惯）
+
+  // 血缘关系布局：目标数据在左侧，源数据在右侧
+  // data_flow边：目标数据 ← 源数据（箭头指向目标）
+  // 元数据关系：库 → schema → 表 → 字段（从左到右的层次结构）
+
   if (nodeType === 'database') {
-    layer = 0;  // 最左侧：数据库（基础设施）
+    layer = 0;  // 最左侧：数据库（元数据层次结构）
     rank = 0;
     weight = 10;
   } 
   else if (nodeType === 'schema') {
-    layer = 1;  // 第二层：模式（基础设施）
+    layer = 1;  // 第二层：模式（元数据层次结构）
     rank = 0;
     weight = 20;
   }
   else if (nodeType === 'sqlpattern') {
-    layer = 2;  // 第三层：SQL模式（基础设施）
+    layer = 2;  // 第三层：SQL模式
     rank = 0;
     weight = 30;
   }
-  else if (nodeType === 'table') {
+  else if (nodeType === 'table' || nodeType === 'column') {
     if (isTargetNode) {
-      layer = 5;  // 目标表在右侧中心位置
-      rank = 0;
-      weight = 100;  // 高权重，确保在层级中心
+      // 目标表/字段继续分层
+      layer = nodeType === 'table' ? 2 : 3;
+      weight = nodeType === 'table' ? 100 : 110;
     } else {
-      layer = 3;  // 源表在左侧（源数据）
-      rank = 0;
-      weight = 50;
-    }
-  }
-  else if (nodeType === 'column') {
-    if (isTargetNode) {
-      layer = 6;  // 目标列在最右侧
-      rank = 0;
-      weight = 110;
-    } else {
-      // 源列在源表右侧，但仍在左半部分
-      layer = 4;  // 源列在源表右侧
-      rank = 0;
+      // 源表和源字段同级
+      layer = 5;
       weight = 60;
     }
   }
@@ -732,8 +743,6 @@ const calculateNodeLayer = (node: any): { layer: number, rank: number, weight: n
     rank = 1;
     weight = 40;
   }
-  
-  console.log(`节点 ${node.label} 层级信息: layer=${layer}, rank=${rank}, weight=${weight}`);
   return { layer, rank, weight };
 };
 
