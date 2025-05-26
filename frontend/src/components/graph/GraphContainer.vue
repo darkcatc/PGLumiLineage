@@ -263,11 +263,8 @@ G6.registerEdge('custom-data-flow', {
       attrs: {
         path,
         stroke: '#ff4d4f',
-        lineWidth: 3,
-        endArrow: {
-          path: 'M 0,0 L 10,5 L 0,10 Z',
-          fill: '#ff4d4f'
-        }
+        lineWidth: 3
+        // 不设置endArrow，去除箭头
       },
       name: 'custom-data-flow-path'
     });
@@ -323,10 +320,11 @@ const initGraph = () => {
         stroke: '#999',
         lineWidth: 1.5,
         cursor: 'pointer',
-        endArrow: {
-          path: 'M 0,0 L 8,4 L 0,8 Z',
-          fill: '#999'
-        }
+        // 只为非data_flow类型设置endArrow
+        // endArrow: {
+        //   path: 'M 0,0 L 8,4 L 0,8 Z',
+        //   fill: '#999'
+        // }
       },
       // 设置连接点位置：从源节点右侧连接到目标节点右侧
       sourceAnchor: 1,       // 源节点右侧连接点
@@ -468,7 +466,7 @@ const bindEvents = () => {
 };
 
   // 渲染图
-const renderGraph = (data: { nodes: any[]; edges: any[] }) => {
+const renderGraph = (data: { nodes: any[]; edges: any[], focusId?: string }) => {
   console.log('开始渲染图形:', data);
   if (!graph) {
     console.error('图实例不存在，无法渲染');
@@ -504,6 +502,19 @@ const renderGraph = (data: { nodes: any[]; edges: any[] }) => {
       if (graph) {
         // 适应视图，确保所有节点都可见
         graph.fitView(20);
+        // 居中聚焦被筛选对象
+        if (data.focusId) {
+          graph.focusItem(data.focusId, true, {
+            easing: 'easeCubic',
+            duration: 600
+          });
+        } else if (processedNodes.length > 0) {
+          // 默认聚焦第一个节点
+          graph.focusItem(processedNodes[0].id, true, {
+            easing: 'easeCubic',
+            duration: 600
+          });
+        }
         console.log('图形渲染完成，使用dagre层级布局');
       }
     }, 100);
@@ -582,12 +593,12 @@ const getEdgeStyle = (type: string) => {
     case 'has_column':
     case 'contains':
       edgeType = EdgeType.CONTAINS;
-      // 结构关系使用灰色细线，直线连接
+      // 结构关系使用灰色细线，不要箭头
       customStyle = {
         stroke: '#bbb',
         lineWidth: 1,
-        lineDash: [2, 2],  // 虚线
-
+        lineDash: [2, 2],
+        endArrow: false  // 明确禁用箭头
       };
       break;
     case 'reads_from':
@@ -597,23 +608,20 @@ const getEdgeStyle = (type: string) => {
     case 'writes_to':
     case 'writes':
       edgeType = EdgeType.WRITES;
-      // SQL写入关系使用绿色
+      // 写入关系不再保留箭头
       customStyle = {
         stroke: '#52c41a',
-        lineWidth: 2
+        lineWidth: 2,
+        endArrow: false // 明确禁用箭头
       };
       break;
     case 'data_flow':
       edgeType = EdgeType.DATA_FLOW;
-      // 数据流关系使用红色粗线，最突出，使用曲线连接
+      // 数据流关系不设置箭头
       customStyle = {
         stroke: '#ff4d4f',
         lineWidth: 3,
-        endArrow: {
-          path: 'M 0,0 L 10,5 L 0,10 Z',
-          fill: '#ff4d4f'
-        },
-
+        endArrow: false  // 明确禁用箭头
       };
       break;
     case 'generates':
@@ -624,40 +632,54 @@ const getEdgeStyle = (type: string) => {
       edgeType = EdgeType.REFERENCES;
       break;
     default:
-      edgeType = EdgeType.DEPENDS_ON; // 默认为依赖关系
+      edgeType = EdgeType.DEPENDS_ON;
   }
   
-  // 合并默认样式和自定义样式
+  // 获取默认样式，但如果customStyle明确设置了endArrow为false，则移除默认的endArrow
   const defaultStyle = EDGE_STYLE_MAP[edgeType]?.style || {};
-  return { ...defaultStyle, ...customStyle };
+  const mergedStyle = { ...defaultStyle, ...customStyle };
+  
+  // 如果customStyle明确禁用了箭头，确保最终样式中没有箭头
+  if (customStyle.endArrow === false) {
+    delete mergedStyle.endArrow;
+  }
+  
+  return mergedStyle;
 };
 
 // 处理图数据 - 使用dagre布局，血缘关系：目标在左，源在右
 const processGraphData = (data: { nodes: any[]; edges: any[] }) => {
   console.log('开始处理图数据 - 血缘关系布局：目标在左，源在右');
-  
-  // 转换节点数据，添加层级信息
+
+  // 1. 统计所有血缘源端id（data_flow/writes_to/writes的source端）
+  const dataFlowSourceIds = new Set(
+    data.edges
+      .filter(e => ['data_flow', 'writes_to', 'writes'].includes((e.type || '').toLowerCase()))
+      .map(e => e.source)
+  );
+
+  // 2. 计算节点分层
   const processedNodes = data.nodes.map((node) => {
     const nodeType = getNodeType(node.type);
-    const layerInfo = calculateNodeLayer(node);
-    
+    const layerInfo = calculateNodeLayer(node, dataFlowSourceIds);
     return {
       id: node.id,
       label: node.label,
       type: nodeType,
       style: getNodeStyle(node.type),
       originalData: node,
-      // 添加层级信息，帮助dagre布局
       layer: layerInfo.layer,
       rank: layerInfo.rank,
-      // 添加权重，影响同层内的排序
       weight: layerInfo.weight
     };
   });
-  
-  // 转换边数据，根据类型设置不同的连接方式
+
+  // 3. 转换边数据，根据类型设置不同的连接方式
   const processedEdges = data.edges.map(edge => {
     const edgeStyle = getEdgeStyle(edge.type);
+    if (edgeStyle && edgeStyle.endArrow === false) {
+      delete edgeStyle.endArrow;
+    }
     const edgeType = edge.type?.toLowerCase() || '';
     let edgeConfig: any = {
       id: edge.id,
@@ -665,83 +687,66 @@ const processGraphData = (data: { nodes: any[]; edges: any[] }) => {
       style: edgeStyle,
       originalData: edge
     };
-    // 血缘关系反转source/target，箭头从目标指向源
     if (edgeType === 'data_flow') {
       edgeConfig.type = 'custom-data-flow';
-      edgeConfig.source = edge.target; // 目标节点作为source
-      edgeConfig.target = edge.source; // 源节点作为target
-      edgeConfig.sourceAnchor = 1;  // 目标节点右侧
-      edgeConfig.targetAnchor = 3;  // 源节点左侧
-    }
-    // 元数据关系使用折线
-    else if (["has_schema", "has_object", "has_column"].includes(edgeType)) {
+      edgeConfig.source = edge.target;
+      edgeConfig.target = edge.source;
+      edgeConfig.sourceAnchor = 1;
+      edgeConfig.targetAnchor = 3;
+    } else if (["has_schema", "has_object", "has_column"].includes(edgeType)) {
       edgeConfig.type = 'polyline';
       edgeConfig.source = edge.source;
       edgeConfig.target = edge.target;
       edgeConfig.sourceAnchor = 1;
       edgeConfig.targetAnchor = 3;
-    }
-    else {
+    } else {
       edgeConfig.type = 'quadratic';
       edgeConfig.source = edge.source;
       edgeConfig.target = edge.target;
     }
     return edgeConfig;
   });
-  
-  console.log('图数据处理完成 - 使用dagre自动布局', { 
-    nodes: processedNodes.length, 
-    edges: processedEdges.length 
+
+  console.log('图数据处理完成 - 使用dagre自动布局', {
+    nodes: processedNodes.length,
+    edges: processedEdges.length
   });
-  
+
   return { processedNodes, processedEdges };
 };
 
-// 计算节点层级 - 源表和源字段同级
-const calculateNodeLayer = (node: any): { layer: number, rank: number, weight: number } => {
+// 计算节点层级 - 元数据链路始终分层，血缘源端layer提升但不影响结构链路
+const calculateNodeLayer = (node: any, dataFlowSourceIds: Set<string>): { layer: number, rank: number, weight: number } => {
   const nodeType = node.type?.toLowerCase() || '';
-  const fqn = node.fqn || node.label || '';
-  const isTargetNode = fqn.includes('monthly_channel_returns_analysis_report');
-
-  let layer = 0;  // 层级：0=最左侧，数字越大越靠右
-  let rank = 0;   // 同层内的排序
-  let weight = 0; // 权重，影响同层内的位置
-
-  // 血缘关系布局：目标数据在左侧，源数据在右侧
-  // data_flow边：目标数据 ← 源数据（箭头指向目标）
-  // 元数据关系：库 → schema → 表 → 字段（从左到右的层次结构）
+  let layer = 2; // 默认表层
+  let rank = 0;
+  let weight = 0;
 
   if (nodeType === 'database') {
-    layer = 0;  // 最左侧：数据库（元数据层次结构）
-    rank = 0;
+    layer = 0;
     weight = 10;
-  } 
-  else if (nodeType === 'schema') {
-    layer = 1;  // 第二层：模式（元数据层次结构）
-    rank = 0;
+  } else if (nodeType === 'schema') {
+    layer = 1;
     weight = 20;
-  }
-  else if (nodeType === 'sqlpattern') {
-    layer = 2;  // 第三层：SQL模式
-    rank = 0;
-    weight = 30;
-  }
-  else if (nodeType === 'table' || nodeType === 'column') {
-    if (isTargetNode) {
-      // 目标表/字段继续分层
-      layer = nodeType === 'table' ? 2 : 3;
-      weight = nodeType === 'table' ? 100 : 110;
-    } else {
-      // 源表和源字段同级
-      layer = 5;
-      weight = 60;
-    }
-  }
-  else {
-    // 其他类型节点
+  } else if (nodeType === 'table') {
     layer = 2;
-    rank = 1;
+    weight = 100;
+  } else if (nodeType === 'column') {
+    layer = 3;
+    weight = 110;
+  } else if (nodeType === 'sqlpattern' || nodeType === 'sql_pattern') {
+    // sqlpattern始终与表同级，体现加工方式
+    layer = 2;
+    weight = 80;
+  } else {
+    layer = 2;
     weight = 40;
+  }
+
+  // 只有非sqlpattern的血缘源端才提升layer
+  if (dataFlowSourceIds.has(node.id) && !(nodeType === 'sqlpattern' || nodeType === 'sql_pattern')) {
+    layer = Math.max(layer, 5);
+    weight += 1000;
   }
   return { layer, rank, weight };
 };
